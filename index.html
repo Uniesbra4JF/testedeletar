@@ -307,6 +307,9 @@
         #ai-search-modal .modal-dark {
             max-width: 500px;
         }
+        
+        #ai-search-modal textarea {
+            min-height: 120px;
             padding-left: 0.75rem;
             padding-right: 0.75rem;
         }
@@ -1647,9 +1650,9 @@ const aiSearchCancelBtn = document.getElementById('ai-search-cancel-btn');
                 });
             }
 
-            async function handleAiSearch() {
+            async function handleAiSearch(searchTermParam) {
                 const apiKey = localStorage.getItem('unintaApiKey');
-                const searchTerm = searchInput.value;
+                const searchTerm = searchTermParam || searchInput.value;
 
                 if (!apiKey) {
                     alert('Por favor, insira sua chave de API nas configurações para usar a busca inteligente.');
@@ -1687,8 +1690,8 @@ const aiSearchCancelBtn = document.getElementById('ai-search-cancel-btn');
                 const prompt = `Você é um assistente de busca inteligente para um manual. Sua tarefa é encontrar a seção mais relevante com base na pergunta do usuário. O conteúdo do manual é fornecido como um array JSON. A pergunta do usuário pode conter erros de digitação ou ser uma pergunta indireta. Sua resposta DEVE SER APENAS o 'id' do card ou subcard mais relevante. Não adicione nenhum outro texto ou explicação. Conteúdo do Manual: ${JSON.stringify(simplifiedContent)}. Pergunta do Usuário: "${searchTerm}". ID mais relevante:`;
 
                 try {
-                    // Usando o modelo Gemini 1.5 Flash que é mais amplamente disponível
-                    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+                    // Usando o modelo Gemini 2.0 Flash-Lite mais recente
+                    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-lite:generateContent?key=${apiKey}`, {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
@@ -1841,10 +1844,20 @@ const aiSearchCancelBtn = document.getElementById('ai-search-cancel-btn');
                 searchInput.value = promptText;
                 aiSearchModal.classList.add('hidden');
                 aiSearchModal.classList.remove('flex');
-                aiSearchPrompt.value = '';
                 
-                // Executa a busca inteligente
-                handleAiSearch();
+                // Mostra indicador de progresso
+                aiSearchConfirmBtn.disabled = true;
+                aiSearchConfirmBtn.innerHTML = '<i data-lucide="loader" class="spinning"></i> Buscando...';
+                lucide.createIcons();
+                
+                // Executa a busca inteligente com o texto do prompt
+                handleAiSearch(promptText).finally(() => {
+                    // Restaura o botão
+                    aiSearchConfirmBtn.disabled = false;
+                    aiSearchConfirmBtn.innerHTML = '<i data-lucide="search"></i> Buscar';
+                    aiSearchPrompt.value = '';
+                    lucide.createIcons();
+                });
             });
 
 
