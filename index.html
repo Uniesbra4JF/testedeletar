@@ -297,6 +297,16 @@
         #search-input.active {
             width: 200px; /* ou a largura que preferir */
             opacity: 1;
+        }
+        
+        /* Estilo para o modal de busca inteligente */
+        #ai-search-modal textarea {
+            min-height: 120px;
+        }
+        
+        #ai-search-modal .modal-dark {
+            max-width: 500px;
+        }
             padding-left: 0.75rem;
             padding-right: 0.75rem;
         }
@@ -447,6 +457,28 @@
             <div class="mt-6 flex justify-end space-x-4">
                 <button id="settings-cancel-btn" class="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-500 transition-all duration-200">Cancelar</button>
                 <button id="settings-save-btn" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-500 transition-all duration-200">Salvar</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal de Busca Inteligente -->
+    <div id="ai-search-modal" class="fixed inset-0 bg-black/70 z-50 hidden items-center justify-center backdrop-blur-sm">
+        <div class="modal-dark rounded-lg shadow-xl p-6 w-full max-w-md">
+            <h3 class="text-lg font-bold text-white mb-4">Busca Inteligente</h3>
+            <div class="space-y-4">
+                <div>
+                    <label for="ai-search-prompt" class="block text-sm font-medium text-gray-300 mb-2">Descreva o que você está procurando:</label>
+                    <textarea 
+                        id="ai-search-prompt" 
+                        class="w-full bg-gray-800/50 border border-gray-600 text-white rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none" 
+                        rows="4" 
+                        placeholder="Ex: informações sobre trancamento de curso, requisitos para segunda licenciatura..."
+                    ></textarea>
+                </div>
+            </div>
+            <div class="mt-6 flex justify-end space-x-4">
+                <button id="ai-search-cancel-btn" class="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-500 transition-all duration-200">Cancelar</button>
+                <button id="ai-search-confirm-btn" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-500 transition-all duration-200">Buscar</button>
             </div>
         </div>
     </div>
@@ -663,9 +695,15 @@
             const aiSearchBtn = document.getElementById('ai-search-btn');
             const settingsBtn = document.getElementById('settings-btn');
             const settingsModal = document.getElementById('settings-modal');
-            const settingsSaveBtn = document.getElementById('settings-save-btn');
-            const settingsCancelBtn = document.getElementById('settings-cancel-btn');
-            const apiKeyInput = document.getElementById('api-key-input');
+const settingsSaveBtn = document.getElementById('settings-save-btn');
+const settingsCancelBtn = document.getElementById('settings-cancel-btn');
+const apiKeyInput = document.getElementById('api-key-input');
+
+// Modal de Busca Inteligente
+const aiSearchModal = document.getElementById('ai-search-modal');
+const aiSearchPrompt = document.getElementById('ai-search-prompt');
+const aiSearchConfirmBtn = document.getElementById('ai-search-confirm-btn');
+const aiSearchCancelBtn = document.getElementById('ai-search-cancel-btn');
 
             // --- FUNÇÕES ---
             function updateStateFromDOM() {
@@ -1762,7 +1800,11 @@
                 }
             });
             searchInput.addEventListener('input', handleSearch);
-            aiSearchBtn.addEventListener('click', handleAiSearch);
+            aiSearchBtn.addEventListener('click', () => {
+                aiSearchModal.classList.remove('hidden');
+                aiSearchModal.classList.add('flex');
+                aiSearchPrompt.focus();
+            });
 
             settingsBtn.addEventListener('click', () => {
                 settingsModal.classList.remove('hidden');
@@ -1779,6 +1821,30 @@
                 settingsModal.classList.add('hidden');
                 settingsModal.classList.remove('flex');
                 alert('Chave de API salva com sucesso!');
+            });
+
+            // Listeners do Modal de Busca Inteligente
+            aiSearchCancelBtn.addEventListener('click', () => {
+                aiSearchModal.classList.add('hidden');
+                aiSearchModal.classList.remove('flex');
+                aiSearchPrompt.value = '';
+            });
+
+            aiSearchConfirmBtn.addEventListener('click', () => {
+                const promptText = aiSearchPrompt.value.trim();
+                if (!promptText) {
+                    alert('Por favor, digite uma descrição para a busca.');
+                    return;
+                }
+                
+                // Usa o texto do modal como termo de busca
+                searchInput.value = promptText;
+                aiSearchModal.classList.add('hidden');
+                aiSearchModal.classList.remove('flex');
+                aiSearchPrompt.value = '';
+                
+                // Executa a busca inteligente
+                handleAiSearch();
             });
 
 
