@@ -1842,8 +1842,6 @@ const aiSearchCancelBtn = document.getElementById('ai-search-cancel-btn');
                 
                 // Usa o texto do modal como termo de busca
                 searchInput.value = promptText;
-                aiSearchModal.classList.add('hidden');
-                aiSearchModal.classList.remove('flex');
                 
                 // Mostra indicador de progresso
                 aiSearchConfirmBtn.disabled = true;
@@ -1852,7 +1850,9 @@ const aiSearchCancelBtn = document.getElementById('ai-search-cancel-btn');
                 
                 // Executa a busca inteligente com o texto do prompt
                 handleAiSearch(promptText).finally(() => {
-                    // Restaura o botão
+                    // Fecha o modal e restaura o botão
+                    aiSearchModal.classList.add('hidden');
+                    aiSearchModal.classList.remove('flex');
                     aiSearchConfirmBtn.disabled = false;
                     aiSearchConfirmBtn.innerHTML = '<i data-lucide="search"></i> Buscar';
                     aiSearchPrompt.value = '';
