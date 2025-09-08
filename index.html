@@ -1,1985 +1,1366 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Manual Interativo UNINTA</title>
-    
-    <!-- Tailwind CSS -->
+    <title>Uninta-aluno-Status-Hub</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    
-    <!-- Biblioteca de Ícones (Lucide) -->
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <!-- Fontes do Google -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@600;700&display=swap" rel="stylesheet">
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/xlsx/dist/xlsx.full.min.js"></script>
+    <script src="https://unpkg.com/file-saver@2.0.5/dist/FileSaver.min.js"></script>
     <style>
-        /* Estilo base com a nova paleta dark */
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #0f172a; /* Fundo principal azul-escuro mais profundo */
-            color: #e2e8f0; /* Texto principal cinza mais claro */
-            overflow-x: hidden;
+        /* Custom styles for the active/inactive circle */
+        .status-tag .w-3.h-3 {
+            flex-shrink: 0; /* Prevent the circle from shrinking */
         }
-        /* Fundo com gradiente sutil e textura */
-        body::before {
-            content: '';
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-image: 
-                radial-gradient(circle at top right, rgba(30, 58, 138, 0.4), transparent 40%),
-                radial-gradient(circle at bottom left, rgba(59, 130, 246, 0.15), transparent 50%),
-                linear-gradient(135deg, rgba(15, 23, 42, 0.9) 0%, rgba(30, 41, 59, 0.8) 100%);
-            background-repeat: no-repeat;
-            z-index: -1;
+         /* Custom styles for the settings menu dropdown */
+        .settings-menu-container {
+            position: relative;
         }
-        .header-title {
-            font-family: 'Poppins', sans-serif;
-        }
-        /* Efeito de arrastar para o modo ADM */
-        .dragging {
-            opacity: 0.4;
-            transform: scale(0.98);
-            border: 2px dashed #3b82f6;
-        }
-        /* Estilo para edição de texto */
-        [contenteditable="true"] {
-            outline: 2px dashed #22c55e;
-            padding: 4px;
-            border-radius: 4px;
-            background-color: rgba(34, 197, 94, 0.1);
-        }
-        /* Scrollbar customizada */
-        .custom-scrollbar::-webkit-scrollbar {
-            width: 8px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-track {
-            background-color: rgba(30, 41, 59, 0.3);
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-            background-color: #475569;
-            border-radius: 10px;
-            border: 2px solid transparent;
-            background-clip: content-box;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-            background-color: #64748b;
-        }
-        /* Barra de ferramentas de destaque */
-        #highlight-toolbar {
+        .settings-menu-container .absolute {
             position: absolute;
+            /* Ensure dropdown is above other content */
+            z-index: 50; /* Tailwind z-index class */
+        }
+         /* Hide the file input */
+        .hidden-file-input {
             display: none;
-            background-color: #1e293b;
-            border-radius: 6px;
-            padding: 4px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.4);
-            z-index: 1000;
-            border: 1px solid #334155;
         }
-        .color-swatch {
-            width: 20px;
-            height: 20px;
-            border-radius: 50%;
-            cursor: pointer;
-            transition: transform 0.1s ease-in-out;
-        }
-        .color-swatch:hover {
-            transform: scale(1.2);
-        }
-        /* Estilos para minimizar card */
-        .card-content-wrapper {
-            transition: max-height 0.5s ease-in-out, opacity 0.3s ease-in-out 0.1s;
-            overflow: hidden;
-            max-height: 2000px; /* Altura grande o suficiente */
-            opacity: 1;
-        }
-        .card-content-wrapper.collapsed {
-            max-height: 0;
-            opacity: 0;
-            transition: max-height 0.5s ease-in-out, opacity 0.2s ease-in-out;
-        }
-        /* Estilos para subcards */
-        .subcard {
-            margin-left: 1.5rem;
-            border-left: 2px solid #3b82f6;
-            padding-left: 1rem;
-            margin-top: 1rem;
-            margin-bottom: 0.5rem;
-        }
-        .subcard-header {
+        /* Style for the student count circle */
+        .student-count-circle {
             display: flex;
             align-items: center;
-            margin-bottom: 0.5rem;
-        }
-        .subcard-title {
-            font-size: 1.1rem;
-            font-weight: 600;
-            color: #93c5fd;
-        }
-        /* Notificação de cópia */
-        .copy-notification {
-            position: fixed;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            background-color: #10b981;
+            justify-content: center;
+            width: 30px; /* Adjust size as needed */
+            height: 30px; /* Adjust size as needed */
+            /* Background color will be set dynamically by React */
             color: white;
-            padding: 10px 20px;
-            border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-            z-index: 1000;
-            opacity: 0;
-            transition: opacity 0.3s ease-in-out;
+            border-radius: 50%;
+            font-size: 0.875rem; /* text-sm */
+            font-weight: bold;
+            margin-right: 10px; /* Space between circle and title */
+            flex-shrink: 0; /* Prevent shrinking */
+            transition: background-color 0.3s ease; /* Smooth transition for color change */
         }
-        .copy-notification.show {
-            opacity: 1;
-        }
-        /* Botão minimizar individual */
-        .minimize-btn, .subcard-minimize-btn {
-            transition: transform 0.3s ease;
-        }
-        .minimize-btn.rotated, .subcard-minimize-btn.rotated {
-            transform: rotate(180deg);
-        }
-        
-        /* NOVOS ESTILOS PARA OS CARDS */
-        .card-container {
-            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
-            border: 1px solid rgba(59, 130, 246, 0.3);
-            box-shadow: 
-                0 10px 25px -5px rgba(0, 0, 0, 0.5),
-                0 8px 10px -6px rgba(0, 0, 0, 0.4),
-                inset 0 1px 0 rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(8px);
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .card-container::before {
-            content: '';
+        /* Style for the search input container */
+        .search-input-container .clear-button {
             position: absolute;
+            right: 8px; /* Adjust as needed */
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: #ccc;
+            cursor: pointer;
+            font-size: 1.2rem;
+            line-height: 1;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 24px;
+            height: 24px;
+        }
+        .search-input-container .clear-button:hover {
+            color: #fff;
+        }
+
+        /* Full page form container */
+        .full-page-form-container {
+            position: fixed;
             top: 0;
             left: 0;
-            right: 0;
-            height: 1px;
-            background: linear-gradient(90deg, transparent, rgba(59, 130, 246, 0.7), transparent);
-            z-index: 1;
-        }
-        
-        .card-container::after {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 1px;
-            height: 100%;
-            background: linear-gradient(180deg, transparent, rgba(59, 130, 246, 0.7), transparent);
-            z-index: 1;
-        }
-        
-        .card-glow {
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: radial-gradient(circle at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(59, 130, 246, 0.15) 0%, transparent 70%);
-            pointer-events: none;
-            opacity: 0;
-            transition: opacity 0.3s ease;
-            z-index: 0;
-        }
-        
-        .card-container:hover .card-glow {
-            opacity: 1;
-        }
-        
-        .card-header {
-            position: relative;
-            z-index: 2;
-        }
-        
-        .subcard-container {
-            background: linear-gradient(135deg, #1e293b 0%, #1e293b 100%);
-            border: 1px solid rgba(59, 130, 246, 0.2);
-            box-shadow: 
-                0 4px 15px -3px rgba(0, 0, 0, 0.4),
-                0 3px 8px -2px rgba(0, 0, 0, 0.3),
-                inset 0 1px 0 rgba(255, 255, 255, 0.05);
-            backdrop-filter: blur(6px);
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .subcard-container::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 1px;
-            background: linear-gradient(90deg, transparent, rgba(59, 130, 246, 0.5), transparent);
-            z-index: 1;
-        }
-        
-        .subcard-container::after {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 1px;
-            height: 100%;
-            background: linear-gradient(180deg, transparent, rgba(59, 130, 246, 0.5), transparent);
-            z-index: 1;
-        }
-        
-        /* Efeito de brilho nos botões */
-        .btn-glow {
-            position: relative;
-            overflow: hidden;
-            transition: all 0.3s ease;
-        }
-        
-        .btn-glow::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
             width: 100%;
             height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-            transition: left 0.5s ease;
-        }
-        
-        .btn-glow:hover::before {
-            left: 100%;
-        }
-        
-        /* Sidebar mais escura */
-        .sidebar-dark {
-            background: linear-gradient(180deg, #0f172a 0%, #1e293b 100%);
-            border: 1px solid rgba(59, 130, 246, 0.2);
-            box-shadow: 
-                0 10px 25px -5px rgba(0, 0, 0, 0.4),
-                0 8px 10px -6px rgba(0, 0, 0, 0.3);
-        }
-        
-        /* Botões de controle mais escuros */
-        .control-btn {
-            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
-            border: 1px solid rgba(59, 130, 246, 0.2);
-            box-shadow: 
-                0 4px 15px -3px rgba(0, 0, 0, 0.4),
-                0 3px 8px -2px rgba(0, 0, 0, 0.3);
-        }
-        
-        /* Modal mais escuro (Cor alterada) */
-        .modal-dark {
-            background: linear-gradient(135deg, #1e293b 0%, #111827 100%);
-            border: 1px solid rgba(99, 102, 241, 0.5); /* Borda em tom de anil/índigo */
-            box-shadow: 
-                0 20px 30px -10px rgba(0, 0, 0, 0.6), /* Sombra mais forte */
-                0 15px 20px -5px rgba(0, 0, 0, 0.5),
-                inset 0 0 15px rgba(99, 102, 241, 0.1); /* Brilho interno */
-        }
-
-        /* Estilos da Barra de Pesquisa */
-        #search-input {
-            width: 0;
-            opacity: 0;
-            transition: all 0.3s ease-in-out;
-            padding-left: 0;
-            padding-right: 0;
-        }
-        #search-input.active {
-            width: 200px; /* ou a largura que preferir */
-            opacity: 1;
-        }
-        
-        /* Estilo para o modal de busca inteligente */
-        #ai-search-modal textarea {
-            min-height: 120px;
-        }
-        
-        #ai-search-modal .modal-dark {
-            max-width: 500px;
-        }
-        
-        #ai-search-modal textarea {
-            min-height: 120px;
-            padding-left: 0.75rem;
-            padding-right: 0.75rem;
-        }
-
-        /* Animação de Borda Pulsante para Destaque da IA */
-        @keyframes pulse-border {
-            0% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7); }
-            70% { box-shadow: 0 0 0 10px rgba(59, 130, 246, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); }
-        }
-        .ai-highlight {
-            animation: pulse-border 2s 2; /* Executa a animação 2 vezes */
-            border-color: #3b82f6 !important;
-        }
-
-        /* Animação de Rotação para Loading */
-        .spinning {
-            animation: spin 1s linear infinite;
-        }
-        @keyframes spin {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
-        }
-
-        /* Notificação de Busca */
-        .search-notification {
-            position: fixed;
-            bottom: 20px;
-            left: 50%;
-            color: white;
-            padding: 12px 24px;
-            border-radius: 8px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.25);
-            z-index: 1001;
-            opacity: 0;
-            transition: opacity 0.3s ease-in-out, background-color 0.3s ease-in-out, transform 0.3s ease-in-out;
+            background: rgba(0, 0, 0, 0.8); /* Dark overlay */
             display: flex;
             align-items: center;
-            transform: translateX(-50%) translateY(20px);
+            justify-content: center;
+            z-index: 100; /* Ensure it's on top */
+            overflow-y: auto; /* Allow scrolling for smaller screens */
+            padding: 20px;
         }
-        .search-notification.show {
-            opacity: 1;
-            transform: translateX(-50%) translateY(0);
-        }
-        .search-notification.success {
-            background-color: #10b981; /* Verde */
-        }
-        .search-notification.error {
-            background-color: #ef4444; /* Vermelho */
-        }
-        .search-notification.info {
-            background-color: #3b82f6; /* Azul */
+
+        .full-page-form-container .form-content {
+            background: #1a202c; /* bg-gray-900 */
+            border-radius: 0.75rem; /* rounded-xl */
+            padding: 2.5rem; /* p-10 */
+            max-width: 800px; /* max-w-2xl */
+            width: 100%;
+            box-shadow: 0 10px 15px rgba(0, 0, 0, 0.5); /* shadow-lg */
         }
     </style>
 </head>
-<body class="min-h-screen">
-    <!-- Barra de Progresso -->
-    <div id="progress-bar" class="fixed top-0 left-0 h-1 bg-blue-500 z-[9999]" style="width: 0%; opacity: 0; transition: width 10s cubic-bezier(0.1, 0.7, 0.1, 1), opacity 0.3s ease-out;"></div>
+<body class="bg-gradient-to-br from-gray-900 to-red-900 text-gray-100 font-sans">
+    <div id="root"></div>
 
-    <!-- Tela de Carregamento -->
-    <div id="loader" class="fixed inset-0 z-50 flex flex-col items-center justify-center bg-[#0f172a] transition-opacity duration-500">
-        <div class="text-blue-400 text-2xl font-bold">UNINTA</div>
-        <p class="text-gray-400 mt-2">Carregando manual...</p>
-    </div>
-    <!-- Container principal que gerencia o layout da sidebar -->
-    <div id="app-container" class="opacity-0 transition-opacity duration-500">
-        <!-- Sidebar -->
-        <aside id="sidebar" class="sidebar-dark fixed top-0 left-0 z-40 w-64 h-screen transition-transform duration-300 ease-in-out">
-            <div class="flex flex-col h-full p-4">
-                <!-- Cabeçalho da Sidebar -->
-                <div class="flex items-center justify-between mb-6 px-2">
-                    <h2 class="text-xl font-bold text-white">Sumário</h2>
-                    <button id="pin-sidebar-btn" class="p-2 text-gray-400 hover:text-white hover:bg-gray-700/50 rounded-md transition-all duration-200 btn-glow" title="Fixar/Ocultar menu">
-                        <i data-lucide="pin"></i>
-                    </button>
-                </div>
-                <!-- Navegação -->
-                <nav id="menu-nav-links" class="flex-1 overflow-y-auto custom-scrollbar"></nav>
-                <!-- Controles de Importar/Exportar -->
-                <div class="mt-4 pt-4 border-t border-gray-700/50 space-y-2">
-                    <button id="import-btn" class="w-full flex items-center justify-center px-3 py-2 text-sm font-medium text-gray-300 bg-gray-700/30 hover:bg-gray-700/50 rounded-md transition-all duration-200 btn-glow">
-                        <i data-lucide="upload" class="h-4 w-4 mr-2"></i>
-                        Importar Dados
-                    </button>
-                    <button id="export-btn" class="w-full flex items-center justify-center px-3 py-2 text-sm font-medium text-gray-300 bg-gray-700/30 hover:bg-gray-700/50 rounded-md transition-all duration-200 btn-glow">
-                        <i data-lucide="download" class="h-4 w-4 mr-2"></i>
-                        Exportar Dados
-                    </button>
-                    <input type="file" id="import-file-input" class="hidden" accept=".json">
-                </div>
-            </div>
-        </aside>
-        <!-- Botão para abrir a sidebar quando ela está oculta -->
-        <button id="open-sidebar-btn" class="control-btn fixed top-4 left-4 z-30 p-2 text-gray-300 rounded-full shadow-lg hover:text-white transition-all duration-300 ease-in-out opacity-0 pointer-events-none">
-            <i data-lucide="menu"></i>
-        </button>
-        <!-- Conteúdo Principal -->
-        <main id="main-content" class="transition-all duration-300 ease-in-out">
-            <div class="container mx-auto px-6 py-8">
-                <!-- Cabeçalho da Página -->
-                <header class="mb-10">
-                    <div class="flex justify-between items-start">
-                        <div>
-                            <h1 class="header-title text-4xl md:text-5xl font-bold text-white">
-                                Manual Administrativo <span class="text-blue-400">UNINTA</span>
-                            </h1>
-                            <p class="mt-2 text-lg text-gray-400">Guia interativo de procedimentos e informações.</p>
-                        </div>
-                    </div>
-                </header>
-                <!-- Seção de Tópicos Fixados -->
-                <div id="pinned-container" class="mb-10"></div>
-                
-                <!-- Seção de Conteúdo Principal -->
-                <div id="content-sections" class="space-y-6"></div>
-            </div>
-        </main>
-    </div>
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
 
-    <!-- Controles Fixos no Topo Direito -->
-    <div class="fixed top-4 right-4 z-30 flex items-center space-x-2">
-        <button id="settings-btn" class="control-btn p-2 text-gray-400 rounded-full shadow-lg hover:text-white" title="Configurações">
-            <i data-lucide="settings"></i>
-        </button>
-        <div class="flex items-center control-btn rounded-full shadow-lg">
-            <input type="text" id="search-input" placeholder="Pesquisar..." class="bg-transparent text-white focus:outline-none">
-            <button id="search-btn" class="p-2 text-gray-400 hover:text-white" title="Pesquisar">
-                <i data-lucide="search"></i>
-            </button>
-        </div>
-        <button id="ai-search-btn" class="control-btn p-2 text-gray-400 rounded-full shadow-lg hover:text-white" title="Busca Inteligente">
-            <i data-lucide="sparkles"></i>
-        </button>
-        <button id="minimize-all-btn" class="control-btn p-2 text-gray-400 rounded-full shadow-lg hover:text-white" title="Minimizar/Expandir Todos">
-            <i data-lucide="chevrons-up-down"></i>
-        </button>
-    </div>
-    
-    <!-- Controles do ADM -->
-    <div id="admin-controls" class="fixed bottom-5 z-20 flex items-center space-x-3 transition-all duration-300 ease-in-out">
-        <button id="admin-toggle-btn" class="control-btn p-3 rounded-full shadow-lg text-gray-300 hover:bg-gray-700/50 transition-all duration-200">
-            <i data-lucide="shield"></i>
-        </button>
-        <button id="save-btn" class="hidden items-center px-4 py-2 bg-green-600 text-white font-semibold rounded-full shadow-lg hover:bg-green-700 transition-all duration-200">
-            <i data-lucide="save" class="mr-2 h-5 w-5"></i>
-            Salvar
-        </button>
-        <button id="reset-btn" class="hidden items-center px-4 py-2 bg-red-600 text-white font-semibold rounded-full shadow-lg hover:bg-red-700 transition-all duration-200">
-            <i data-lucide="rotate-ccw" class="mr-2 h-5 w-5"></i>
-            Resetar
-        </button>
-    </div>
-    
-    <!-- Botão para Adicionar Novo Card -->
-    <button id="add-card-btn" class="hidden fixed bottom-5 right-5 z-20 p-3 bg-blue-600 text-white rounded-full shadow-lg hover:bg-blue-700 transition-transform hover:scale-110">
-        <i data-lucide="plus"></i>
-    </button>
+        function App() {
+          // State management
+          const [students, setStudents] = useState([]);
+          const [searchTerm, setSearchTerm] = useState('');
+          const [filterStatus, setFilterStatus] = useState('');
+          // `editingStudent` will be null for list view, {} for adding, or a student object for editing
+          const [editingStudent, setEditingStudent] = useState(null);
+          const [isMenuOpen, setIsMenuOpen] = useState(false); // State for menu dropdown visibility
+          // New state for selected student IDs
+          const [selectedStudentIds, setSelectedStudentIds] = useState(new Set());
+          // New state for view mode: 'active', 'inactive', 'archived', 'all'
+          const [viewMode, setViewMode] = useState('active');
 
-    <!-- Modal de Confirmação para Exclusão -->
-    <div id="confirm-modal" class="fixed inset-0 bg-black/70 z-50 hidden items-center justify-center backdrop-blur-sm">
-        <div class="modal-dark rounded-lg shadow-xl p-6 w-full max-w-sm">
-            <h3 id="modal-title" class="text-lg font-bold text-white">Confirmar Exclusão</h3>
-            <p id="modal-message" class="text-gray-300 mt-2">Você tem certeza que deseja excluir este card? Esta ação não pode ser desfeita.</p>
-            <div class="mt-6 flex justify-end space-x-4">
-                <button id="modal-cancel-btn" class="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-500 transition-all duration-200">Cancelar</button>
-                <button id="modal-confirm-btn" class="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-500 transition-all duration-200">Excluir</button>
-            </div>
-        </div>
-    </div>
+          // Ref for the menu container to detect clicks outside
+          const menuRef = useRef(null);
+          // Ref for the hidden file input for importing
+          const fileInputRef = useRef(null);
 
-    <!-- Modal de Configurações -->
-    <div id="settings-modal" class="fixed inset-0 bg-black/70 z-50 hidden items-center justify-center backdrop-blur-sm">
-        <div class="modal-dark rounded-lg shadow-xl p-6 w-full max-w-md">
-            <h3 class="text-lg font-bold text-white mb-4">Configurações</h3>
-            <div class="space-y-4">
-                <div>
-                    <label for="api-key-input" class="block text-sm font-medium text-gray-300 mb-1">Chave de API (Busca Inteligente)</label>
-                    <input type="password" id="api-key-input" class="w-full bg-gray-800/50 border border-gray-600 text-white rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Insira sua chave de API">
-                </div>
-            </div>
-            <div class="mt-6 flex justify-end space-x-4">
-                <button id="settings-cancel-btn" class="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-500 transition-all duration-200">Cancelar</button>
-                <button id="settings-save-btn" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-500 transition-all duration-200">Salvar</button>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Modal de Busca Inteligente -->
-    <div id="ai-search-modal" class="fixed inset-0 bg-black/70 z-50 hidden items-center justify-center backdrop-blur-sm">
-        <div class="modal-dark rounded-lg shadow-xl p-6 w-full max-w-md">
-            <h3 class="text-lg font-bold text-white mb-4">Busca Inteligente</h3>
-            <div class="space-y-4">
-                <div>
-                    <label for="ai-search-prompt" class="block text-sm font-medium text-gray-300 mb-2">Descreva o que você está procurando:</label>
-                    <textarea 
-                        id="ai-search-prompt" 
-                        class="w-full bg-gray-800/50 border border-gray-600 text-white rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none" 
-                        rows="4" 
-                        placeholder="Ex: informações sobre trancamento de curso, requisitos para segunda licenciatura..."
-                    ></textarea>
-                </div>
-            </div>
-            <div class="mt-6 flex justify-end space-x-4">
-                <button id="ai-search-cancel-btn" class="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-500 transition-all duration-200">Cancelar</button>
-                <button id="ai-search-confirm-btn" class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-500 transition-all duration-200">Buscar</button>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Barra de ferramentas flutuante para destaque de texto -->
-    <div id="highlight-toolbar">
-        <div class="flex space-x-2 items-center">
-            <div class="color-swatch" style="background-color: #FBBF24;" data-color="#FBBF24" title="Amarelo"></div>
-            <div class="color-swatch" style="background-color: #3B82F6;" data-color="#3B82F6" title="Azul"></div>
-            <div class="color-swatch" style="background-color: #EC4899;" data-color="#EC4899" title="Rosa"></div>
-            <div class="color-swatch" style="background-color: #22C55E;" data-color="#22C55E" title="Verde"></div>
-            <div class="h-5 border-l border-gray-600"></div>
-            <button id="remove-color-btn" class="p-1 text-gray-400 hover:text-white" title="Remover Cor">
-                <i data-lucide="remove-formatting" class="h-5 w-5"></i>
-            </button>
-        </div>
-    </div>
-    
-    <!-- Notificação de cópia -->
-    <div id="copy-notification" class="copy-notification">
-        <i data-lucide="check" class="inline mr-2"></i>
-        Conteúdo copiado para a área de transferência!
-    </div>
 
-    <!-- Notificação de Busca -->
-    <div id="search-notification" class="search-notification">
-        <span id="search-notification-icon-container" class="mr-2 flex items-center"></span>
-        <span id="search-notification-message"></span>
-    </div>
-    
-    <!-- Templates -->
-    <template id="section-template">
-        <section class="card-container rounded-xl transition-all duration-300 ease-in-out" draggable="false">
-            <div class="card-glow"></div>
-            <div class="p-6">
-                <div class="flex justify-between items-start">
-                    <div class="prose prose-invert max-w-none w-full text-gray-300">
-                        <div class="flex items-center justify-between mb-2">
-                            <h2 class="text-2xl font-bold text-white" data-editable></h2>
-                            <button class="minimize-btn text-gray-400 hover:text-blue-400 transition-colors p-1" title="Minimizar/Expandir">
-                                <i data-lucide="chevron-down" class="h-5 w-5"></i>
-                            </button>
-                        </div>
-                        <div class="card-content-wrapper">
-                            <div data-editable></div>
-                            <div class="subcards-container mt-4"></div>
-                        </div>
-                    </div>
-                    <div class="flex flex-col items-center space-y-2 ml-4 flex-shrink-0">
-                        <button class="pin-btn text-gray-400 hover:text-blue-400 transition-colors p-1" title="Fixar Tópico no Topo">
-                            <i data-lucide="bookmark-plus" class="h-5 w-5"></i>
-                        </button>
-                        <button class="add-subcard-btn hidden text-gray-400 hover:text-purple-400 transition-colors p-1" title="Adicionar Subcard">
-                            <i data-lucide="folder-plus" class="h-5 w-5"></i>
-                        </button>
-                        <button class="copy-btn text-gray-400 hover:text-yellow-400 transition-colors p-1" title="Copiar Texto">
-                            <i data-lucide="copy" class="h-5 w-5"></i>
-                        </button>
-                        <button class="clone-btn hidden text-gray-400 hover:text-green-400 transition-colors p-1" title="Clonar Card">
-                            <i data-lucide="copy" class="h-5 w-5"></i>
-                        </button>
-                        <button class="delete-btn hidden text-gray-400 hover:text-red-400 transition-colors p-1" title="Excluir Card">
-                            <i data-lucide="trash-2" class="h-5 w-5"></i>
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </section>
-    </template>
-    
-    <template id="subcard-template">
-        <div class="subcard subcard-container rounded-lg p-4 shadow-md">
-            <div class="flex justify-between items-start">
-                <div class="w-full">
-                    <div class="flex items-center justify-between mb-2">
-                        <h3 class="subcard-title" data-editable></h3>
-                        <button class="subcard-minimize-btn text-gray-400 hover:text-blue-400 transition-colors p-1" title="Minimizar/Expandir">
-                            <i data-lucide="chevron-down" class="h-4 w-4"></i>
-                        </button>
-                    </div>
-                    <div class="subcard-content-wrapper">
-                        <div data-editable></div>
-                    </div>
-                </div>
-                <div class="flex flex-col items-center space-y-2 ml-4 flex-shrink-0">
-                    <button class="subcard-copy-btn text-gray-400 hover:text-yellow-400 transition-colors p-1" title="Copiar Texto">
-                        <i data-lucide="copy" class="h-4 w-4"></i>
-                    </button>
-                    <button class="subcard-clone-btn hidden text-gray-400 hover:text-green-400 transition-colors p-1" title="Clonar Subcard">
-                        <i data-lucide="copy" class="h-4 w-4"></i>
-                    </button>
-                    <button class="subcard-delete-btn hidden text-gray-400 hover:text-red-400 transition-colors p-1" title="Excluir Subcard">
-                        <i data-lucide="trash-2" class="h-4 w-4"></i>
-                    </button>
-                </div>
-            </div>
-        </div>
-    </template>
-    
-    <template id="pinned-item-template">
-        <div class="bg-blue-600/80 backdrop-blur-sm border border-blue-500 text-white rounded-lg p-4 shadow-lg flex justify-between items-center">
-            <a href="#" class="font-semibold hover:underline"></a>
-            <button class="unpin-btn text-white/70 hover:text-white" title="Desafixar Tópico">
-                <i data-lucide="bookmark-minus" class="h-5 w-5"></i>
-            </button>
-        </div>
-    </template>
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            // --- DADOS INICIAIS ---
-            const initialData = [
-                { 
-                    id: 'info-gerais', 
-                    title: '1. Informações Gerais', 
-                    content: `<ul class="list-disc pl-5 space-y-2"><li><strong>Situação Financeira:</strong> Para solicitar trancamento, desistência ou troca de curso, o aluno deve estar com a situação financeira regularizada.</li><li><strong>Documentação na Matrícula:</strong> Uma declaração de conclusão é aceita apenas no ato da matrícula. A partir do segundo semestre, a apresentação do diploma e histórico originais é obrigatória.</li><li><strong>Unidades Curriculares de Extensão (UCE):</strong> Aplicam-se apenas aos cursos de Licenciatura e Bacharelado.</li></ul>`,
-                    minimized: false,
-                    subcards: []
-                },
-                { 
-                    id: 'graduacao', 
-                    title: '2.1. Graduação', 
-                    content: `<ul class="list-disc pl-5 space-y-2"><li><strong>Requisito:</strong> Ensino médio completo é obrigatório.</li><li><strong>Atividades Complementares:</strong> Todos os cursos exigem o envio de atividades complementares.</li><li><strong>ENADE:</strong> A participação é obrigatória para os cursos de Licenciatura.</li><li><strong>Bacharelado:</strong> Pode ser cursado mesmo por quem já possui um diploma de ensino superior em outra área.</li></ul>`,
-                    minimized: false,
-                    subcards: []
-                },
-                { 
-                    id: 'segunda-licenciatura', 
-                    title: '2.2. Segunda Licenciatura', 
-                    content: `<ul class="list-disc pl-5 space-y-2"><li><strong>Requisito de Ingresso:</strong> É obrigatório possuir uma primeira Licenciatura completa na mesma área.</li><li><strong>Processo Seletivo:</strong> Ingresso via análise do diploma e histórico superior.</li><li><strong>Aproveitamento de Disciplinas:</strong> Não há, pois o curso tem duração reduzida.</li><li><strong>Atividades Obrigatórias:</strong> Todos os cursos incluem estágios e seminários ou UCE.</li></ul>`,
-                    minimized: false,
-                    subcards: []
-                },
-                { 
-                    id: 'pos-graduacao', 
-                    title: '2.3. Pós-Graduação', 
-                    content: `<ul class="list-disc pl-5 space-y-2"><li><strong>Requisito:</strong> Ensino superior completo é obrigatório.</li><li><strong>TCC:</strong> Nenhum curso exige, conforme resolução do MEC.</li><li><strong>Estágio:</strong> Não é obrigatório, exceto para <strong>Psicopedagogia Institucional e Clínica</strong>.</li></ul>`,
-                    minimized: false,
-                    subcards: []
-                },
-                { 
-                    id: 'troca-curso', 
-                    title: '3.1. Troca de Curso', 
-                    content: `<p class="mb-4">O pedido é feito pelo próprio estudante através do Sistema Acadêmico.</p><div class="p-4 bg-red-900/20 border-l-4 border-red-700"><h4 class="font-bold text-red-300">Regras Importantes</h4><ul class="list-disc pl-5 mt-2 space-y-1 text-red-400"><li>Valores pagos não são devolvidos nem aproveitados.</li><li>Bolsas de estudo não são transferidas.</li><li>O aluno pagará a semestralidade integral do novo curso.</li></ul></div>`,
-                    minimized: false,
-                    subcards: []
-                },
-                { 
-                    id: 'trancamento', 
-                    title: '3.2. Trancamento', 
-                    content: `<ul class="list-disc pl-5 space-y-2"><li><strong>Quando:</strong> A partir do 2º semestre.</li><li><strong>Limite:</strong> Até 4 vezes durante o curso.</li><li><strong>Taxa:</strong> R$ 80,00 por solicitação.</li><li><strong>Abandono:</strong> A não realização dos procedimentos resulta em abandono de curso.</li></ul>`,
-                    minimized: false,
-                    subcards: []
-                },
-                { 
-                    id: 'solicitacao-certificado', 
-                    title: '3.4. Solicitação de Certificado', 
-                    content: `<h3 class="font-semibold text-lg mb-2">Condições:</h3><ul class="list-disc pl-5 space-y-1 mb-4"><li>Prazo do curso concluído.</li><li>Financeiro quitado.</li><li>Aprovado em todas as disciplinas.</li></ul><div class="mt-2 p-3 bg-gray-700/50 border border-gray-600 rounded-md"><p class="font-bold">📌 Documentação Obrigatória (PDF):</p><ul class="list-disc pl-5 text-sm mt-2"><li>RG, CPF, Comprovante de endereço.</li><li>Diploma e Histórico da graduação.</li></ul></div>`,
-                    minimized: false,
-                    subcards: []
-                },
-                { 
-                    id: 'bolsa-cebas', 
-                    title: '4. Bolsa CEBAS', 
-                    content: `<h3 class="font-semibold text-lg mb-2">Critérios:</h3><ul class="list-disc pl-5 space-y-1 mb-4"><li>Não possuir diploma superior.</li><li>Renda familiar per capita de até 1,5 salário mínimo.</li><li>Ensino fundamental e médio em escola pública ou como bolsista integral.</li><li>Matrícula ativa.</li></ul><div class="p-3 bg-blue-900/20 border-l-4 border-blue-700"><strong class="text-blue-300">Como Solicitar:</strong> Enviar documentação para <a href="mailto:bolsas@uninta.edu.br" class="font-medium text-blue-400">bolsas@uninta.edu.br</a>.</div>`,
-                    minimized: false,
-                    subcards: []
-                },
-                { 
-                    id: 'apresentacao-candidato', 
-                    title: '5. Modelo de Apresentação', 
-                    content: `<blockquote class="p-4 my-4 border-l-4 border-gray-600 bg-gray-800/80"><p class="text-md italic leading-relaxed">"Bom dia, meu nome é José e estou aqui para ajudá-lo no polo da Uninta..."</p></blockquote>`,
-                    minimized: false,
-                    subcards: []
+          // Load students from localStorage on initial render
+          useEffect(() => {
+            const savedStudents = JSON.parse(localStorage.getItem('students'));
+            if (savedStudents) {
+              const updatedStudents = savedStudents.map(student => {
+                  const newStudent = { ...student };
+
+                  newStudent.status = Array.isArray(newStudent.status) ? newStudent.status.filter(tag => tag && tag !== '') : [];
+
+                  if (!newStudent.status.some(s => s.startsWith('ativo-'))) {
+                      newStudent.status.push('ativo-true');
+                  }
+
+                  if (typeof newStudent.entryDate === 'undefined') {
+                      newStudent.entryDate = '';
+                  }
+                  // Ensure lastInteractionDate exists
+                  if (typeof newStudent.lastInteractionDate === 'undefined') {
+                      newStudent.lastInteractionDate = '';
+                  }
+                  // Ensure isArchived exists and defaults to false
+                  if (typeof newStudent.isArchived === 'undefined') {
+                      newStudent.isArchived = false;
+                  }
+                  // Ensure simulado exists and defaults to empty
+                  if (!newStudent.status.some(s => s.startsWith('simulado-'))) {
+                      newStudent.status.push('simulado-'); // Add a default empty value
+                  }
+                  // Ensure motivo-inativo exists and defaults to empty
+                  if (!newStudent.status.some(s => s.startsWith('motivo-inativo-'))) {
+                      newStudent.status.push('motivo-inativo-'); // Add a default empty value
+                  }
+
+
+                  return newStudent;
+              });
+              setStudents(updatedStudents.filter(student => student.name && student.course));
+            } else {
+              // Initial sample student with all fields
+              const initialStudent = {
+                id: crypto.randomUUID(),
+                name: "Carlos Santos",
+                course: "Administração",
+                entryDate: "2025.1",
+                lastInteractionDate: "2025-05-20",
+                isArchived: false, // New field for archiving
+                status: ["orientation-video", "device-site", "diff-sabe", "ativo-true", "boleto-sabe", "forum-discursiva-sabe", "level-veterano", "simulado-sim", "motivo-inativo-"] // Added simulado-sim and motivo-inativo-
+              };
+              setStudents([initialStudent]);
+            }
+          }, []);
+
+          // Save students to localStorage whenever they change
+          useEffect(() => {
+            localStorage.setItem('students', JSON.stringify(students));
+          }, [students]);
+
+            // Effect to close menu on outside click
+            useEffect(() => {
+                const handleClickOutside = (event) => {
+                    if (menuRef.current && !menuRef.current.contains(event.target)) {
+                        setIsMenuOpen(false);
+                    }
+                };
+
+                if (isMenuOpen) {
+                    document.addEventListener('mousedown', handleClickOutside);
                 }
-            ];
-            // --- ESTADO DA APLICAÇÃO ---
-            let state = { 
-                isAdmin: false, 
-                content: [], 
-                pinnedItems: [], 
-                isSidebarPinned: true, 
-                areCardsMinimized: false 
+
+                return () => {
+                    document.removeEventListener('mousedown', handleClickOutside);
+                };
+            }, [isMenuOpen]);
+
+
+          // Filter students based on search, status filter, and view mode
+          const filteredStudents = students.filter(student => {
+            console.log('Calculando filteredStudents. filterStatus:', filterStatus, 'searchTerm:', searchTerm, 'viewMode:', viewMode); // Debugging log
+            const lowerCaseSearchTerm = searchTerm.toLowerCase().trim();
+            // If search term is empty, show all students for search part
+            const matchesSearch = lowerCaseSearchTerm ?
+                lowerCaseSearchTerm.split(/\s+/).filter(word => word.length > 0).every(word =>
+                    `${student.name} ${student.course} ${student.entryDate} ${student.lastInteractionDate}`.toLowerCase().includes(word)
+                ) : true;
+
+            // Check if student matches the specific status filter (e.g., 'diff-critico')
+            const matchesFilter = filterStatus ?
+              student.status.includes(filterStatus) : true;
+
+            // Check if student matches the selected view mode (active, inactive, archived, all)
+            let matchesViewMode = true;
+            if (viewMode === 'active') {
+                matchesViewMode = student.status.includes('ativo-true') && !student.isArchived;
+            } else if (viewMode === 'inactive') {
+                matchesViewMode = student.status.includes('ativo-false') && !student.isArchived;
+            } else if (viewMode === 'archived') {
+                matchesViewMode = student.isArchived;
+            } else if (viewMode === 'all') {
+                matchesViewMode = true; // Show all students regardless of active/archived status
+            }
+
+            return matchesSearch && matchesFilter && matchesViewMode;
+          });
+
+          // Determine the background color class for the student count circle
+          const countCircleColorClass = (searchTerm || filterStatus || viewMode !== 'active') ? 'bg-yellow-500 text-gray-900' : 'bg-blue-500';
+
+
+          // Get label for status tag
+          const getTagLabel = (tag) => {
+            const tagMap = {
+              'orientation-video': 'Vídeo Tutorial',
+              'orientation-presencial': 'Presencial',
+              'device-app': 'App',
+              'device-site': 'Site',
+              'diff-critico': 'AVA - Crítico',
+              'diff-sabe': 'AVA - Sabe',
+              'diff-dicas': 'AVA - Dicas',
+              'ativo-true': 'Ativo',
+              'ativo-false': 'Inativo',
+              'boleto-sabe': 'Boleto (Sabe)',
+              'boleto-nao-sabe': 'Boleto (Não Sabe)',
+              'forum-discursiva-sabe': 'Fórum/Discursiva (Sabe Finalizar)',
+              'forum-discursiva-nao-sabe': 'Fórum/Discursiva (Não Sabe Finalizar)',
+              'level-veterano': 'Nível: Veterano',
+              'level-novato': 'Nível: Novato',
+              'simulado-sim': 'USA SIMULADO: SIM',
+              'simulado-nao': 'USA SIMULADO: NÃO',
+              'simulado-ajuda': 'USA SIMULADO: USA/REQUER AJUDA',
+              'motivo-inativo-trancou': 'Motivo Inativo: Trancou',
+              'motivo-inativo-desistente': 'Motivo Inativo: Desistente',
+              'motivo-inativo-pendente': 'Motivo Inativo: Pendente-$',
+              'motivo-inativo-finalizou': 'Motivo Inativo: Finalizou',
+              'motivo-inativo-diplomado': 'Motivo Inativo: Diplomado(a)'
             };
-            let cardToDelete = null; // Variável para armazenar o ID do card a ser excluído
-            let subcardToDelete = null; // Variável para armazenar o ID do subcard a ser excluído
-            // --- ELEMENTOS DO DOM ---
-            const appContainer = document.getElementById('app-container');
-            const mainContent = document.getElementById('main-content');
-            const contentSections = document.getElementById('content-sections');
-            const pinnedContainer = document.getElementById('pinned-container');
-            const sectionTemplate = document.getElementById('section-template');
-            const subcardTemplate = document.getElementById('subcard-template');
-            const pinnedItemTemplate = document.getElementById('pinned-item-template');
-            const adminControls = document.getElementById('admin-controls');
-            const adminToggleBtn = document.getElementById('admin-toggle-btn');
-            const saveBtn = document.getElementById('save-btn');
-            const addCardBtn = document.getElementById('add-card-btn');
-            const resetBtn = document.getElementById('reset-btn');
-            const copyNotification = document.getElementById('copy-notification');
-            
-            const sidebar = document.getElementById('sidebar');
-            const pinSidebarBtn = document.getElementById('pin-sidebar-btn');
-            const openSidebarBtn = document.getElementById('open-sidebar-btn');
-            const menuNavLinks = document.getElementById('menu-nav-links');
-            
-            const confirmModal = document.getElementById('confirm-modal');
-            const modalConfirmBtn = document.getElementById('modal-confirm-btn');
-            const modalCancelBtn = document.getElementById('modal-cancel-btn');
-            
-            const highlightToolbar = document.getElementById('highlight-toolbar');
-            const minimizeAllBtn = document.getElementById('minimize-all-btn');
-            
-            const importBtn = document.getElementById('import-btn');
-            const exportBtn = document.getElementById('export-btn');
-            const importFileInput = document.getElementById('import-file-input');
-            const progressBar = document.getElementById('progress-bar');
+            return tagMap[tag] || tag;
+          };
 
-            // Novos elementos
-            const searchBtn = document.getElementById('search-btn');
-            const searchInput = document.getElementById('search-input');
-            const aiSearchBtn = document.getElementById('ai-search-btn');
-            const settingsBtn = document.getElementById('settings-btn');
-            const settingsModal = document.getElementById('settings-modal');
-            const settingsSaveBtn = document.getElementById('settings-save-btn');
-            const settingsCancelBtn = document.getElementById('settings-cancel-btn');
-            const apiKeyInput = document.getElementById('api-key-input');
+           // Get tag value from label (reverse of getTagLabel)
+            const getTagValue = (label) => {
+                const tagMap = {
+                    'Vídeo Tutorial': 'orientation-video',
+                    'Presencial': 'orientation-presencial',
+                    'App': 'device-app',
+                    'Site': 'site',
+                    'AVA - Crítico': 'diff-critico',
+                    'AVA - Sabe': 'diff-sabe',
+                    'AVA - Dicas': 'diff-dicas',
+                    'Ativo': 'ativo-true',
+                    'Inativo': 'ativo-false',
+                    'Boleto (Sabe)': 'boleto-sabe',
+                    'Boleto (Não Sabe)': 'boleto-nao-sabe',
+                    'Fórum/Discursiva (Sabe Finalizar)': 'forum-discursiva-sabe',
+                    'Fórum/Discursiva (Não Sabe Finalizar)': 'forum-discursiva-nao-sabe',
+                    'Nível: Veterano': 'level-veterano',
+                    'Nível: Novato': 'level-novato',
+                    'USA SIMULADO: SIM': 'simulado-sim',
+                    'USA SIMULADO: NÃO': 'simulado-nao',
+                    'USA SIMULADO: USA/REQUER AJUDA': 'simulado-ajuda',
+                    'Motivo Inativo: Trancou': 'motivo-inativo-trancou',
+                    'Motivo Inativo: Desistente': 'motivo-inativo-desistente',
+                    'Motivo Inativo: Pendente-$': 'motivo-inativo-pendente',
+                    'Motivo Inativo: Finalizou': 'motivo-inativo-finalizou',
+                    'Motivo Inativo: Diplomado(a)': 'motivo-inativo-diplomado'
+                };
+                return tagMap[label] || label;
+            };
 
-            // Modal de Busca Inteligente
-            const aiSearchModal = document.getElementById('ai-search-modal');
-            const aiSearchPrompt = document.getElementById('ai-search-prompt');
-            const aiSearchConfirmBtn = document.getElementById('ai-search-confirm-btn');
-            const aiSearchCancelBtn = document.getElementById('ai-search-cancel-btn');
-            
-            // Notificações
-            const searchNotification = document.getElementById('search-notification');
-            const searchNotificationMessage = document.getElementById('search-notification-message');
+            // New function to get color for status tags
+            const getTagColor = (tag) => {
+                const colorMap = {
+                    'orientation-': 'bg-green-600',
+                    'device-': 'bg-indigo-600',
+                    'diff-critico': 'bg-red-600',
+                    'diff-sabe': 'bg-green-600',
+                    'diff-dicas': 'bg-yellow-600',
+                    'boleto-': 'bg-blue-600',
+                    'forum-discursiva-': 'bg-purple-600',
+                    'level-veterano': 'bg-orange-600',
+                    'level-novato': 'bg-teal-600',
+                    'simulado-sim': 'bg-lime-600',
+                    'simulado-nao': 'bg-pink-600',
+                    'simulado-ajuda': 'bg-yellow-600',
+                    'motivo-inativo-': 'bg-gray-600',
+                };
 
-            // --- FUNÇÕES ---
-            function showSearchNotification(message, type = 'info', duration = 4000) {
-                // Remove classes de tipo anteriores
-                searchNotification.classList.remove('success', 'error', 'info');
-                
-                // Adiciona a classe de tipo correta
-                searchNotification.classList.add(type);
-                
-                // Define o ícone
-                const iconContainer = document.getElementById('search-notification-icon-container');
-                let icon = 'info';
-                if (type === 'success') icon = 'check-circle';
-                if (type === 'error') icon = 'alert-circle';
-                
-                // Limpa o container e cria o novo ícone
-                if (iconContainer) {
-                    iconContainer.innerHTML = `<i data-lucide="${icon}" class="h-5 w-5"></i>`;
+                const prefix = tag.split('-')[0] + '-';
+                if (colorMap[tag]) {
+                    return colorMap[tag]; // Specific tag color
                 }
-                
-                lucide.createIcons();
-                
-                // Define a mensagem
-                searchNotificationMessage.textContent = message;
-                
-                // Mostra a notificação
-                searchNotification.classList.add('show');
-                
-                // Esconde após a duração
-                setTimeout(() => {
-                    searchNotification.classList.remove('show');
-                }, duration);
+                return colorMap[prefix] || 'bg-gray-600'; // Default to prefix color or grey
+            };
+
+
+          // Delete a student
+          const deleteStudent = (id) => {
+            if (window.confirm('Tem certeza que deseja excluir este aluno?')) {
+              setStudents(students.filter(student => student.id !== id));
+              // Also remove from selection if deleted
+              setSelectedStudentIds(prev => {
+                  const newSet = new Set(prev);
+                  newSet.delete(id);
+                  return newSet;
+              });
             }
-            
-            function updateStateFromDOM() {
-                const currentOrderIds = Array.from(contentSections.children).map(sectionEl => sectionEl.dataset.id);
-                const contentMap = new Map(state.content.map(item => [item.id, item]));
-                const reorderedContent = currentOrderIds.map(id => {
-                    const sectionEl = document.getElementById(id);
-                    const title = sectionEl.querySelector('h2').innerText;
-                    const content = sectionEl.querySelector('div[data-editable]').innerHTML;
-                    const originalItem = contentMap.get(id);
-                    
-                    // Coleta subcards do DOM
-                    const subcardsContainer = sectionEl.querySelector('.subcards-container');
-                    const subcards = [];
-                    if (subcardsContainer) {
-                        Array.from(subcardsContainer.children).forEach(subcardEl => {
-                            const subcardId = subcardEl.dataset.id;
-                            const subcardTitle = subcardEl.querySelector('.subcard-title').innerText;
-                            const subcardContent = subcardEl.querySelector('.subcard-content-wrapper div[data-editable]').innerHTML;
-                            const minimized = subcardEl.querySelector('.subcard-content-wrapper').classList.contains('collapsed');
-                            subcards.push({
-                                id: subcardId,
-                                title: subcardTitle,
-                                content: subcardContent,
-                                minimized: minimized
-                            });
-                        });
-                    }
-                    
-                    return { 
-                        ...originalItem, 
-                        title, 
-                        content,
-                        minimized: sectionEl.querySelector('.card-content-wrapper').classList.contains('collapsed'),
-                        subcards: subcards
+          };
+
+          // Save a student (add or update)
+          const saveStudent = (studentToSave) => {
+            if (studentToSave.id) {
+              // Update existing student
+              setStudents(students.map(s =>
+                s.id === studentToSave.id ? studentToSave : s
+              ));
+            } else {
+              // Add new student
+              setStudents([...students, { ...studentToSave, id: crypto.randomUUID() }]);
+            }
+            setEditingStudent(null); // Go back to list view
+          };
+
+          // Toggle archive status for a student
+          const handleToggleArchive = (id, newIsArchivedStatus) => {
+              setStudents(prevStudents =>
+                  prevStudents.map(student =>
+                      student.id === id ? { ...student, isArchived: newIsArchivedStatus } : student
+                  )
+              );
+              setSelectedStudentIds(prev => {
+                  const newSet = new Set(prev);
+                  newSet.delete(id); // Remove from selection if toggled archive status
+                  return newSet;
+              });
+          };
+
+
+          // Function to export student data to XLSX
+          // dataToExport can be either an array of student objects (for filtered/all)
+          // or a Set of student IDs (for selected)
+          const exportToXLSX = (dataToExport, fileName = 'alunos.xlsx') => {
+            let finalData = [];
+
+            // Check if dataToExport is a Set (meaning it's selected IDs)
+            if (dataToExport instanceof Set) {
+                finalData = students.filter(student => dataToExport.has(student.id));
+            } else {
+                // Otherwise, assume it's an array of student objects (e.g., filteredStudents)
+                finalData = dataToExport;
+            }
+
+            if (finalData.length === 0) {
+                alert('Nenhum aluno para exportar.');
+                return;
+            }
+
+            const worksheetData = finalData.map(student => {
+              const orientation = getTagLabel(student.status.find(tag => tag.startsWith('orientation-')) || '');
+              const device = getTagLabel(student.status.find(tag => tag.startsWith('device-')) || '');
+              const difficulty = getTagLabel(student.status.find(tag => tag.startsWith('diff-')) || '');
+              const ativo = getTagLabel(student.status.find(tag => tag.startsWith('ativo-')) || '');
+              const boleto = getTagLabel(student.status.find(tag => tag.startsWith('boleto-')) || '');
+              const forumDiscursiva = getTagLabel(student.status.find(tag => tag.startsWith('forum-discursiva-')) || '');
+              const level = getTagLabel(student.status.find(tag => tag.startsWith('level-')) || '');
+              const simulado = getTagLabel(student.status.find(tag => tag.startsWith('simulado-')) || '');
+              const motivoInativo = getTagLabel(student.status.find(tag => tag.startsWith('motivo-inativo-')) || ''); // New field
+
+              return {
+                'ID': student.id,
+                'Nome do Aluno': student.name,
+                'Curso': student.course,
+                'Data de Ingresso': student.entryDate,
+                'Data Última Interação': student.lastInteractionDate,
+                'Arquivado': student.isArchived ? 'Sim' : 'Não', // Include new field
+                'Nível do Aluno': level,
+                'Orientação': orientation,
+                'Dispositivo': device,
+                'Dificuldade AVA': difficulty,
+                'Status Ativo': ativo,
+                'Emitir Boleto': boleto,
+                'Fórum/Discursiva': forumDiscursiva,
+                'USA SIMULADO': simulado,
+                'Motivo Inativo': motivoInativo // New column
+              };
+            });
+
+            const ws = XLSX.utils.json_to_sheet(worksheetData);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Alunos");
+
+            const excelBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+            const dataBlob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=UTF-8' });
+
+            saveAs(dataBlob, fileName);
+            setSelectedStudentIds(new Set()); // Clear selection after export
+          };
+
+          // Function to import student data from XLSX
+          const importFromXLSX = (event) => {
+            const file = event.target.files[0];
+            if (!file) {
+              return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+              try {
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, { type: 'array' });
+
+                const sheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[sheetName];
+
+                const jsonStudents = XLSX.utils.sheet_to_json(worksheet);
+
+                const importedStudents = jsonStudents.map(item => {
+                    const studentId = crypto.randomUUID();
+
+                    const statusArray = [
+                        getTagValue(item['Orientação'] || ''),
+                        getTagValue(item['Dispositivo'] || ''),
+                        getTagValue(item['Dificuldade AVA'] || ''),
+                        getTagValue(item['Status Ativo'] || ''),
+                        getTagValue(item['Emitir Boleto'] || ''),
+                        getTagValue(item['Fórum/Discursiva'] || ''),
+                        getTagValue(item['Nível do Aluno'] || ''),
+                        getTagValue(item['USA SIMULADO'] || ''),
+                        getTagValue(item['Motivo Inativo'] || '') // New field
+                    ].filter(tag => tag && tag !== '');
+
+                    return {
+                        id: studentId,
+                        name: item['Nome do Aluno'] || 'Nome Desconhecido',
+                        course: item['Curso'] || 'Curso Desconhecido',
+                        entryDate: item['Data de Ingresso'] || '',
+                        lastInteractionDate: item['Data Última Interação'] || '',
+                        isArchived: item['Arquivado'] === 'Sim', // Read new field
+                        status: statusArray
                     };
                 });
-                state.content.forEach(item => {
-                    if (!reorderedContent.find(rc => rc.id === item.id)) {
-                        reorderedContent.push(item);
+
+                setStudents(importedStudents);
+                alert('Dados importados com sucesso!');
+
+              } catch (error) {
+                console.error("Error importing file:", error);
+                alert('Erro ao importar arquivo. Certifique-se de que é um arquivo XLSX válido e no formato correto.');
+              } finally {
+                  event.target.value = null;
+              }
+            };
+
+            reader.readAsArrayBuffer(file);
+          };
+
+          // Function to trigger the hidden file input click
+          const triggerImport = () => {
+            fileInputRef.current.click();
+          };
+
+          // Function to clear search term
+          const clearSearch = () => {
+            setSearchTerm('');
+          };
+
+          // Function to clear all student data
+          const clearAllStudents = () => {
+            if (window.confirm('ATENÇÃO: Tem certeza que deseja APAGAR TODOS os dados de alunos? Esta ação é irreversível.')) {
+              setStudents([]);
+              localStorage.removeItem('students');
+              alert('Todos os dados de alunos foram zerados.');
+              setIsMenuOpen(false);
+              setSelectedStudentIds(new Set()); // Clear selection
+            }
+          };
+
+          // Function to update unique IDs for all students and clear local storage
+          const updateUniqueIds = () => {
+            if (window.confirm('Tem certeza que deseja atualizar os IDs de todos os alunos e limpar o cache da página? Isso pode ser útil para corrigir IDs duplicados ou inválidos e garantir que a aplicação use os dados mais recentes.')) {
+              const seenIds = new Set();
+              const updatedStudents = students.map(student => {
+                let newId = student.id;
+                if (typeof newId !== 'string' || seenIds.has(newId)) {
+                  newId = crypto.randomUUID();
+                }
+                seenIds.add(newId);
+                return { ...student, id: newId };
+              });
+              setStudents(updatedStudents);
+
+              localStorage.setItem('students', JSON.stringify(updatedStudents));
+
+              alert('IDs dos alunos atualizados e cache da página limpo com sucesso! A página será recarregada.');
+              window.location.reload();
+            }
+          };
+
+
+          // Function to check for duplicate students (same name and course)
+          const isDuplicateStudent = (currentStudent) => {
+            const count = students.filter(student =>
+              student.name.toLowerCase() === currentStudent.name.toLowerCase() &&
+              currentStudent.course.toLowerCase() === student.course.toLowerCase() &&
+              student.id !== currentStudent.id // Exclude itself when checking for duplicates
+            ).length;
+            return count > 0; // If count is greater than 0, it means there are other duplicates
+          };
+
+          // Handle student selection
+          const handleStudentSelect = (id, isChecked) => {
+              setSelectedStudentIds(prev => {
+                  const newSet = new Set(prev);
+                  if (isChecked) {
+                      newSet.add(id);
+                  } else {
+                      newSet.delete(id);
+                  }
+                  return newSet;
+              });
+          };
+
+          // Clear all selected students
+          const clearSelection = () => {
+              setSelectedStudentIds(new Set());
+              setIsMenuOpen(false); // Close menu after action
+          };
+
+
+          // Student card component with inline editing
+          const StudentCard = ({ student, onEdit, onDelete, isDuplicate, isSelected, onSelect, onToggleArchive }) => {
+            const [editingStatus, setEditingStatus] = useState(null);
+
+            const extractStatusValue = (prefix) => {
+              return student.status.find(tag => tag.startsWith(prefix)) || '';
+            };
+
+            // Handle inline status change
+            const handleInlineStatusChange = (prefix, newValue) => {
+                const newStatusArray = student.status.filter(tag => !tag.startsWith(prefix));
+                if (newValue) {
+                    newStatusArray.push(newValue);
+                }
+
+                const updatedStudent = {
+                    ...student,
+                    status: newStatusArray.filter(tag => tag && tag !== '')
+                };
+                onEdit(updatedStudent);
+                setEditingStatus(null);
+            };
+
+            const renderStatusTag = (tag) => {
+                const prefix = tag.split('-')[0] + '-';
+
+                if (tag.startsWith('ativo-')) {
+                    const isActive = tag === 'ativo-true';
+                    const circleColor = isActive ? 'bg-green-500' : 'bg-red-500';
+                    const label = isActive ? 'Ativo' : 'Inativo';
+
+                    const toggleActiveStatus = () => {
+                        const newStatusValue = isActive ? 'ativo-false' : 'ativo-true';
+                        const newStatusArray = student.status.filter(s => !s.startsWith('ativo-'));
+                        newStatusArray.push(newStatusValue);
+                        const updatedStudent = { ...student, status: newStatusArray };
+                        onEdit(updatedStudent);
+                    };
+
+                    return (
+                        <span
+                            key={tag}
+                            className="status-tag flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium bg-gray-700 text-gray-100 cursor-pointer hover:bg-gray-600 transition-colors"
+                            onClick={toggleActiveStatus}
+                            title={`Clique para ${isActive ? 'desativar' : 'ativar'}`}
+                        >
+                            <span className={`w-3 h-3 rounded-full ${circleColor}`}></span>
+                            {label}
+                        </span>
+                    );
+                }
+
+                if (editingStatus && editingStatus.prefix === prefix) {
+                    let options = [];
+                    switch (prefix) {
+                        case 'orientation-':
+                            options = [
+                                { value: 'orientation-video', label: 'Vídeo Tutorial' },
+                                { value: 'orientation-presencial', label: 'Presencial' }
+                            ];
+                            break;
+                        case 'device-':
+                            options = [
+                                { value: 'device-app', label: 'App' },
+                                { value: 'device-site', label: 'Site' }
+                            ];
+                            break;
+                        case 'diff-':
+                            options = [
+                                { value: 'diff-critico', label: 'AVA - Crítico' },
+                                { value: 'diff-sabe', label: 'AVA - Sabe' },
+                                { value: 'diff-dicas', label: 'AVA - Dicas' }
+                            ];
+                            break;
+                        case 'boleto-':
+                            options = [
+                                { value: 'boleto-sabe', label: 'Boleto (Sabe)' },
+                                { value: 'boleto-nao-sabe', label: 'Boleto (Não Sabe)' }
+                            ];
+                            break;
+                        case 'forum-discursiva-':
+                            options = [
+                                { value: 'forum-discursiva-sabe', label: 'Fórum/Discursiva (Sabe Finalizar)' },
+                                { value: 'forum-discursiva-nao-sabe', label: 'Fórum/Discursiva (Não Sabe Finalizar)' }
+                            ];
+                            break;
+                        case 'level-':
+                            options = [
+                                { value: 'level-veterano', label: 'Nível: Veterano' },
+                                { value: 'level-novato', label: 'Nível: Novato' }
+                            ];
+                            break;
+                        case 'simulado-':
+                            options = [
+                                { value: 'simulado-sim', label: 'SIM' },
+                                { value: 'simulado-nao', label: 'NÃO' },
+                                { value: 'simulado-ajuda', label: 'USA/REQUER AJUDA' }
+                            ];
+                            break;
+                        case 'motivo-inativo-':
+                            options = [
+                                { value: 'motivo-inativo-trancou', label: 'Trancou' },
+                                { value: 'motivo-inativo-desistente', label: 'Desistente' },
+                                { value: 'motivo-inativo-pendente', label: 'Pendente-$' },
+                                { value: 'motivo-inativo-finalizou', label: 'Finalizou' },
+                                { value: 'motivo-inativo-diplomado', label: 'Diplomado(a)' }
+                            ];
+                            break;
+                        default:
+                            options = [];
                     }
-                });
-                state.content = reorderedContent;
-            }
-            function saveState() {
-                localStorage.setItem('unintaManualState', JSON.stringify({ 
-                    content: state.content, 
-                    pinnedItems: state.pinnedItems 
-                }));
-                
-                saveBtn.innerHTML = `<i data-lucide="check-circle" class="mr-2 h-5 w-5"></i> Salvo!`;
-                lucide.createIcons();
-                setTimeout(() => {
-                    saveBtn.innerHTML = `<i data-lucide="save" class="mr-2 h-5 w-5"></i> Salvar`;
-                    lucide.createIcons();
-                }, 2000);
-            }
-            function loadState() {
-                const savedState = localStorage.getItem('unintaManualState');
-                if (savedState) {
-                    const parsedState = JSON.parse(savedState);
-                    state.content = parsedState.content;
-                    state.pinnedItems = parsedState.pinnedItems || [];
+
+                    return (
+                         <select
+                            key={tag}
+                            value={editingStatus.currentValue}
+                            onChange={(e) => handleInlineStatusChange(prefix, e.target.value)}
+                            onBlur={() => setEditingStatus(null)}
+                            className="px-2 py-1 text-sm bg-gray-700 rounded-lg border border-gray-600 text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
+                            autoFocus
+                         >
+                            <option value="">Selecione...</option>
+                            {options.map(option => (
+                                <option key={option.value} value={option.value}>{option.label}</option>
+                            ))}
+                         </select>
+                    );
                 } else {
-                    state.content = initialData;
-                    state.pinnedItems = [];
+                    return (
+                        <span
+                            key={tag}
+                            className={`status-tag px-3 py-1 rounded-full text-sm font-medium cursor-pointer hover:opacity-80 transition-opacity ${getTagColor(tag)}`}
+                            onClick={() => setEditingStatus({ prefix: prefix, currentValue: tag })}
+                        >
+                            {getTagLabel(tag)}
+                        </span>
+                    );
                 }
-                
-                const savedSidebarPin = localStorage.getItem('sidebarPinned');
-                state.isSidebarPinned = window.innerWidth < 1024 ? false : (savedSidebarPin === null ? true : JSON.parse(savedSidebarPin));
+            };
 
-                const savedApiKey = localStorage.getItem('unintaApiKey');
-                if (savedApiKey) {
-                    apiKeyInput.value = savedApiKey;
-                }
 
-                render();
-                // Esconde o loader e mostra o conteúdo
-                const loader = document.getElementById('loader');
-                
-                setTimeout(() => {
-                    loader.classList.add('opacity-0');
-                    appContainer.classList.remove('opacity-0');
-                    // Remove o loader do DOM após a transição
-                    setTimeout(() => loader.style.display = 'none', 500);
-                }, 100); 
-            }
-            function render() {
-                contentSections.innerHTML = '';
-                pinnedContainer.innerHTML = '';
-                menuNavLinks.innerHTML = '';
-                const contentMap = new Map(state.content.map(item => [item.id, item]));
-                if (state.pinnedItems.length > 0) {
-                    const pinnedHeader = document.createElement('h3');
-                    pinnedHeader.className = "text-xl font-bold text-white mb-4 flex items-center";
-                    pinnedHeader.innerHTML = `<i data-lucide="bookmark-check" class="h-5 w-5 mr-2 text-blue-400"></i> Tópicos Fixados`;
-                    pinnedContainer.appendChild(pinnedHeader);
-                    const pinnedGrid = document.createElement('div');
-                    pinnedGrid.className = 'grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4';
-                    state.pinnedItems.forEach(id => {
-                        const item = contentMap.get(id);
-                        if (!item) return;
-                        const pinnedClone = pinnedItemTemplate.content.cloneNode(true);
-                        const link = pinnedClone.querySelector('a');
-                        link.textContent = item.title;
-                        link.href = `#${item.id}`;
-                        link.onclick = (e) => { e.preventDefault(); document.getElementById(item.id)?.scrollIntoView({ behavior: 'smooth' }); };
-                        pinnedClone.querySelector('.unpin-btn').addEventListener('click', (e) => { e.preventDefault(); toggleContentPin(item.id); });
-                        pinnedGrid.appendChild(pinnedClone);
-                    });
-                    pinnedContainer.appendChild(pinnedGrid);
-                }
-                state.content.forEach(item => {
-                    if (!state.pinnedItems.includes(item.id)) {
-                        const sectionClone = sectionTemplate.content.cloneNode(true);
-                        const sectionEl = sectionClone.querySelector('section');
-                        sectionEl.id = item.id;
-                        sectionEl.dataset.id = item.id;
-                        
-                        // Adiciona efeito de brilho interativo
-                        const cardGlow = sectionEl.querySelector('.card-glow');
-                        sectionEl.addEventListener('mousemove', (e) => {
-                            const rect = sectionEl.getBoundingClientRect();
-                            const x = ((e.clientX - rect.left) / rect.width) * 100;
-                            const y = ((e.clientY - rect.top) / rect.height) * 100;
-                            cardGlow.style.setProperty('--mouse-x', `${x}%`);
-                            cardGlow.style.setProperty('--mouse-y', `${y}%`);
-                        });
-                        
-                        const titleEl = sectionEl.querySelector('h2');
-                        titleEl.textContent = item.title;
-                        
-                        const contentEl = sectionEl.querySelector('div[data-editable]');
-                        contentEl.innerHTML = item.content;
-                        
-                        // Configura o estado de minimização do card
-                        const cardContentWrapper = sectionEl.querySelector('.card-content-wrapper');
-                        const minimizeBtn = sectionEl.querySelector('.minimize-btn');
-                        
-                        if (item.minimized) {
-                            cardContentWrapper.classList.add('collapsed');
-                            minimizeBtn.classList.add('rotated');
-                        }
-                        
-                        // Container para subcards
-                        const subcardsContainer = sectionEl.querySelector('.subcards-container');
-                        
-                        // Renderiza subcards
-                        if (item.subcards && item.subcards.length > 0) {
-                            item.subcards.forEach(subcard => {
-                                const subcardClone = subcardTemplate.content.cloneNode(true);
-                                const subcardEl = subcardClone.querySelector('.subcard');
-                                subcardEl.dataset.id = subcard.id;
-                                subcardEl.dataset.parentId = item.id;
-                                
-                                const subcardTitleEl = subcardEl.querySelector('.subcard-title');
-                                subcardTitleEl.textContent = subcard.title;
-                                
-                                const subcardContentEl = subcardEl.querySelector('.subcard-content-wrapper div[data-editable]');
-                                subcardContentEl.innerHTML = subcard.content;
-                                
-                                // Configura o estado de minimização do subcard
-                                const subcardContentWrapper = subcardEl.querySelector('.subcard-content-wrapper');
-                                const subcardMinimizeBtn = subcardEl.querySelector('.subcard-minimize-btn');
-                                
-                                if (subcard.minimized) {
-                                    subcardContentWrapper.classList.add('collapsed');
-                                    subcardMinimizeBtn.classList.add('rotated');
+            const isInactive = student.status.includes('ativo-false');
+            const motivoInativoTag = student.status.find(tag => tag.startsWith('motivo-inativo-'));
+
+            return (
+              // Added flex and items-center to align checkbox
+              <div className={`student-card bg-gray-800/70 backdrop-blur-lg rounded-xl p-4 mb-4 relative flex items-start gap-3 ${student.isArchived ? 'opacity-70 border-purple-500' : ''} ${isDuplicate ? 'border-2 border-red-500' : ''}`}>
+                {student.isArchived && (
+                    <span className="absolute top-0 left-0 bg-purple-600 text-white text-xs px-2 py-1 rounded-br-lg z-10">Arquivado</span>
+                )}
+                <input
+                    type="checkbox"
+                    checked={isSelected}
+                    onChange={(e) => onSelect(student.id, e.target.checked)}
+                    className="mt-1 w-5 h-5 text-blue-600 bg-gray-700 border-gray-600 rounded focus:ring-blue-500"
+                />
+                <div className="flex-grow"> {/* This div wraps the student info and status tags */}
+                  <div className="student-info">
+                    <h3 className="student-name text-xl font-bold text-blue-400 mb-1">
+                      {student.name}
+                    </h3>
+                    <p className="student-course text-gray-400 text-sm">
+                      {student.course}
+                      {student.entryDate && ( // Display entry date if available
+                          <span className="ml-2 text-gray-500 text-xs">({student.entryDate})</span>
+                      )}
+                    </p>
+                    {student.lastInteractionDate && ( // Display last interaction date if available
+                        <p className="text-gray-500 text-xs mt-1">Última Interação: {student.lastInteractionDate}</p>
+                    )}
+                  </div>
+                  <div className="status-group flex flex-wrap gap-1 mt-2">
+                    {/* Always render 'ativo-' tag */}
+                    {student.status.filter(tag => tag.startsWith('ativo-')).map((tag) => (
+                        renderStatusTag(tag)
+                    ))}
+
+                    {/* Render 'motivo-inativo-' if student is inactive or if a reason is selected */}
+                    {isInactive && (motivoInativoTag && motivoInativoTag !== 'motivo-inativo-' ? renderStatusTag(motivoInativoTag) : renderStatusTag('motivo-inativo-'))}
+
+                    {/* Render other tags ONLY if student is active */}
+                    {!isInactive && (
+                        <>
+                            {student.status.filter(tag => tag.startsWith('level-')).map((tag) => (
+                                renderStatusTag(tag)
+                            ))}
+                            {student.status.filter(tag => tag.endsWith('-nao-sabe') || tag.startsWith('diff-critico')).map((tag) => (
+                                renderStatusTag(tag)
+                            ))}
+                            {student.status.filter(tag => tag.startsWith('simulado-') && tag !== 'simulado-').map((tag) => (
+                                renderStatusTag(tag)
+                            ))}
+                            {student.status.filter(tag => !tag.startsWith('ativo-') && !tag.startsWith('level-') && !tag.endsWith('-nao-sabe') && !tag.startsWith('diff-critico') && !tag.startsWith('simulado-') && !tag.startsWith('motivo-inativo-')).map((tag) => (
+                                renderStatusTag(tag)
+                            ))}
+                        </>
+                    )}
+                  </div>
+                </div>
+                <div className="student-actions absolute top-3 right-3 flex gap-2">
+                  <button
+                    onClick={() => {
+                        console.log("Botão Editar clicado para aluno:", student.id);
+                        onEdit(student); // Pass the entire student object for editing
+                    }}
+                    className="action-btn text-gray-400 hover:text-blue-400 transition-colors"
+                    title="Editar"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                    </svg>
+                  </button>
+                  <button
+                    onClick={() => onToggleArchive(student.id, !student.isArchived)}
+                    className="action-btn text-gray-400 hover:text-purple-400 transition-colors"
+                    title={student.isArchived ? "Desarquivar" : "Arquivar"}
+                  >
+                      {student.isArchived ? (
+                          // Icon for unarchive (e.g., folder open)
+                          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                              <path d="M12 11v6"></path>
+                              <path d="M9 14h6"></path>
+                          </svg>
+                      ) : (
+                          // Icon for archive (e.g., folder with minus)
+                          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                              <line x1="9" y1="14" x2="15" y2="14"></line>
+                          </svg>
+                      )}
+                  </button>
+                  <button
+                    onClick={() => onDelete(student.id)}
+                    className="action-btn text-gray-400 hover:text-red-400 transition-colors"
+                    title="Excluir"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="3 6 5 6 21 6"></polyline>
+                      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                      <line x1="10" y1="11" x2="10" y2="17"></line>
+                      <line x1="14" y1="11" x2="14" y2="17"></line>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            );
+          };
+
+          // New component for Add/Edit Student Form
+          const AddEditStudentForm = ({ studentToEdit, onSave, onCancel, getTagValue }) => {
+            const [formData, setFormData] = useState({
+              name: '',
+              course: '',
+              entryDate: '',
+              lastInteractionDate: '',
+              isArchived: false, // New field
+              level: '',
+              orientation: '',
+              device: '',
+              difficulty: '',
+              ativo: 'ativo-true',
+              boleto: '',
+              forumDiscursiva: '',
+              simulado: '', // New field
+              motivoInativo: '' // New field
+            });
+
+            useEffect(() => {
+              console.log("Rendering AddEditStudentForm, studentToEdit:", studentToEdit);
+              if (studentToEdit && studentToEdit.id) { // Editing existing student
+                const extractStatus = (prefix) => studentToEdit.status.find(tag => tag.startsWith(prefix)) || '';
+                setFormData({
+                  name: studentToEdit.name,
+                  course: studentToEdit.course,
+                  entryDate: studentToEdit.entryDate,
+                  lastInteractionDate: studentToEdit.lastInteractionDate,
+                  isArchived: studentToEdit.isArchived || false, // Populate new field
+                  level: extractStatus('level-'),
+                  orientation: extractStatus('orientation-'),
+                  device: extractStatus('device-'),
+                  difficulty: extractStatus('diff-'),
+                  ativo: extractStatus('ativo-'),
+                  boleto: extractStatus('boleto-'),
+                  forumDiscursiva: extractStatus('forum-discursiva-'),
+                  simulado: extractStatus('simulado-'),
+                  motivoInativo: extractStatus('motivo-inativo-') // Populate new field
+                });
+              } else { // Adding new student or no student to edit
+                setFormData({
+                  name: '',
+                  course: '',
+                  entryDate: '',
+                  lastInteractionDate: '',
+                  isArchived: false, // Reset for new student
+                  level: '',
+                  orientation: '',
+                  device: '',
+                  difficulty: '',
+                  ativo: 'ativo-true',
+                  boleto: '',
+                  forumDiscursiva: '',
+                  simulado: '',
+                  motivoInativo: '' // Reset for new student
+                });
+              }
+            }, [studentToEdit]);
+
+            const handleSubmit = () => {
+              if (!formData.name || !formData.course) {
+                alert('Por favor, preencha o Nome do Aluno e o Curso.');
+                return;
+              }
+
+              const newStatus = [
+                  formData.orientation,
+                  formData.device,
+                  formData.difficulty,
+                  formData.ativo || 'ativo-true',
+                  formData.boleto,
+                  formData.forumDiscursiva,
+                  formData.level,
+                  formData.simulado,
+                  formData.motivoInativo // Include new field
+              ].filter(tag => tag && tag !== '');
+
+              const studentData = {
+                id: studentToEdit ? studentToEdit.id : undefined, // Keep ID if editing, undefined if new
+                name: formData.name,
+                course: formData.course,
+                entryDate: formData.entryDate,
+                lastInteractionDate: formData.lastInteractionDate,
+                isArchived: formData.isArchived, // Include new field
+                status: newStatus
+              };
+              onSave(studentData);
+            };
+
+            return (
+              <div className="full-page-form-container">
+                <div className="form-content">
+                  <h1 className="text-2xl font-bold text-blue-400 mb-4">
+                    {studentToEdit && studentToEdit.id ? 'Editar Aluno' : 'Adicionar Novo Aluno'}
+                  </h1>
+                  <div className="space-y-3">
+                    <div>
+                      <label className="block text-sm font-medium mb-1">Nome <span className="text-red-500">*</span></label>
+                      <input
+                        type="text"
+                        value={formData.name}
+                        onChange={(e) => setFormData({...formData, name: e.target.value})}
+                        className="w-full px-3 py-2 bg-gray-700 rounded-lg border border-gray-600 text-white"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium mb-1">Curso <span className="text-red-500">*</span></label>
+                      <input
+                        type="text"
+                        value={formData.course}
+                        onChange={(e) => setFormData({...formData, course: e.target.value})}
+                        className="w-full px-3 py-2 bg-gray-700 rounded-lg border border-gray-600 text-white"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium mb-1">Data de Ingresso (Ex: 2025.1)</label>
+                      <input
+                        type="text"
+                        value={formData.entryDate}
+                        onChange={(e) => setFormData({...formData, entryDate: e.target.value})}
+                        className="w-full px-3 py-2 bg-gray-700 rounded-lg border border-gray-600 text-white"
+                        placeholder="Ex: 2025.1"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium mb-1">Última Interação (AAAA-MM-DD)</label>
+                      <input
+                        type="date"
+                        value={formData.lastInteractionDate}
+                        onChange={(e) => setFormData({...formData, lastInteractionDate: e.target.value})}
+                        className="w-full px-3 py-2 bg-gray-700 rounded-lg border border-gray-600 text-white"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium mb-1">Nível do Aluno</label>
+                      <select
+                        value={formData.level}
+                        onChange={(e) => setFormData({...formData, level: e.target.value})}
+                        className="w-full px-3 py-2 bg-gray-700 rounded-lg border border-gray-600 text-white"
+                      >
+                        <option value="">Selecione...</option>
+                        <option value="level-veterano">Veterano</option>
+                        <option value="level-novato">Novato</option>
+                      </select>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                      <div>
+                        <label className="block text-sm font-medium mb-1">Orientação</label>
+                        <select
+                          value={formData.orientation}
+                          onChange={(e) => setFormData({...formData, orientation: e.target.value})}
+                          className="w-full px-3 py-2 bg-gray-700 rounded-lg border border-gray-600 text-white"
+                        >
+                          <option value="">Selecione...</option>
+                          <option value="orientation-video">Vídeo Tutorial</option>
+                          <option value="orientation-presencial">Presencial</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium mb-1">Dispositivo</label>
+                        <select
+                          value={formData.device}
+                          onChange={(e) => setFormData({...formData, device: e.target.value})}
+                          className="w-full px-3 py-2 bg-gray-700 rounded-lg border border-gray-600 text-white"
+                        >
+                          <option value="">Selecione...</option>
+                          <option value="device-app">App</option>
+                          <option value="device-site">Site</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium mb-1">Dificuldade</label>
+                        <select
+                          value={formData.difficulty}
+                          onChange={(e) => setFormData({...formData, difficulty: e.target.value})}
+                          className="w-full px-3 py-2 bg-gray-700 rounded-lg border border-gray-600 text-white"
+                        >
+                          <option value="">Selecione...</option>
+                          <option value="diff-critico">AVA - Crítico</option>
+                          <option value="diff-sabe">AVA - Sabe</option>
+                          <option value="diff-dicas">AVA - Dicas</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium mb-1">Status Ativo</label>
+                        <select
+                          value={formData.ativo}
+                          onChange={(e) => setFormData({...formData, ativo: e.target.value})}
+                          className="w-full px-3 py-2 bg-gray-700 rounded-lg border border-gray-600 text-white"
+                        >
+                          <option value="">Selecione...</option>
+                          <option value="ativo-true">Ativo</option>
+                          <option value="ativo-false">Inativo</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium mb-1">Emitir Boleto</label>
+                        <select
+                          value={formData.boleto}
+                          onChange={(e) => setFormData({...formData, boleto: e.target.value})}
+                          className="w-full px-3 py-2 bg-gray-700 rounded-lg border border-gray-600 text-white"
+                        >
+                          <option value="">Selecione...</option>
+                          <option value="boleto-sabe">Sabe</option>
+                          <option value="boleto-nao-sabe">Não Sabe</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium mb-1">Fórum/Discursiva</label>
+                        <select
+                          value={formData.forumDiscursiva}
+                          onChange={(e) => setFormData({...formData, forumDiscursiva: e.target.value})}
+                          className="w-full px-3 py-2 bg-gray-700 rounded-lg border border-gray-600 text-white"
+                        >
+                          <option value="">Selecione...</option>
+                          <option value="forum-discursiva-sabe">Fórum/Discursiva (Sabe Finalizar)</option>
+                          <option value="forum-discursiva-nao-sabe">Fórum/Discursiva (Não Sabe Finalizar)</option>
+                        </select>
+                      </div>
+                      <div> {/* New dropdown for USA SIMULADO */}
+                        <label className="block text-sm font-medium mb-1">USA SIMULADO</label>
+                        <select
+                          value={formData.simulado}
+                          onChange={(e) => setFormData({...formData, simulado: e.target.value})}
+                          className="w-full px-3 py-2 bg-gray-700 rounded-lg border border-gray-600 text-white"
+                        >
+                          <option value="">Selecione...</option>
+                          <option value="simulado-sim">SIM</option>
+                          <option value="simulado-nao">NÃO</option>
+                          <option value="simulado-ajuda">USA/REQUER AJUDA</option>
+                        </select>
+                      </div>
+                      <div> {/* New dropdown for Motivo Inativo */}
+                        <label className="block text-sm font-medium mb-1">Motivo Inativo</label>
+                        <select
+                          value={formData.motivoInativo}
+                          onChange={(e) => setFormData({...formData, motivoInativo: e.target.value})}
+                          className="w-full px-3 py-2 bg-gray-700 rounded-lg border border-gray-600 text-white"
+                        >
+                          <option value="">Selecione...</option>
+                          <option value="motivo-inativo-trancou">Trancou</option>
+                          <option value="motivo-inativo-desistente">Desistente</option>
+                          <option value="motivo-inativo-pendente">Pendente-$</option>
+                          <option value="motivo-inativo-finalizou">Finalizou</option>
+                          <option value="motivo-inativo-diplomado">Diplomado(a)</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 mt-4"> {/* New checkbox for archived status */}
+                        <input
+                            type="checkbox"
+                            id="isArchived"
+                            checked={formData.isArchived}
+                            onChange={(e) => setFormData({...formData, isArchived: e.target.checked})}
+                            className="w-5 h-5 text-blue-600 bg-gray-700 border-gray-600 rounded focus:ring-blue-500"
+                        />
+                        <label htmlFor="isArchived" className="text-sm font-medium text-gray-300">Arquivado</label>
+                    </div>
+                    <div className="flex gap-3 pt-2">
+                      <button
+                        onClick={handleSubmit}
+                        className="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors text-white"
+                      >
+                        Salvar
+                      </button>
+                      <button
+                        onClick={onCancel}
+                        className="px-4 py-2 bg-gray-600 hover:bg-gray-700 rounded-lg transition-colors text-white"
+                      >
+                        Cancelar
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            );
+          };
+
+
+          return (
+            <div className="min-h-screen bg-gradient-to-br from-gray-900 to-red-900 text-gray-100">
+              {/* Debugging log for editingStudent state */}
+              {console.log('App renderizado, editingStudent:', editingStudent)}
+              {/* Navigation */}
+              <nav className="navbar sticky top-0 z-10 flex justify-between items-center p-4 bg-black/50 backdrop-blur-md">
+                {/* Container for the count circle and title */}
+                <div className="flex items-center">
+                    {/* Student Count Circle - Displays count of filtered students and changes color */}
+                    <div className={`student-count-circle ${countCircleColorClass}`}>
+                        {filteredStudents.length}
+                    </div>
+                    <div className="logo text-2xl font-bold text-blue-400">Plataforma AVA</div>
+                    {/* New tag for Relatório-Adm-Uninta */}
+                    <a
+                        href="https://uniesbra4jf.github.io/relatorio-Uninta/"
+                        target="_blank"
+                        className="ml-4 px-3 py-1 rounded-full text-sm font-bold bg-red-700 text-white hover:bg-red-600 transition-colors md:block"
+                        title="Abrir Relatório-Adm-Uninta em uma nova aba"
+                    >
+                        Relatório-Adm-Uninta
+                    </a>
+                    
+                     <a
+                        href="https://uniesbra4jf.github.io/Manual-Adm-UNINTA/"
+                        target="_blank"
+                        className="ml-4 px-3 py-1 rounded-full text-sm font-bold bg-blu-700 text-white hover:bg-red-600 transition-colors md:block"
+                        title="Abrir Relatório-Adm-Uninta em uma nova aba"
+                    >
+                        Manual-Adm-UNINTA
+                    </a>
+                    
+                </div>
+                {/* Settings menu with icon and dropdown */}
+                <div className="settings-menu-container relative" ref={menuRef}> {/* Add ref and class */}
+                    <button
+                        onClick={() => setIsMenuOpen(!isMenuOpen)}
+                        className="settings-button text-gray-300 hover:text-blue-400 transition-colors focus:outline-none"
+                        aria-label="Menu de Configurações"
+                    >
+                        {/* Settings Icon (Feather Icons) */}
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="feather feather-settings">
+                            <circle cx="12" cy="12" r="3"></circle>
+                            <path d="M19.4 15a1.65 1.65 0 0 0 .3 1.67l-.2.2c-.39.39-.66 1.11-.66 1.67V21h-3.73a1.65 1.65 0 0 0-1.65-1.65h-.79a1.65 1.65 0 0 0-1.65 1.65H3v-3.73a1.65 1.65 0 0 0-.66-1.67l-.2-.2a1.65 1.65 0 0 0 .3-1.67l-.2-.2c.39-.39 1.11-.66 1.67-.66H3v-3.73a1.65 1.65 0 0 0 1.65-1.65v-.79a1.65 1.65 0 0 0-1.65-1.65H3V3h3.73a1.65 1.65 0 0 0 1.65 1.65h.79a1.65 1.65 0 0 0 1.65-1.65H21v3.73c.56 0 1.3.27 1.67.66l.2.2a1.65 1.65 0 0 0 0 2.34l-.2.2c-.39.39-1.11.66-1.67.66z"></path>
+                        </svg>
+                    </button>
+                    {/* Dropdown Menu */}
+                    {isMenuOpen && (
+                      <div className="absolute right-0 mt-2 w-48 bg-gray-800 rounded-md shadow-lg py-1 z-20">
+                        {/* Menu Item: Configurações */}
+                        <a
+                            href="#"
+                            className="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-700"
+                            onClick={() => {
+                                alert('Funcionalidade de Configurações (em desenvolvimento)'); // Placeholder action
+                                setIsMenuOpen(false); // Close menu on click
+                            }}
+                        >
+                            Configurações
+                        </a>
+                        {/* Menu Item: Exportar para XLSX (Todos) */}
+                         <a
+                            href="#"
+                            className="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-700"
+                            onClick={() => {
+                                // Export the currently filtered students
+                                exportToXLSX(filteredStudents, 'alunos_filtrados.xlsx');
+                                setIsMenuOpen(false); // Close menu on click
+                            }}
+                        >
+                            Exportar para XLSX (Filtrados)
+                        </a>
+                        {/* New Menu Item: Exportar Selecionados para XLSX */}
+                        <a
+                            href="#"
+                            className={`block px-4 py-2 text-sm ${selectedStudentIds.size > 0 ? 'text-blue-300 hover:bg-gray-700' : 'text-gray-500 cursor-not-allowed'}`}
+                            onClick={(e) => {
+                                if (selectedStudentIds.size > 0) {
+                                    exportToXLSX(selectedStudentIds, 'alunos_selecionados.xlsx'); // Export only selected
+                                } else {
+                                    alert('Nenhum aluno selecionado para exportar.');
                                 }
-                                
-                                // Configuração dos botões do subcard
-                                const subcardCopyBtn = subcardEl.querySelector('.subcard-copy-btn');
-                                subcardCopyBtn.setAttribute('data-card-id', item.id);
-                                subcardCopyBtn.setAttribute('data-subcard-id', subcard.id);
-                                subcardCopyBtn.addEventListener('click', (e) => {
-                                    e.stopPropagation();
-                                    const cardId = e.currentTarget.getAttribute('data-card-id');
-                                    const subcardId = e.currentTarget.getAttribute('data-subcard-id');
-                                    copySubcardContent(cardId, subcardId);
-                                });
-                                
-                                const subcardCloneBtn = subcardEl.querySelector('.subcard-clone-btn');
-                                subcardCloneBtn.setAttribute('data-card-id', item.id);
-                                subcardCloneBtn.setAttribute('data-subcard-id', subcard.id);
-                                subcardCloneBtn.addEventListener('click', (e) => {
-                                    e.stopPropagation();
-                                    const cardId = e.currentTarget.getAttribute('data-card-id');
-                                    const subcardId = e.currentTarget.getAttribute('data-subcard-id');
-                                    cloneSubcard(cardId, subcardId);
-                                });
-                                
-                                const subcardDeleteBtn = subcardEl.querySelector('.subcard-delete-btn');
-                                subcardDeleteBtn.setAttribute('data-card-id', item.id);
-                                subcardDeleteBtn.setAttribute('data-subcard-id', subcard.id);
-                                subcardDeleteBtn.addEventListener('click', (e) => {
-                                    e.stopPropagation();
-                                    const cardId = e.currentTarget.getAttribute('data-card-id');
-                                    const subcardId = e.currentTarget.getAttribute('data-subcard-id');
-                                    showDeleteSubcardConfirmation(cardId, subcardId);
-                                });
-                                
-                                // Configuração do botão de minimizar do subcard
-                                subcardMinimizeBtn.addEventListener('click', (e) => {
-                                    e.stopPropagation();
-                                    const subcardId = subcardEl.dataset.id;
-                                    toggleSubcardMinimize(item.id, subcardId);
-                                });
-                                
-                                // Evento para atualizar o título dinamicamente
-                                subcardTitleEl.addEventListener('input', () => {
-                                    const newTitle = subcardTitleEl.innerText;
-                                    // Atualiza o título no estado
-                                    const stateItem = state.content.find(i => i.id === item.id);
-                                    if (stateItem && stateItem.subcards) {
-                                        const subcardItem = stateItem.subcards.find(sc => sc.id === subcard.id);
-                                        if (subcardItem) {
-                                            subcardItem.title = newTitle;
-                                        }
-                                    }
-                                });
-                                
-                                subcardsContainer.appendChild(subcardEl);
-                            });
-                        }
-                        
-                        // Configuração dos botões do card
-                        sectionEl.querySelector('.pin-btn').addEventListener('click', () => toggleContentPin(item.id));
-                        
-                        // Configuração do botão de adicionar subcard
-                        const addSubcardBtn = sectionEl.querySelector('.add-subcard-btn');
-                        addSubcardBtn.setAttribute('data-card-id', item.id);
-                        addSubcardBtn.addEventListener('click', (e) => {
-                            e.stopPropagation();
-                            const cardId = e.currentTarget.getAttribute('data-card-id');
-                            addSubCard(cardId);
-                        });
-                        
-                        // Configuração do botão de cópia
-                        const copyBtn = sectionEl.querySelector('.copy-btn');
-                        copyBtn.setAttribute('data-card-id', item.id);
-                        copyBtn.addEventListener('click', (e) => {
-                            e.stopPropagation();
-                            const cardId = e.currentTarget.getAttribute('data-card-id');
-                            copyCardContent(cardId);
-                        });
-                        
-                        sectionEl.querySelector('.clone-btn').addEventListener('click', () => cloneCard(item.id));
-                        
-                        // Configuração do botão de exclusão
-                        const deleteBtn = sectionEl.querySelector('.delete-btn');
-                        deleteBtn.setAttribute('data-card-id', item.id);
-                        deleteBtn.addEventListener('click', (e) => {
-                            e.stopPropagation();
-                            const cardId = e.currentTarget.getAttribute('data-card-id');
-                            showDeleteConfirmation(cardId, item.title);
-                        });
-                        
-                        // Configuração do botão de minimizar do card
-                        minimizeBtn.addEventListener('click', (e) => {
-                            e.stopPropagation();
-                            toggleCardMinimize(item.id);
-                        });
-                        
-                        // Evento para atualizar o título dinamicamente
-                        titleEl.addEventListener('input', () => {
-                            const newTitle = titleEl.innerText;
-                            // Atualiza o título no estado
-                            const stateItem = state.content.find(i => i.id === item.id);
-                            if (stateItem) {
-                                stateItem.title = newTitle;
-                            }
-                            // Atualiza o link no sumário
-                            const sidebarLink = menuNavLinks.querySelector(`a[href="#${item.id}"]`);
-                            if (sidebarLink) {
-                                sidebarLink.textContent = newTitle;
-                            }
-                        });
-                        
-                        contentSections.appendChild(sectionClone);
-                    }
-                    const menuLink = document.createElement('a');
-                    menuLink.href = `#${item.id}`;
-                    menuLink.textContent = item.title;
-                    menuLink.className = 'block py-3 px-3 rounded-md text-gray-300 hover:bg-gray-700/50 hover:text-white transition-all duration-200';
-                    menuLink.onclick = (e) => {
-                        e.preventDefault();
-                        document.getElementById(item.id)?.scrollIntoView({ behavior: 'smooth' });
-                        if (window.innerWidth < 1024) {
-                            sidebar.classList.add('-translate-x-full');
-                        }
-                    };
-                    menuNavLinks.appendChild(menuLink);
-                });
-                updateAdminUI();
-                updateSidebarUI();
-                lucide.createIcons();
-            }
-            
-            function toggleContentPin(id) {
-                const index = state.pinnedItems.indexOf(id);
-                if (index > -1) {
-                    state.pinnedItems.splice(index, 1);
-                } else {
-                    if (state.pinnedItems.length < 5) {
-                        state.pinnedItems.push(id);
-                    } else {
-                        alert('Você pode fixar no máximo 5 tópicos.');
-                        return;
-                    }
-                }
-                saveState();
-                render();
-            }
-            function updateAdminUI() {
-                const editableElements = document.querySelectorAll('[data-editable]');
-                const sections = document.querySelectorAll('#content-sections section');
-                const deleteButtons = document.querySelectorAll('.delete-btn');
-                const cloneButtons = document.querySelectorAll('.clone-btn');
-                const addSubcardButtons = document.querySelectorAll('.add-subcard-btn');
-                const subcardDeleteButtons = document.querySelectorAll('.subcard-delete-btn');
-                const subcardCloneButtons = document.querySelectorAll('.subcard-clone-btn');
-                
-                if (state.isAdmin) {
-                    saveBtn.classList.remove('hidden');
-                    addCardBtn.classList.remove('hidden');
-                    resetBtn.classList.remove('hidden');
-                    adminToggleBtn.classList.add('bg-blue-600', 'text-white');
-                    deleteButtons.forEach(btn => btn.classList.remove('hidden'));
-                    cloneButtons.forEach(btn => btn.classList.remove('hidden'));
-                    addSubcardButtons.forEach(btn => btn.classList.remove('hidden'));
-                    subcardDeleteButtons.forEach(btn => btn.classList.remove('hidden'));
-                    subcardCloneButtons.forEach(btn => btn.classList.remove('hidden'));
-                    editableElements.forEach(el => el.setAttribute('contenteditable', 'true'));
-                    sections.forEach(sec => sec.setAttribute('draggable', 'true'));
-                } else {
-                    saveBtn.classList.add('hidden');
-                    addCardBtn.classList.add('hidden');
-                    resetBtn.classList.add('hidden');
-                    adminToggleBtn.classList.remove('bg-blue-600', 'text-white');
-                    deleteButtons.forEach(btn => btn.classList.add('hidden'));
-                    cloneButtons.forEach(btn => btn.classList.add('hidden'));
-                    addSubcardButtons.forEach(btn => btn.classList.add('hidden'));
-                    subcardDeleteButtons.forEach(btn => btn.classList.add('hidden'));
-                    subcardCloneButtons.forEach(btn => btn.classList.add('hidden'));
-                    editableElements.forEach(el => el.setAttribute('contenteditable', 'false'));
-                    sections.forEach(sec => sec.setAttribute('draggable', 'false'));
-                }
-            }
-            
-            function toggleAdminMode() {
-                if (!state.isAdmin) {
-                    const password = prompt("Digite a senha de administrador:");
-                    if (password !== "123") { alert("Senha incorreta!"); return; }
-                }
-                state.isAdmin = !state.isAdmin;
-                updateAdminUI();
-            }
-            function updateSidebarUI() {
-                if (state.isSidebarPinned) {
-                    sidebar.classList.remove('-translate-x-full');
-                    mainContent.classList.add('lg:ml-64');
-                    adminControls.classList.add('lg:left-72');
-                    openSidebarBtn.classList.add('opacity-0', 'pointer-events-none');
-                    pinSidebarBtn.innerHTML = '<i data-lucide="pin-off"></i>';
-                    pinSidebarBtn.classList.add('bg-blue-600/30', 'text-blue-300');
-                } else {
-                    sidebar.classList.add('-translate-x-full');
-                    mainContent.classList.remove('lg:ml-64');
-                    adminControls.classList.remove('lg:left-72');
-                    openSidebarBtn.classList.remove('opacity-0', 'pointer-events-none');
-                    pinSidebarBtn.innerHTML = '<i data-lucide="pin"></i>';
-                    pinSidebarBtn.classList.remove('bg-blue-600/30', 'text-blue-300');
-                }
-                lucide.createIcons();
-            }
-            function toggleSidebarPin() {
-                state.isSidebarPinned = !state.isSidebarPinned;
-                localStorage.setItem('sidebarPinned', state.isSidebarPinned);
-                updateSidebarUI();
-            }
-            
-            // --- Novas Funções de Edição ---
-            function addNewCard() {
-                const newId = 'card-' + Date.now();
-                const newCard = {
-                    id: newId,
-                    title: 'Novo Tópico',
-                    content: '<p>Comece a editar este conteúdo...</p>',
-                    minimized: false,
-                    subcards: []
-                };
-                state.content.push(newCard);
-                render(); // Re-renderiza a UI com o novo card
-                
-                // Rola a página para o novo card e foca no título para edição
-                const newCardElement = document.getElementById(newId);
-                if (newCardElement) {
-                    newCardElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    setTimeout(() => {
-                        newCardElement.querySelector('h2').focus();
-                    }, 300);
-                }
-            }
-            
-            function addSubCard(parentId) {
-                const parentCard = state.content.find(item => item.id === parentId);
-                if (!parentCard) return;
-                
-                // Inicializa o array de subcards se não existir
-                if (!parentCard.subcards) {
-                    parentCard.subcards = [];
-                }
-                
-                const newSubcardId = 'subcard-' + Date.now();
-                const newSubcard = {
-                    id: newSubcardId,
-                    title: 'Novo Subcard',
-                    content: '<p>Comece a editar este conteúdo...</p>',
-                    minimized: false
-                };
-                
-                parentCard.subcards.push(newSubcard);
-                render();
-                
-                // Rola a página para o novo subcard e foca no título para edição
-                const newSubcardElement = document.querySelector(`[data-id="${newSubcardId}"]`);
-                if (newSubcardElement) {
-                    newSubcardElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    setTimeout(() => {
-                        newSubcardElement.querySelector('.subcard-title').focus();
-                    }, 300);
-                }
-            }
-            
-            function cloneCard(id) {
-                const originalCardIndex = state.content.findIndex(item => item.id === id);
-                if (originalCardIndex === -1) return;
-                const originalCard = state.content[originalCardIndex];
-                const newCard = {
-                    ...originalCard, // Copia todo o conteúdo
-                    id: 'card-' + Date.now(),
-                    title: `Cópia de ${originalCard.title}`,
-                    subcards: originalCard.subcards ? originalCard.subcards.map(subcard => ({
-                        ...subcard,
-                        id: 'subcard-' + Date.now() + Math.random()
-                    })) : []
-                };
-                state.content.splice(originalCardIndex + 1, 0, newCard);
-                render();
-            }
-            
-            function cloneSubcard(parentId, subcardId) {
-                const parentCard = state.content.find(item => item.id === parentId);
-                if (!parentCard || !parentCard.subcards) return;
-                
-                const originalSubcardIndex = parentCard.subcards.findIndex(subcard => subcard.id === subcardId);
-                if (originalSubcardIndex === -1) return;
-                
-                const originalSubcard = parentCard.subcards[originalSubcardIndex];
-                const newSubcard = {
-                    ...originalSubcard,
-                    id: 'subcard-' + Date.now(),
-                    title: `Cópia de ${originalSubcard.title}`
-                };
-                
-                parentCard.subcards.splice(originalSubcardIndex + 1, 0, newSubcard);
-                render();
-            }
-            
-            function toggleCardMinimize(cardId) {
-                const card = state.content.find(item => item.id === cardId);
-                if (!card) return;
+                                setIsMenuOpen(false); // Close menu on click
+                            }}
+                        >
+                            Exportar Selecionados para XLSX
+                        </a>
+                        {/* Menu Item: Importar de XLSX */}
+                         <a
+                            href="#"
+                            className="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-700"
+                            onClick={() => {
+                                triggerImport(); // Trigger the file input click
+                                setIsMenuOpen(false); // Close menu on click
+                            }}
+                        >
+                            Importar de XLSX
+                        </a>
+                        {/* New Menu Item: Gestão de Materiais Didáticos */}
+                         <a
+                            href="https://fbiluoficial.github.io/uninta-disciplina/" // Set the href
+                            target="_blank" // Open in a new tab
+                            className="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-700"
+                            onClick={() => {
+                                setIsMenuOpen(false); // Close menu on click
+                            }}
+                        >
+                            ✨Gestão de Materiais Didáticos
+                        </a>
 
-                card.minimized = !card.minimized;
-
-                const cardElement = document.getElementById(cardId);
-                if (cardElement) {
-                    const cardContentWrapper = cardElement.querySelector('.card-content-wrapper');
-                    const minimizeBtn = cardElement.querySelector('.minimize-btn');
-                    
-                    if (cardContentWrapper && minimizeBtn) {
-                        cardContentWrapper.classList.toggle('collapsed', card.minimized);
-                        minimizeBtn.classList.toggle('rotated', card.minimized);
-                    }
-                }
-                
-                saveState();
-            }
-            
-            function toggleSubcardMinimize(parentId, subcardId) {
-                const parentCard = state.content.find(item => item.id === parentId);
-                if (!parentCard || !parentCard.subcards) return;
-                
-                const subcard = parentCard.subcards.find(subcard => subcard.id === subcardId);
-                if (!subcard) return;
-                
-                subcard.minimized = !subcard.minimized;
-                
-                const subcardElement = document.querySelector(`[data-id="${subcardId}"]`);
-                if (subcardElement) {
-                    const subcardContentWrapper = subcardElement.querySelector('.subcard-content-wrapper');
-                    const subcardMinimizeBtn = subcardElement.querySelector('.subcard-minimize-btn');
-
-                    if (subcardContentWrapper && subcardMinimizeBtn) {
-                        subcardContentWrapper.classList.toggle('collapsed', subcard.minimized);
-                        subcardMinimizeBtn.classList.toggle('rotated', subcard.minimized);
-                    }
-                }
-                
-                saveState();
-            }
-            
-            function showDeleteConfirmation(id, title) {
-                // Armazena o ID do card a ser excluído na variável global
-                cardToDelete = id;
-                
-                // Atualiza o título e mensagem do modal
-                document.getElementById('modal-title').textContent = 'Confirmar Exclusão';
-                document.getElementById('modal-message').textContent = `Você tem certeza que deseja excluir o card "${title}"? Esta ação não pode ser desfeita.`;
-                
-                // Exibe o modal
-                confirmModal.classList.remove('hidden');
-                confirmModal.classList.add('flex');
-            }
-            
-            function showDeleteSubcardConfirmation(parentId, subcardId) {
-                // Armazena os IDs do card e subcard a serem excluídos
-                subcardToDelete = { parentId, subcardId };
-                
-                // Atualiza o título e mensagem do modal
-                document.getElementById('modal-title').textContent = 'Confirmar Exclusão';
-                document.getElementById('modal-message').textContent = `Você tem certeza que deseja excluir este subcard? Esta ação não pode ser desfeita.`;
-                
-                // Exibe o modal
-                confirmModal.classList.remove('hidden');
-                confirmModal.classList.add('flex');
-            }
-            
-            function deleteCard() {
-                if (!cardToDelete) return;
-                
-                // Remove o card do estado
-                state.content = state.content.filter(item => item.id !== cardToDelete);
-                // Remove dos fixados também, se estiver lá
-                state.pinnedItems = state.pinnedItems.filter(pinnedId => pinnedId !== cardToDelete);
-                
-                // Remove o elemento do DOM
-                const cardElement = document.getElementById(cardToDelete);
-                if (cardElement) {
-                    cardElement.remove();
-                }
-                
-                // Limpa a variável global
-                cardToDelete = null;
-                
-                // Salva e renderiza novamente
-                saveState();
-                render();
-            }
-            
-            function deleteSubcard() {
-                if (!subcardToDelete) return;
-                
-                const { parentId, subcardId } = subcardToDelete;
-                
-                // Encontra o card pai
-                const parentCard = state.content.find(item => item.id === parentId);
-                if (!parentCard || !parentCard.subcards) return;
-                
-                // Remove o subcard do estado
-                parentCard.subcards = parentCard.subcards.filter(subcard => subcard.id !== subcardId);
-                
-                // Remove o elemento do DOM
-                const subcardElement = document.querySelector(`[data-id="${subcardId}"]`);
-                if (subcardElement) {
-                    subcardElement.remove();
-                }
-                
-                // Limpa a variável global
-                subcardToDelete = null;
-                
-                // Salva e renderiza novamente
-                saveState();
-                render();
-            }
-            
-            // Função para converter HTML para Markdown
-            function htmlToMarkdown(html) {
-                // Cria um elemento temporário para manipular o HTML
-                const tempDiv = document.createElement('div');
-                tempDiv.innerHTML = html;
-                
-                let markdown = '';
-                
-                // Processa cada nó filho
-                Array.from(tempDiv.childNodes).forEach(node => {
-                    markdown += processNode(node);
-                });
-                
-                return markdown.trim();
-            }
-            
-            // Função recursiva para processar nós
-            function processNode(node, depth = 0) {
-                if (node.nodeType === Node.TEXT_NODE) {
-                    return node.textContent;
-                }
-                
-                if (node.nodeType !== Node.ELEMENT_NODE) {
-                    return '';
-                }
-                
-                const tagName = node.tagName.toLowerCase();
-                let result = '';
-                
-                switch (tagName) {
-                    case 'h1':
-                        result = `# ${node.textContent}\n\n`;
-                        break;
-                    case 'h2':
-                        result = `## ${node.textContent}\n\n`;
-                        break;
-                    case 'h3':
-                        result = `### ${node.textContent}\n\n`;
-                        break;
-                    case 'h4':
-                        result = `#### ${node.textContent}\n\n`;
-                        break;
-                    case 'h5':
-                        result = `##### ${node.textContent}\n\n`;
-                        break;
-                    case 'h6':
-                        result = `###### ${node.textContent}\n\n`;
-                        break;
-                    case 'p':
-                        result = `${processChildNodes(node)}\n\n`;
-                        break;
-                    case 'strong':
-                    case 'b':
-                        result = `**${processChildNodes(node)}**`;
-                        break;
-                    case 'em':
-                    case 'i':
-                        result = `*${processChildNodes(node)}*`;
-                        break;
-                    case 'ul':
-                        result = processList(node, false) + '\n';
-                        break;
-                    case 'ol':
-                        result = processList(node, true) + '\n';
-                        break;
-                    case 'li':
-                        result = `- ${processChildNodes(node)}\n`;
-                        break;
-                    case 'blockquote':
-                        result = `> ${processChildNodes(node).trim()}\n\n`;
-                        break;
-                    case 'a':
-                        const href = node.getAttribute('href') || '';
-                        const text = processChildNodes(node);
-                        result = `[${text}](${href})`;
-                        break;
-                    case 'div':
-                        // Processa divs com classes especiais
-                        if (node.classList.contains('bg-red-900/20') || 
-                            node.classList.contains('bg-blue-900/20') || 
-                            node.classList.contains('bg-gray-700/50')) {
-                            result = `\n${processChildNodes(node)}\n`;
-                        } else {
-                            result = processChildNodes(node);
-                        }
-                        break;
-                    default:
-                        // Para outros elementos, apenas processa os filhos
-                        result = processChildNodes(node);
-                }
-                
-                return result;
-            }
-            
-            // Função para processar nós filhos
-            function processChildNodes(node) {
-                let result = '';
-                Array.from(node.childNodes).forEach(child => {
-                    result += processNode(child);
-                });
-                return result;
-            }
-            
-            // Função para processar listas
-            function processList(listNode, isOrdered) {
-                let result = '';
-                const items = listNode.querySelectorAll('li');
-                
-                items.forEach((item, index) => {
-                    const prefix = isOrdered ? `${index + 1}.` : '-';
-                    result += `${prefix} ${processChildNodes(item).trim()}\n`;
-                });
-                
-                return result;
-            }
-            
-            function copyCardContent(cardId) {
-                const card = state.content.find(item => item.id === cardId);
-                if (!card) return;
-                
-                // Extrai o título
-                const titleText = card.title;
-                
-                // Converte o conteúdo HTML para Markdown
-                const contentMarkdown = htmlToMarkdown(card.content);
-                
-                // Combina título e conteúdo
-                const fullText = `# ${titleText}\n\n${contentMarkdown}`;
-                
-                // Copia para a área de transferência
-                navigator.clipboard.writeText(fullText).then(() => {
-                    // Exibe notificação de sucesso
-                    copyNotification.classList.add('show');
-                    setTimeout(() => {
-                        copyNotification.classList.remove('show');
-                    }, 2000);
-                }).catch(err => {
-                    console.error('Erro ao copiar texto: ', err);
-                    alert('Não foi possível copiar o texto. Tente novamente.');
-                });
-            }
-            
-            function copySubcardContent(parentId, subcardId) {
-                const parentCard = state.content.find(item => item.id === parentId);
-                if (!parentCard || !parentCard.subcards) return;
-                
-                const subcard = parentCard.subcards.find(subcard => subcard.id === subcardId);
-                if (!subcard) return;
-                
-                // Extrai o título do card pai e do subcard
-                const parentTitleText = parentCard.title;
-                const subcardTitleText = subcard.title;
-                
-                // Converte o conteúdo HTML para Markdown
-                const contentMarkdown = htmlToMarkdown(subcard.content);
-                
-                // Combina título e conteúdo
-                const fullText = `# ${parentTitleText}\n\n## ${subcardTitleText}\n\n${contentMarkdown}`;
-                
-                // Copia para a área de transferência
-                navigator.clipboard.writeText(fullText).then(() => {
-                    // Exibe notificação de sucesso
-                    copyNotification.classList.add('show');
-                    setTimeout(() => {
-                        copyNotification.classList.remove('show');
-                    }, 2000);
-                }).catch(err => {
-                    console.error('Erro ao copiar texto: ', err);
-                    alert('Não foi possível copiar o texto. Tente novamente.');
-                });
-            }
-            
-            function resetAllData() {
-                const password = prompt("Digite a senha de administrador para resetar todos os dados:");
-                if (password !== "123") {
-                    alert("Senha incorreta! Ação cancelada.");
-                    return;
-                }
-                
-                if (confirm("Tem certeza que deseja resetar todos os dados? Esta ação não pode ser desfeita.")) {
-                    // Limpa o localStorage
-                    localStorage.removeItem('unintaManualState');
-                    localStorage.removeItem('sidebarPinned');
-                    localStorage.removeItem('unintaApiKey');
-                    
-                    // Reseta o estado para os dados iniciais
-                    state.content = [...initialData];
-                    state.pinnedItems = [];
-                    state.isAdmin = false;
-                    state.isSidebarPinned = true;
-                    state.areCardsMinimized = false;
-                    
-                    // Salva o estado inicial
-                    saveState();
-                    
-                    // Renderiza novamente
-                    render();
-                    
-                    alert("Dados resetados com sucesso!");
-                }
-            }
-            function setupHighlightToolbar() {
-                // Impede que a barra de ferramentas roube o foco, o que desfaz a seleção de texto.
-                highlightToolbar.addEventListener('mousedown', (e) => {
-                    e.preventDefault();
-                });
-                document.addEventListener('mouseup', () => {
-                    const selection = window.getSelection();
-                    if (!selection.isCollapsed && state.isAdmin) {
-                        const range = selection.getRangeAt(0);
-                        const rect = range.getBoundingClientRect();
-                        
-                        let parent = range.commonAncestorContainer;
-                        if (parent.nodeType !== Node.ELEMENT_NODE) {
-                            parent = parent.parentNode;
-                        }
-                        if (parent.closest('[contenteditable="true"]')) {
-                            highlightToolbar.style.display = 'flex';
-                            highlightToolbar.style.left = `${rect.left + window.scrollX + rect.width / 2 - highlightToolbar.offsetWidth / 2}px`;
-                            highlightToolbar.style.top = `${rect.top + window.scrollY - highlightToolbar.offsetHeight - 8}px`;
-                        } else {
-                           highlightToolbar.style.display = 'none';
-                        }
-                    } else {
-                        highlightToolbar.style.display = 'none';
-                    }
-                });
-                highlightToolbar.addEventListener('click', (e) => {
-                    const swatch = e.target.closest('.color-swatch');
-                    const removeBtn = e.target.closest('#remove-color-btn');
-                    if (swatch) {
-                        const color = swatch.dataset.color;
-                        document.execCommand('foreColor', false, color);
-                    } else if (removeBtn) {
-                        // removeFormat remove toda a formatação (negrito, etc.), mas é o mais confiável para remover a cor.
-                        document.execCommand('removeFormat', false, null);
-                    }
-                    
-                    // Esconde a barra de ferramentas após a ação
-                    if (swatch || removeBtn) {
-                        highlightToolbar.style.display = 'none';
-                    }
-                });
-            }
-            function toggleMinimizeAllCards() {
-                state.areCardsMinimized = !state.areCardsMinimized;
-                const wrappers = document.querySelectorAll('.card-content-wrapper, .subcard-content-wrapper');
-                wrappers.forEach(wrapper => {
-                    wrapper.classList.toggle('collapsed', state.areCardsMinimized);
-                });
-                
-                // Atualiza os ícones de minimização
-                const minimizeBtns = document.querySelectorAll('.minimize-btn, .subcard-minimize-btn');
-                minimizeBtns.forEach(btn => {
-                    btn.classList.toggle('rotated', state.areCardsMinimized);
-                });
-            }
-            function handleExport() {
-                updateStateFromDOM(); // Garante que o estado está atualizado com as últimas edições
-                const dataToExport = {
-                    content: state.content,
-                    pinnedItems: state.pinnedItems
-                };
-                const dataStr = JSON.stringify(dataToExport, null, 2);
-                const dataBlob = new Blob([dataStr], {type: "application/json"});
-                const url = URL.createObjectURL(dataBlob);
-                const link = document.createElement('a');
-                link.href = url;
-                link.download = 'manual-uninta-dados.json';
-                link.click();
-                URL.revokeObjectURL(url);
-            }
-            function handleImport() {
-                importFileInput.click();
-            }
-            function processImportedFile(event) {
-                const file = event.target.files[0];
-                if (!file) return;
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    try {
-                        const importedData = JSON.parse(e.target.result);
-                        if (importedData.content && Array.isArray(importedData.content)) {
-                            state.content = importedData.content;
-                            state.pinnedItems = importedData.pinnedItems || [];
-                            saveState();
-                            render();
-                            alert('Dados importados com sucesso!');
-                        } else {
-                            alert('Arquivo inválido. O formato dos dados não é o esperado.');
-                        }
-                    } catch (error) {
-                        alert('Erro ao ler o arquivo. Verifique se é um arquivo JSON válido.');
-                        console.error("Erro ao importar:", error);
-                    }
-                };
-                reader.readAsText(file);
-                // Reseta o valor para poder importar o mesmo arquivo novamente
-                importFileInput.value = '';
-            }
-            // --- Drag & Drop ---
-            let draggedItem = null;
-            contentSections.addEventListener('dragstart', (e) => {
-                if (!state.isAdmin) return;
-                draggedItem = e.target.closest('section');
-                if (draggedItem) {
-                    setTimeout(() => { draggedItem.classList.add('dragging'); }, 0);
-                    e.dataTransfer.effectAllowed = 'move';
-                }
-            });
-            contentSections.addEventListener('dragend', () => { if (draggedItem) { draggedItem.classList.remove('dragging'); draggedItem = null; } });
-            contentSections.addEventListener('dragover', (e) => {
-                e.preventDefault();
-                if (!state.isAdmin || !draggedItem) return;
-                const target = e.target.closest('section');
-                if (target && target !== draggedItem) {
-                    const rect = target.getBoundingClientRect();
-                    const next = (e.clientY - rect.top) / (rect.bottom - rect.top) > 0.5;
-                    contentSections.insertBefore(draggedItem, next && target.nextSibling || target);
-                }
-            });
-            contentSections.addEventListener('drop', (e) => { 
-                e.preventDefault(); 
-                if (state.isAdmin) { 
-                    updateStateFromDOM();
-                    saveState(); 
-                    render(); 
-                } 
-            });
-
-            // --- Lógica de Pesquisa e Configurações ---
-            function handleSearch() {
-                const searchTerm = searchInput.value.toLowerCase();
-                const cards = document.querySelectorAll('#content-sections > section');
-
-                cards.forEach(card => {
-                    const title = card.querySelector('h2')?.innerText.toLowerCase() || '';
-                    const content = card.querySelector('div[data-editable]')?.innerText.toLowerCase() || '';
-                    const subcards = card.querySelectorAll('.subcard');
-                    let subcardMatch = false;
-
-                    subcards.forEach(subcard => {
-                        const subTitle = subcard.querySelector('.subcard-title')?.innerText.toLowerCase() || '';
-                        const subContent = subcard.querySelector('.subcard-content-wrapper div[data-editable]')?.innerText.toLowerCase() || '';
-                        if (subTitle.includes(searchTerm) || subContent.includes(searchTerm)) {
-                            subcardMatch = true;
-                        }
-                    });
-
-                    if (title.includes(searchTerm) || content.includes(searchTerm) || subcardMatch) {
-                        card.style.display = '';
-                    } else {
-                        card.style.display = 'none';
-                    }
-                });
-            }
-
-            async function handleAiSearch(searchTermParam) {
-                const apiKey = localStorage.getItem('unintaApiKey');
-                const searchTerm = searchTermParam || searchInput.value;
-
-                if (!apiKey) {
-                    showSearchNotification('Por favor, insira sua chave de API nas configurações.', 'error');
-                    return;
-                }
-                if (!searchTerm.trim()) {
-                    showSearchNotification('Por favor, digite um termo para a busca inteligente.', 'error');
-                    return;
-                }
-
-                // Inicia a barra de progresso
-                progressBar.style.transitionDuration = '10s';
-                progressBar.style.opacity = '1';
-                progressBar.style.width = '0%';
-                setTimeout(() => { progressBar.style.width = '90%'; }, 10);
-
-                const tempDiv = document.createElement('div');
-                const simplifiedContent = state.content.flatMap(card => {
-                    const cardContent = {
-                        id: card.id,
-                        title: card.title,
-                        text: ''
-                    };
-                    tempDiv.innerHTML = card.content;
-                    cardContent.text = tempDiv.textContent || tempDiv.innerText || '';
-                    
-                    const subcardContents = (card.subcards || []).map(subcard => {
-                        tempDiv.innerHTML = subcard.content;
-                        return {
-                            id: subcard.id,
-                            title: `${card.title} -> ${subcard.title}`,
-                            text: tempDiv.textContent || tempDiv.innerText || ''
-                        };
-                    });
-                    return [cardContent, ...subcardContents];
-                });
-
-                const prompt = `Analise o conteúdo de um manual fornecido como JSON e localize a seção mais relevante para a pergunta do usuário.
-Sua resposta DEVE ser exclusivamente o 'id' da seção mais apropriada. Não adicione texto, explicações, markdown ou aspas.
-
-**Conteúdo do Manual:**
-${JSON.stringify(simplifiedContent, null, 2)}
-
-**Pergunta do Usuário:**
-"${searchTerm}"
-
-**ID da seção mais relevante:**`;
-
-                try {
-                    // Usando um modelo Gemini mais recente e estável
-                    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${apiKey}`, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify({
-                            contents: [{ 
-                                parts: [{ 
-                                    text: prompt 
-                                }] 
-                            }],
-                            generationConfig: {
-                                temperature: 0.1,
-                                maxOutputTokens: 50,
-                            }
-                        }),
-                    });
-
-                    if (!response.ok) {
-                        const errorData = await response.json().catch(() => ({}));
-                        throw new Error(`Erro na API: ${response.status} ${response.statusText} - ${JSON.stringify(errorData)}`);
-                    }
-
-                    const result = await response.json();
-                    
-                    if (!result.candidates || !result.candidates[0] || !result.candidates[0].content || !result.candidates[0].content.parts[0]) {
-                        throw new Error('Resposta da API em formato inesperado');
-                    }
-
-                    // Limpa a resposta para garantir que temos apenas o ID
-                    const resultId = result.candidates[0].content.parts[0].text.replace(/["'`]/g, '').trim();
-                    
-                    const elementToHighlight = document.getElementById(resultId) || document.querySelector(`[data-id="${resultId}"]`);
-
-                    if (elementToHighlight) {
-                        document.querySelectorAll('.ai-highlight').forEach(el => el.classList.remove('ai-highlight'));
-
-                        const parentCard = elementToHighlight.closest('.card-container');
-                        if (parentCard) {
-                            const cardId = parentCard.id;
-                            const cardState = state.content.find(c => c.id === cardId);
-                            if (cardState && cardState.minimized) {
-                                toggleCardMinimize(cardId); // Expande o card pai se estiver minimizado
-                            }
-
-                            if (elementToHighlight.classList.contains('subcard-container')) {
-                                const subcardId = elementToHighlight.dataset.id;
-                                const subcardState = cardState?.subcards.find(sc => sc.id === subcardId);
-                                if (subcardState && subcardState.minimized) {
-                                    toggleSubcardMinimize(cardId, subcardId); // Expande o subcard se estiver minimizado
+                          
+                        {/* New Menu Item: Atualizar IDs Únicos */}
+                          
+                        {/* New Menu Item: Atualizar IDs Únicos */}
+                        <a
+                            href="#"
+                            className="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-700"
+                            onClick={updateUniqueIds} // Call the new function
+                        >
+                            Atualizar IDs Únicos
+                        </a>
+                        {/* New Menu Item: Limpar Seleção */}
+                        <a
+                            href="#"
+                            className={`block px-4 py-2 text-sm ${selectedStudentIds.size > 0 ? 'text-yellow-300 hover:bg-gray-700' : 'text-gray-500 cursor-not-allowed'}`}
+                            onClick={(e) => {
+                                if (selectedStudentIds.size > 0) {
+                                    clearSelection();
+                                } else {
+                                    alert('Nenhum aluno selecionado para limpar.');
                                 }
-                            }
-                        }
+                            }}
+                        >
+                            Limpar Seleção ({selectedStudentIds.size})
+                        </a>
+                        {/* New Menu Item: Zerar Todos */}
+                         <a
+                            href="#"
+                            className="block px-4 py-2 text-sm text-red-400 hover:bg-gray-700"
+                            onClick={clearAllStudents} // Call the clearAllStudents function
+                        >
+                            Zerar Todos
+                        </a>
+                      </div>
+                    )}
+                </div>
+              </nav>
 
-                        // Aguarda a animação de expansão antes de rolar
-                        setTimeout(() => {
-                           elementToHighlight.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                            elementToHighlight.classList.add('ai-highlight');
-                            showSearchNotification('Tópico encontrado! Destacando resultado.', 'success');
-                            setTimeout(() => {
-                                elementToHighlight.classList.remove('ai-highlight');
-                            }, 4000); // Duração da animação de destaque
-                        }, 500); // Tempo de espera para a animação de collapse/expand
-                    } else {
-                        showSearchNotification(`Não foi possível encontrar um resultado relevante.`, 'error');
-                    }
-
-                } catch (error) {
-                    console.error('Erro na busca com IA:', error);
-                    let errorMessage = 'Ocorreu um erro ao realizar a busca inteligente.';
-                    if (error.message.includes('API key')) {
-                        errorMessage = 'Erro de autenticação. Verifique sua chave de API.';
-                    } else if (error.message.includes('network') || error.message.includes('Network')) {
-                        errorMessage = 'Erro de conexão. Verifique sua internet.';
-                    }
-                    showSearchNotification(errorMessage, 'error');
-                } finally {
-                    // Finaliza e esconde a barra de progresso
-                    progressBar.style.transitionDuration = '0.3s';
-                    progressBar.style.width = '100%';
-                    setTimeout(() => {
-                        progressBar.style.opacity = '0';
-                        setTimeout(() => { progressBar.style.width = '0%'; }, 300);
-                    }, 300);
-                }
-            }
-
-            // --- EVENT LISTENERS ---
-            adminToggleBtn.addEventListener('click', toggleAdminMode);
-            saveBtn.addEventListener('click', () => {
-                updateStateFromDOM();
-                saveState();
-            });
-            addCardBtn.addEventListener('click', addNewCard);
-            resetBtn.addEventListener('click', resetAllData);
-            pinSidebarBtn.addEventListener('click', toggleSidebarPin);
-            minimizeAllBtn.addEventListener('click', toggleMinimizeAllCards);
-            openSidebarBtn.addEventListener('click', () => {
-                sidebar.classList.remove('-translate-x-full');
-            });
-            document.addEventListener('click', (e) => {
-                if (window.innerWidth < 1024 && !sidebar.contains(e.target) && !openSidebarBtn.contains(e.target)) {
-                    sidebar.classList.add('-translate-x-full');
-                }
-            });
-            
-            // Listeners do Modal de Confirmação
-            modalCancelBtn.addEventListener('click', () => {
-                confirmModal.classList.add('hidden');
-                confirmModal.classList.remove('flex');
-                cardToDelete = null;
-                subcardToDelete = null;
-            });
-            
-            modalConfirmBtn.addEventListener('click', () => {
-                if (cardToDelete) {
-                    deleteCard();
-                } else if (subcardToDelete) {
-                    deleteSubcard();
-                }
-                confirmModal.classList.add('hidden');
-                confirmModal.classList.remove('flex');
-            });
-            
-            // Listeners de Importar/Exportar
-            importBtn.addEventListener('click', handleImport);
-            exportBtn.addEventListener('click', handleExport);
-            importFileInput.addEventListener('change', processImportedFile);
-
-            // Listeners de Pesquisa e Configurações
-            searchBtn.addEventListener('click', () => {
-                searchInput.classList.toggle('active');
-                if (searchInput.classList.contains('active')) {
-                    searchInput.focus();
-                }
-            });
-            searchInput.addEventListener('input', handleSearch);
-            aiSearchBtn.addEventListener('click', () => {
-                aiSearchModal.classList.remove('hidden');
-                aiSearchModal.classList.add('flex');
-                aiSearchPrompt.focus();
-            });
-
-            settingsBtn.addEventListener('click', () => {
-                settingsModal.classList.remove('hidden');
-                settingsModal.classList.add('flex');
-            });
-
-            settingsCancelBtn.addEventListener('click', () => {
-                settingsModal.classList.add('hidden');
-                settingsModal.classList.remove('flex');
-            });
-
-            settingsSaveBtn.addEventListener('click', () => {
-                localStorage.setItem('unintaApiKey', apiKeyInput.value);
-                settingsModal.classList.add('hidden');
-                settingsModal.classList.remove('flex');
-                alert('Chave de API salva com sucesso!');
-            });
-
-            // Listeners do Modal de Busca Inteligente
-            aiSearchCancelBtn.addEventListener('click', () => {
-                aiSearchModal.classList.add('hidden');
-                aiSearchModal.classList.remove('flex');
-                aiSearchPrompt.value = '';
-            });
-
-            aiSearchConfirmBtn.addEventListener('click', () => {
-                const promptText = aiSearchPrompt.value.trim();
-                if (!promptText) {
-                    showSearchNotification('Por favor, digite uma descrição para a busca.', 'error');
-                    return;
-                }
-                
-                // Usa o texto do modal como termo de busca
-                searchInput.value = promptText;
-                
-                // Mostra indicador de progresso
-                aiSearchConfirmBtn.disabled = true;
-                aiSearchConfirmBtn.innerHTML = '<i data-lucide="loader" class="spinning"></i> Buscando...';
-                lucide.createIcons();
-                
-                // Executa a busca inteligente com o texto do prompt
-                handleAiSearch(promptText).finally(() => {
-                    // Fecha o modal e restaura o botão
-                    aiSearchModal.classList.add('hidden');
-                    aiSearchModal.classList.remove('flex');
-                    aiSearchConfirmBtn.disabled = false;
-                    aiSearchConfirmBtn.innerHTML = 'Buscar';
-                    aiSearchPrompt.value = '';
-                });
-            });
+              {/* Hidden file input for import */}
+              <input
+                type="file"
+                ref={fileInputRef}
+                onChange={importFromXLSX}
+                accept=".xlsx"
+                className="hidden-file-input"
+              />
 
 
-            // --- INICIALIZAÇÃO ---
-            loadState();
-            setupHighlightToolbar();
-            lucide.createIcons();
-        });
+              {/* Main Content */}
+              <main className="container mx-auto px-4 py-8">
+                {/* Filters */}
+                <div className="filters flex flex-wrap gap-4 mb-8">
+                  <div className="flex-grow min-w-[200px] search-input-container"> {/* Added search-input-container class */}
+                    <input
+                      type="text"
+                      placeholder="Buscar aluno..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="search-input w-full px-4 py-2 bg-gray-800/50 rounded-lg border border-gray-700 text-white placeholder-gray-400 pr-10" /* Added pr-10 for button space */
+                    />
+                    {searchTerm && ( /* Conditionally render clear button */
+                        <button
+                            onClick={clearSearch}
+                            className="clear-button"
+                            aria-label="Limpar busca"
+                        >
+                            &times; {/* HTML entity for 'x' */}
+                        </button>
+                    )}
+                  </div>
+                  <div className="min-w-[200px]">
+                    <select
+                      value={filterStatus}
+                      onChange={(e) => {
+                          console.log('Filtro de status alterado para:', e.target.value); // Debugging log
+                          setFilterStatus(e.target.value);
+                      }}
+                      className="filter-select w-full px-4 py-2 bg-gray-800/50 rounded-lg border border-gray-700 text-white"
+                    >
+                      <option value="">Filtrar por status...</option>
+                      <option value="orientation-video">Vídeo Tutorial</option>
+                      <option value="orientation-presencial">Presencial</option>
+                      <option value="device-app">App</option>
+                      <option value="device-site">Site</option>
+                      <option value="diff-critico">AVA - Crítico</option>
+                      <option value="diff-sabe">AVA - Sabe</option>
+                      <option value="diff-dicas">AVA - Dicas</option>
+                      <option value="ativo-true">Ativo</option>
+                      <option value="ativo-false">Inativo</option>
+                      <option value="boleto-sabe">Boleto (Sabe)</option>
+                      <option value="boleto-nao-sabe">Boleto (Não Sabe)</option>
+                      <option value="forum-discursiva-sabe">Fórum/Discursiva (Sabe Finalizar)</option>
+                      <option value="forum-discursiva-nao-sabe">Fórum/Discursiva (Não Sabe Finalizar)</option>
+                       <option value="level-veterano">Nível: Veterano</option>
+                       <option value="level-novato">Nível: Novato</option>
+                       <option value="simulado-sim">USA SIMULADO: SIM</option>
+                       <option value="simulado-nao">USA SIMULADO: NÃO</option>
+                       <option value="simulado-ajuda">USA SIMULADO: USA/REQUER AJUDA</option>
+                       <option value="motivo-inativo-trancou">Motivo Inativo: Trancou</option>
+                       <option value="motivo-inativo-desistente">Motivo Inativo: Desistente</option>
+                       <option value="motivo-inativo-pendente">Motivo Inativo: Pendente-$</option>
+                       <option value="motivo-inativo-finalizou">Motivo Inativo: Finalizou</option>
+                       <option value="motivo-inativo-diplomado">Motivo Inativo: Diplomado(a)</option>
+                    </select>
+                  </div>
+                  {/* New dropdown for view mode */}
+                  <div className="min-w-[200px]">
+                    <select
+                      value={viewMode}
+                      onChange={(e) => setViewMode(e.target.value)}
+                      className="filter-select w-full px-4 py-2 bg-gray-800/50 rounded-lg border border-gray-700 text-white"
+                    >
+                      <option value="active">Mostrar Ativos</option>
+                      <option value="inactive">Mostrar Inativos</option>
+                      <option value="archived">Mostrar Arquivados</option>
+                      <option value="all">Mostrar Todos</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* Student List */}
+                <div className="students-container">
+                  {filteredStudents.length > 0 ? (
+                    filteredStudents.map(student => (
+                      <StudentCard
+                        key={student.id}
+                        student={student}
+                        onEdit={setEditingStudent}
+                        onDelete={deleteStudent}
+                        isDuplicate={isDuplicateStudent(student)}
+                        isSelected={selectedStudentIds.has(student.id)}
+                        onSelect={handleStudentSelect}
+                        onToggleArchive={handleToggleArchive} // Pass the new toggle archive function
+                      />
+                    ))
+                  ) : (
+                    <p className="text-center py-8 text-gray-400">Nenhum aluno encontrado com os filtros aplicados.</p>
+                  )}
+                </div>
+              </main>
+
+              {/* Add/Edit Student Form (Full Page) */}
+              {editingStudent !== null && (
+                <AddEditStudentForm
+                  studentToEdit={editingStudent}
+                  onSave={saveStudent}
+                  onCancel={() => setEditingStudent(null)}
+                  getTagValue={getTagValue}
+                />
+              )}
+
+              {/* Floating Action Button */}
+              {editingStudent === null && ( // Only show FAB if not adding/editing
+                <button
+                  onClick={() => {
+                      console.log("FAB clicado, definindo editingStudent para objeto vazio");
+                      setEditingStudent({}); // Set to empty object for new student
+                  }}
+                  className="fab fixed bottom-6 right-6 bg-blue-600 hover:bg-blue-700 text-white rounded-full w-14 h-14 flex items-center justify-center shadow-lg transition-colors focus:outline-none z-50"
+                  aria-label="Adicionar aluno"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                  </svg>
+                </button>
+              )}
+            </div>
+          );
+        }
+
+        // Render the App component into the root div
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+
     </script>
 </body>
 </html>
-
