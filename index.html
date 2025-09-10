@@ -1,1366 +1,2175 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Uninta-aluno-Status-Hub</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
-    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <script src="https://unpkg.com/xlsx/dist/xlsx.full.min.js"></script>
-    <script src="https://unpkg.com/file-saver@2.0.5/dist/FileSaver.min.js"></script>
+    <title>To-do-ADM com IA</title>
+    <link rel="icon" type="image/png" href="https://i.ibb.co/mHq3ADF/to-do-list.png">
     <style>
-        /* Custom styles for the active/inactive circle */
-        .status-tag .w-3.h-3 {
-            flex-shrink: 0; /* Prevent the circle from shrinking */
-        }
-         /* Custom styles for the settings menu dropdown */
-        .settings-menu-container {
-            position: relative;
-        }
-        .settings-menu-container .absolute {
-            position: absolute;
-            /* Ensure dropdown is above other content */
-            z-index: 50; /* Tailwind z-index class */
-        }
-         /* Hide the file input */
-        .hidden-file-input {
-            display: none;
-        }
-        /* Style for the student count circle */
-        .student-count-circle {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            width: 30px; /* Adjust size as needed */
-            height: 30px; /* Adjust size as needed */
-            /* Background color will be set dynamically by React */
-            color: white;
-            border-radius: 50%;
-            font-size: 0.875rem; /* text-sm */
-            font-weight: bold;
-            margin-right: 10px; /* Space between circle and title */
-            flex-shrink: 0; /* Prevent shrinking */
-            transition: background-color 0.3s ease; /* Smooth transition for color change */
-        }
-        /* Style for the search input container */
-        .search-input-container .clear-button {
-            position: absolute;
-            right: 8px; /* Adjust as needed */
-            top: 50%;
-            transform: translateY(-50%);
-            background: none;
-            border: none;
-            color: #ccc;
-            cursor: pointer;
-            font-size: 1.2rem;
-            line-height: 1;
-            padding: 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            width: 24px;
-            height: 24px;
-        }
-        .search-input-container .clear-button:hover {
-            color: #fff;
+        /* --- GERAL E TEMA --- */
+        :root {
+            --bg-color: #121212;
+            --surface-color: #1e1e1e;
+            --surface-hover-color: #2a2a2a;
+            --font-color: #e0e0e0;
+            --border-color: #333;
+            --primary-accent: #0d6efd;
+            --primary-accent-hover: #0b5ed7;
+            
+            --status-aberto: #ffc107;
+            --status-andamento: #0d6efd;
+            --status-finalizado: #198754;
+            --status-aguardando: #6f42c1;
+
+            --priority-alta: #dc3545;
+            --priority-media: #ffc107;
+            --priority-baixa: #198754;
+
+            --google-blue: #4285F4;
+            --google-red: #DB4437;
+            --google-yellow: #F4B400;
+            --google-green: #0F9D58;
+
+            --ai-glow-start: #00ffff;
+            --ai-glow-end: #ff00ff;
         }
 
-        /* Full page form container */
-        .full-page-form-container {
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--font-color);
+            margin: 0;
+            padding-top: 60px; /* Espaço para o cabeçalho fixo */
+            overflow-x: hidden;
+        }
+
+        /* --- CABEÇALHO E MENU SUPERIOR --- */
+        header {
+            background-color: var(--surface-color);
+            border-bottom: 1px solid var(--border-color);
+            padding: 0 20px;
             position: fixed;
             top: 0;
             left: 0;
+            right: 0;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            z-index: 1000;
+            gap: 15px;
+        }
+
+        .header-left, .header-right {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .logo {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: var(--primary-accent);
+        }
+
+        .menu-button, .menu-item select, .menu-item input[type="text"] {
+            background-color: var(--surface-color);
+            color: var(--font-color);
+            border: 1px solid var(--border-color);
+            padding: 8px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background-color 0.2s, border-color 0.2s;
+            font-size: 14px;
+        }
+        .menu-button:hover, .menu-item select:hover { 
+            background-color: var(--surface-hover-color);
+            border-color: var(--primary-accent);
+        }
+
+        .ai-button {
+            background: linear-gradient(45deg, var(--ai-glow-start), var(--ai-glow-end));
+            color: white;
+            border: none;
+            box-shadow: 0 0 10px var(--ai-glow-start), 0 0 10px var(--ai-glow-end);
+        }
+        .ai-button:hover {
+            box-shadow: 0 0 15px var(--ai-glow-start), 0 0 15px var(--ai-glow-end);
+        }
+        
+        /* --- Dropdown Menu --- */
+        .dropdown {
+            position: relative;
+            display: inline-block;
+        }
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            background-color: var(--surface-color);
+            min-width: 180px;
+            box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+            z-index: 1;
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
+            overflow: hidden;
+            right: 0; /* Alinha o dropdown de configurações à direita */
+        }
+        .dropdown-content .dropdown-item {
+            color: var(--font-color);
+            padding: 12px 16px;
+            text-decoration: none;
+            display: block;
+            background: none;
+            border: none;
             width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.8); /* Dark overlay */
+            text-align: left;
+            cursor: pointer;
+        }
+        .dropdown-content .dropdown-item:hover { background-color: var(--surface-hover-color); }
+        .show { display: block; }
+
+        /* Notificações */
+        #notificationBtn {
+            position: relative;
+        }
+        #notification-count {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background-color: var(--priority-alta);
+            color: white;
+            border-radius: 50%;
+            width: 18px;
+            height: 18px;
+            font-size: 10px;
+            font-weight: bold;
             display: flex;
             align-items: center;
             justify-content: center;
-            z-index: 100; /* Ensure it's on top */
-            overflow-y: auto; /* Allow scrolling for smaller screens */
-            padding: 20px;
+            border: 2px solid var(--surface-color);
+        }
+        #notification-list {
+            max-height: 400px;
+            overflow-y: auto;
+            min-width: 300px;
+        }
+        .notification-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            border-bottom: 1px solid var(--border-color);
+            cursor: pointer;
+        }
+        .notification-item:last-child {
+            border-bottom: none;
+        }
+        .notification-item:hover {
+            background-color: var(--surface-hover-color);
+        }
+        .notification-info {
+            flex-grow: 1;
+            margin-right: 10px;
+        }
+        .notification-item p {
+            margin: 0 0 2px 0;
+            font-size: 0.9em;
+        }
+        .notification-item small {
+            color: #aaa;
+        }
+        
+        /* --- Pesquisa com IA --- */
+        .search-container {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        #searchInput.ai-active {
+            border-color: transparent;
+            background-image: linear-gradient(var(--surface-color), var(--surface-color)), 
+                              radial-gradient(circle at top left, var(--google-blue), var(--google-green), var(--google-yellow), var(--google-red));
+            background-origin: border-box;
+            background-clip: padding-box, border-box;
+            animation: bg-spin 3s linear infinite;
+        }
+        #searchMode {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 40px;
+            height: 20px;
+            background-color: var(--border-color);
+            border-radius: 10px;
+            position: relative;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        #searchMode::before {
+            content: 'IA';
+            color: #000;
+            font-size: 10px;
+            font-weight: bold;
+            position: absolute;
+            left: 20px;
+            top: 2px;
+        }
+        #searchMode::after {
+            content: '';
+            width: 16px;
+            height: 16px;
+            background-color: white;
+            border-radius: 50%;
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            transition: transform 0.3s;
+        }
+        #searchMode:checked {
+            background-color: var(--google-blue);
+        }
+        #searchMode:checked::before {
+            content: '';
+        }
+        #searchMode:checked::after {
+            transform: translateX(20px);
         }
 
-        .full-page-form-container .form-content {
-            background: #1a202c; /* bg-gray-900 */
-            border-radius: 0.75rem; /* rounded-xl */
-            padding: 2.5rem; /* p-10 */
-            max-width: 800px; /* max-w-2xl */
-            width: 100%;
-            box-shadow: 0 10px 15px rgba(0, 0, 0, 0.5); /* shadow-lg */
+        /* --- PAINEL KANBAN --- */
+        main {
+            display: flex;
+            gap: 15px;
+            padding: 20px;
+            min-height: calc(100vh - 100px);
+            max-height: calc(100vh - 100px);
+            align-items: flex-start;
         }
+
+        .status-column {
+            flex: 0 0 320px;
+            background-color: var(--surface-color);
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            max-height: 100%;
+            border-top: 4px solid;
+            transition: box-shadow 0.3s;
+        }
+        .status-column:hover {
+            box-shadow: 0 0 20px -5px var(--border-color);
+        }
+
+        .column-header {
+            padding: 10px 15px;
+            font-weight: bold;
+            font-size: 1.1em;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .ticket-count {
+            background-color: var(--surface-hover-color);
+            border-radius: 50%;
+            width: 28px;
+            height: 28px;
+            display: inline-flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 0.9em;
+            font-weight: bold;
+        }
+        
+        #column-Aberto { border-color: var(--status-aberto); }
+        #column-Andamento { border-color: var(--status-andamento); }
+        #column-Finalizado { border-color: var(--status-finalizado); }
+        #column-Aguardando { border-color: var(--status-aguardando); }
+
+        .tickets-container {
+            overflow-y: auto;
+            flex-grow: 1;
+            padding: 10px;
+        }
+        
+        /* --- CARTÃO DE TICKET --- */
+        .ticket-card {
+            background-color: var(--surface-hover-color);
+            border-radius: 6px;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-left: 5px solid;
+            cursor: grab;
+            transition: transform 0.2s, box-shadow 0.2s;
+            animation: fadeIn 0.5s ease;
+        }
+        .ticket-card.dragging {
+            opacity: 0.5;
+            transform: rotate(3deg);
+        }
+        .ticket-card:hover {
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            transform: translateY(-2px);
+        }
+        
+        .ticket-header {
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            margin-bottom: 10px;
+            gap: 10px;
+        }
+
+        .card-status-select {
+            background-color: var(--surface-color);
+            color: var(--font-color);
+            border: 1px solid var(--border-color);
+            border-radius: 5px;
+            padding: 2px 5px;
+            font-size: 0.8em;
+            cursor: pointer;
+        }
+        .card-status-select:hover {
+            border-color: var(--primary-accent);
+        }
+
+        .ticket-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 10px;
+            font-size: 0.8em;
+            color: #aaa;
+        }
+        
+        .footer-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .communication-status {
+            display: flex;
+            gap: 4px; /* Tighter spacing */
+        }
+
+        .comm-icon {
+            background-color: var(--surface-hover-color);
+            border: 1px solid var(--border-color);
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: bold;
+            cursor: help;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+            transition: transform 0.2s;
+        }
+        .comm-icon:hover {
+            transform: scale(1.1);
+        }
+
+        .icon-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background-color: var(--bg-color);
+            padding: 2px 6px;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+        }
+        .icon-group .copy-icon {
+            padding: 2px;
+        }
+        
+        .ticket-priority { padding: 3px 8px; border-radius: 10px; font-size: 0.8em; color: white; font-weight: bold; }
+        .ticket-content { margin-bottom: 10px; }
+        .ticket-content strong { 
+            font-size: 1.05em; 
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: block;
+        }
+        
+        .deadline-wrapper {
+            border: 2px solid transparent;
+            padding: 2px 5px;
+            border-radius: 4px;
+            transition: border-color 0.3s;
+        }
+        .deadline-wrapper.alert {
+            animation: pulse-border-red 1.5s infinite;
+        }
+        .deadline-wrapper.alert span {
+            color: var(--priority-alta);
+            font-weight: bold;
+        }
+
+        /* --- TAGS --- */
+        .tags-container {
+            display: flex;
+            gap: 5px;
+            flex-wrap: wrap;
+            margin-top: 10px;
+        }
+        .tag-item {
+            background-color: var(--surface-hover-color);
+            border: 1px solid;
+            border-radius: 10px;
+            padding: 2px 8px;
+            font-size: 0.75em;
+            font-weight: bold;
+        }
+
+        /* --- CHECKLIST / SUB-TAREFAS --- */
+        .checklist {
+            margin-top: 10px;
+        }
+        .checklist-progress {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.85em;
+            color: #ccc;
+            margin-bottom: 8px;
+        }
+        .progress-bar {
+            flex-grow: 1;
+            height: 6px;
+            background-color: var(--border-color);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+        .progress-bar-inner {
+            height: 100%;
+            background-color: var(--primary-accent);
+            border-radius: 3px;
+            transition: width 0.3s ease;
+        }
+        .checklist-items {
+            max-height: 105px; /* Altura para ~3 itens */
+            overflow: hidden;
+            transition: max-height 0.3s ease-in-out;
+        }
+        .checklist-items.expanded {
+            max-height: 500px;
+        }
+        .checklist-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 4px 0;
+            cursor: pointer;
+        }
+        .checklist-item input[type="checkbox"] {
+            flex-shrink: 0;
+        }
+        .checklist-item label {
+            flex-grow: 1;
+            transition: color 0.2s, text-decoration 0.2s;
+            white-space: normal;
+            word-break: break-word;
+            min-width: 0; /* FIX para overflow de texto em flex containers */
+        }
+        .checklist-item input[type="checkbox"]:checked + label {
+            text-decoration: line-through;
+            color: #888;
+        }
+        .toggle-checklist {
+            background: none;
+            border: none;
+            color: var(--primary-accent);
+            cursor: pointer;
+            font-size: 0.8em;
+            margin-top: 5px;
+            padding: 0;
+            display: block;
+            width: 100%;
+            text-align: left;
+        }
+        
+        /* --- VISUALIZAÇÃO EM LISTA --- */
+        main.list-view {
+            flex-direction: column;
+            gap: 0;
+            max-height: calc(100vh - 60px);
+            overflow-y: auto;
+            padding: 0;
+        }
+
+        .ticket-row {
+            background-color: var(--surface-color);
+            border-radius: 0;
+            padding: 15px 20px;
+            border-left: 5px solid;
+            display: flex;
+            flex-direction: column;
+            animation: fadeIn 0.5s ease;
+            width: 100%;
+            box-sizing: border-box;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .ticket-row:last-child {
+            border-bottom: none;
+        }
+        .ticket-row:hover {
+            background-color: var(--surface-hover-color);
+        }
+
+        .ticket-row-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 20px;
+            cursor: pointer;
+        }
+
+        .ticket-row-left {
+            flex-grow: 1;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            min-width: 0;
+        }
+        .ticket-row-left strong {
+            font-size: 1.1em;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .ticket-row-right {
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .ticket-row-right .checklist-progress {
+            margin-bottom: 0;
+            width: 120px;
+        }
+
+        .ticket-row-bottom {
+            margin-top: 15px;
+            padding-top: 10px;
+            border-top: 1px solid var(--border-color);
+        }
+        .ticket-row-bottom .checklist-items {
+            max-height: 56px; /* Altura para 2 itens */
+        }
+        .ticket-row-bottom .checklist-items.expanded {
+            max-height: 500px;
+        }
+
+
+        /* --- MODAL --- */
+        .modal {
+            display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%;
+            overflow: auto; background-color: rgba(0,0,0,0.8); animation: fadeIn 0.3s;
+        }
+        .modal-content {
+            background-color: var(--surface-color); margin: 5% auto; padding: 25px; border: 1px solid var(--border-color);
+            width: 90%; max-width: 700px; border-radius: 8px; position: relative; box-shadow: 0 5px 25px rgba(0,0,0,0.5);
+        }
+        .close-button {
+            color: #aaa; position: absolute; top: 15px; right: 25px; font-size: 28px; font-weight: bold; cursor: pointer; transition: color 0.2s;
+        }
+        .close-button:hover { color: white; }
+        .modal-content h2 { margin-top: 0; border-bottom: 1px solid var(--border-color); padding-bottom: 15px;}
+        
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .form-field { display: flex; flex-direction: column; }
+        .form-field.full-width { grid-column: 1 / -1; }
+        .form-field label { margin-bottom: 8px; font-size: 0.9em; color: #ccc; }
+        .form-field input, .form-field select, .form-field textarea {
+            width: 100%; padding: 10px; background-color: var(--bg-color); border: 1px solid var(--border-color);
+            color: var(--font-color); border-radius: 4px; box-sizing: border-box; transition: border-color 0.2s;
+        }
+        #ticketTitle {
+            text-transform: capitalize;
+        }
+        .form-field input:focus, .form-field select:focus, .form-field textarea:focus { outline: none; border-color: var(--primary-accent); }
+        .checkbox-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            background-color: var(--bg-color);
+            padding: 10px;
+            border-radius: 4px;
+            border: 1px solid var(--border-color);
+        }
+        .checkbox-group label {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+        }
+        .checkbox-group input {
+            width: auto;
+            margin-right: 10px;
+        }
+        .form-buttons { margin-top: 25px; display: flex; justify-content: flex-end; gap: 10px; }
+        .form-buttons button { padding: 10px 20px; border-radius: 5px; border: none; cursor: pointer; font-weight: bold; }
+        .btn-save { background-color: var(--primary-accent); color: white; }
+        .btn-delete { background-color: var(--priority-alta); color: white; }
+        .btn-cancel { background-color: var(--surface-hover-color); color: var(--font-color); }
+        
+        /* Histórico no Modal */
+        .modal-extra-section {
+            margin-top: 20px; max-height: 150px; overflow-y: auto; padding: 15px; background: var(--bg-color);
+            border-radius: 4px; border: 1px solid var(--border-color);
+        }
+        .modal-extra-section h4 { margin: 0 0 10px 0; }
+        .modal-extra-section ul { list-style: none; padding: 0; margin: 0; }
+        .modal-extra-section li { font-size: 0.8em; color: #ccc; padding: 5px 0; border-bottom: 1px solid var(--border-color); }
+        .modal-extra-section li:last-child { border-bottom: none; }
+
+        /* Ícones de Copiar */
+        .copy-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: #aaa;
+            transition: color 0.2s;
+        }
+        .copy-icon:hover {
+            color: var(--primary-accent);
+        }
+        .copy-icon.key-icon {
+            font-size: 16px;
+            color: #FFD700;
+        }
+        .copy-icon.key-icon:hover {
+            color: #FFD700; /* Manter a cor dourada no hover */
+        }
+        .copy-icon svg {
+            width: 16px;
+            height: 16px;
+        }
+
+        /* Botão Adicionar Flutuante (FAB) */
+        .fab {
+            position: fixed; bottom: 30px; right: 30px; width: 60px; height: 60px;
+            background-color: var(--primary-accent); color: white; border: none; border-radius: 50%;
+            font-size: 30px; line-height: 60px; text-align: center; box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            cursor: pointer; z-index: 1001; transition: background-color 0.2s, transform 0.2s;
+        }
+        .fab:hover { background-color: var(--primary-accent-hover); transform: scale(1.05); }
+
+        /* --- ANIMAÇÕES E RESPONSIVIDADE --- */
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes pulse-border-red { 0% { border-color: var(--priority-alta); } 50% { border-color: transparent; } 100% { border-color: var(--priority-alta); } }
+        @keyframes bg-spin { to { --border-angle: 360deg; } }
+        @keyframes flash {
+            0% { background-color: var(--primary-accent); }
+            100% { background-color: var(--surface-hover-color); }
+        }
+        .flash {
+            animation: flash 1s ease-out;
+        }
+        
+        @keyframes focus-highlight {
+            0% { box-shadow: 0 0 0px var(--ai-glow-start); }
+            50% { box-shadow: 0 0 25px var(--ai-glow-start); }
+            100% { box-shadow: 0 0 0px var(--ai-glow-start); }
+        }
+        .focus-highlight {
+            animation: focus-highlight 2s ease-in-out;
+        }
+        
+        @property --border-angle { syntax: "<angle>"; inherits: true; initial-value: 0deg; }
+
+        @media (max-width: 900px) {
+            header { height: auto; padding: 10px; flex-wrap: wrap; justify-content: center; }
+            .header-left, .header-right { width: 100%; justify-content: center; }
+            body { padding-top: 120px; }
+            main { flex-direction: column; }
+            .status-column { flex: 1 1 auto; max-height: none; }
+        }
+
     </style>
 </head>
-<body class="bg-gradient-to-br from-gray-900 to-red-900 text-gray-100 font-sans">
-    <div id="root"></div>
-
-    <script type="text/babel">
-        const { useState, useEffect, useRef } = React;
-
-        function App() {
-          // State management
-          const [students, setStudents] = useState([]);
-          const [searchTerm, setSearchTerm] = useState('');
-          const [filterStatus, setFilterStatus] = useState('');
-          // `editingStudent` will be null for list view, {} for adding, or a student object for editing
-          const [editingStudent, setEditingStudent] = useState(null);
-          const [isMenuOpen, setIsMenuOpen] = useState(false); // State for menu dropdown visibility
-          // New state for selected student IDs
-          const [selectedStudentIds, setSelectedStudentIds] = useState(new Set());
-          // New state for view mode: 'active', 'inactive', 'archived', 'all'
-          const [viewMode, setViewMode] = useState('active');
-
-          // Ref for the menu container to detect clicks outside
-          const menuRef = useRef(null);
-          // Ref for the hidden file input for importing
-          const fileInputRef = useRef(null);
-
-
-          // Load students from localStorage on initial render
-          useEffect(() => {
-            const savedStudents = JSON.parse(localStorage.getItem('students'));
-            if (savedStudents) {
-              const updatedStudents = savedStudents.map(student => {
-                  const newStudent = { ...student };
-
-                  newStudent.status = Array.isArray(newStudent.status) ? newStudent.status.filter(tag => tag && tag !== '') : [];
-
-                  if (!newStudent.status.some(s => s.startsWith('ativo-'))) {
-                      newStudent.status.push('ativo-true');
-                  }
-
-                  if (typeof newStudent.entryDate === 'undefined') {
-                      newStudent.entryDate = '';
-                  }
-                  // Ensure lastInteractionDate exists
-                  if (typeof newStudent.lastInteractionDate === 'undefined') {
-                      newStudent.lastInteractionDate = '';
-                  }
-                  // Ensure isArchived exists and defaults to false
-                  if (typeof newStudent.isArchived === 'undefined') {
-                      newStudent.isArchived = false;
-                  }
-                  // Ensure simulado exists and defaults to empty
-                  if (!newStudent.status.some(s => s.startsWith('simulado-'))) {
-                      newStudent.status.push('simulado-'); // Add a default empty value
-                  }
-                  // Ensure motivo-inativo exists and defaults to empty
-                  if (!newStudent.status.some(s => s.startsWith('motivo-inativo-'))) {
-                      newStudent.status.push('motivo-inativo-'); // Add a default empty value
-                  }
-
-
-                  return newStudent;
-              });
-              setStudents(updatedStudents.filter(student => student.name && student.course));
-            } else {
-              // Initial sample student with all fields
-              const initialStudent = {
-                id: crypto.randomUUID(),
-                name: "Carlos Santos",
-                course: "Administração",
-                entryDate: "2025.1",
-                lastInteractionDate: "2025-05-20",
-                isArchived: false, // New field for archiving
-                status: ["orientation-video", "device-site", "diff-sabe", "ativo-true", "boleto-sabe", "forum-discursiva-sabe", "level-veterano", "simulado-sim", "motivo-inativo-"] // Added simulado-sim and motivo-inativo-
-              };
-              setStudents([initialStudent]);
-            }
-          }, []);
-
-          // Save students to localStorage whenever they change
-          useEffect(() => {
-            localStorage.setItem('students', JSON.stringify(students));
-          }, [students]);
-
-            // Effect to close menu on outside click
-            useEffect(() => {
-                const handleClickOutside = (event) => {
-                    if (menuRef.current && !menuRef.current.contains(event.target)) {
-                        setIsMenuOpen(false);
-                    }
-                };
-
-                if (isMenuOpen) {
-                    document.addEventListener('mousedown', handleClickOutside);
-                }
-
-                return () => {
-                    document.removeEventListener('mousedown', handleClickOutside);
-                };
-            }, [isMenuOpen]);
-
-
-          // Filter students based on search, status filter, and view mode
-          const filteredStudents = students.filter(student => {
-            console.log('Calculando filteredStudents. filterStatus:', filterStatus, 'searchTerm:', searchTerm, 'viewMode:', viewMode); // Debugging log
-            const lowerCaseSearchTerm = searchTerm.toLowerCase().trim();
-            // If search term is empty, show all students for search part
-            const matchesSearch = lowerCaseSearchTerm ?
-                lowerCaseSearchTerm.split(/\s+/).filter(word => word.length > 0).every(word =>
-                    `${student.name} ${student.course} ${student.entryDate} ${student.lastInteractionDate}`.toLowerCase().includes(word)
-                ) : true;
-
-            // Check if student matches the specific status filter (e.g., 'diff-critico')
-            const matchesFilter = filterStatus ?
-              student.status.includes(filterStatus) : true;
-
-            // Check if student matches the selected view mode (active, inactive, archived, all)
-            let matchesViewMode = true;
-            if (viewMode === 'active') {
-                matchesViewMode = student.status.includes('ativo-true') && !student.isArchived;
-            } else if (viewMode === 'inactive') {
-                matchesViewMode = student.status.includes('ativo-false') && !student.isArchived;
-            } else if (viewMode === 'archived') {
-                matchesViewMode = student.isArchived;
-            } else if (viewMode === 'all') {
-                matchesViewMode = true; // Show all students regardless of active/archived status
-            }
-
-            return matchesSearch && matchesFilter && matchesViewMode;
-          });
-
-          // Determine the background color class for the student count circle
-          const countCircleColorClass = (searchTerm || filterStatus || viewMode !== 'active') ? 'bg-yellow-500 text-gray-900' : 'bg-blue-500';
-
-
-          // Get label for status tag
-          const getTagLabel = (tag) => {
-            const tagMap = {
-              'orientation-video': 'Vídeo Tutorial',
-              'orientation-presencial': 'Presencial',
-              'device-app': 'App',
-              'device-site': 'Site',
-              'diff-critico': 'AVA - Crítico',
-              'diff-sabe': 'AVA - Sabe',
-              'diff-dicas': 'AVA - Dicas',
-              'ativo-true': 'Ativo',
-              'ativo-false': 'Inativo',
-              'boleto-sabe': 'Boleto (Sabe)',
-              'boleto-nao-sabe': 'Boleto (Não Sabe)',
-              'forum-discursiva-sabe': 'Fórum/Discursiva (Sabe Finalizar)',
-              'forum-discursiva-nao-sabe': 'Fórum/Discursiva (Não Sabe Finalizar)',
-              'level-veterano': 'Nível: Veterano',
-              'level-novato': 'Nível: Novato',
-              'simulado-sim': 'USA SIMULADO: SIM',
-              'simulado-nao': 'USA SIMULADO: NÃO',
-              'simulado-ajuda': 'USA SIMULADO: USA/REQUER AJUDA',
-              'motivo-inativo-trancou': 'Motivo Inativo: Trancou',
-              'motivo-inativo-desistente': 'Motivo Inativo: Desistente',
-              'motivo-inativo-pendente': 'Motivo Inativo: Pendente-$',
-              'motivo-inativo-finalizou': 'Motivo Inativo: Finalizou',
-              'motivo-inativo-diplomado': 'Motivo Inativo: Diplomado(a)'
-            };
-            return tagMap[tag] || tag;
-          };
-
-           // Get tag value from label (reverse of getTagLabel)
-            const getTagValue = (label) => {
-                const tagMap = {
-                    'Vídeo Tutorial': 'orientation-video',
-                    'Presencial': 'orientation-presencial',
-                    'App': 'device-app',
-                    'Site': 'site',
-                    'AVA - Crítico': 'diff-critico',
-                    'AVA - Sabe': 'diff-sabe',
-                    'AVA - Dicas': 'diff-dicas',
-                    'Ativo': 'ativo-true',
-                    'Inativo': 'ativo-false',
-                    'Boleto (Sabe)': 'boleto-sabe',
-                    'Boleto (Não Sabe)': 'boleto-nao-sabe',
-                    'Fórum/Discursiva (Sabe Finalizar)': 'forum-discursiva-sabe',
-                    'Fórum/Discursiva (Não Sabe Finalizar)': 'forum-discursiva-nao-sabe',
-                    'Nível: Veterano': 'level-veterano',
-                    'Nível: Novato': 'level-novato',
-                    'USA SIMULADO: SIM': 'simulado-sim',
-                    'USA SIMULADO: NÃO': 'simulado-nao',
-                    'USA SIMULADO: USA/REQUER AJUDA': 'simulado-ajuda',
-                    'Motivo Inativo: Trancou': 'motivo-inativo-trancou',
-                    'Motivo Inativo: Desistente': 'motivo-inativo-desistente',
-                    'Motivo Inativo: Pendente-$': 'motivo-inativo-pendente',
-                    'Motivo Inativo: Finalizou': 'motivo-inativo-finalizou',
-                    'Motivo Inativo: Diplomado(a)': 'motivo-inativo-diplomado'
-                };
-                return tagMap[label] || label;
-            };
-
-            // New function to get color for status tags
-            const getTagColor = (tag) => {
-                const colorMap = {
-                    'orientation-': 'bg-green-600',
-                    'device-': 'bg-indigo-600',
-                    'diff-critico': 'bg-red-600',
-                    'diff-sabe': 'bg-green-600',
-                    'diff-dicas': 'bg-yellow-600',
-                    'boleto-': 'bg-blue-600',
-                    'forum-discursiva-': 'bg-purple-600',
-                    'level-veterano': 'bg-orange-600',
-                    'level-novato': 'bg-teal-600',
-                    'simulado-sim': 'bg-lime-600',
-                    'simulado-nao': 'bg-pink-600',
-                    'simulado-ajuda': 'bg-yellow-600',
-                    'motivo-inativo-': 'bg-gray-600',
-                };
-
-                const prefix = tag.split('-')[0] + '-';
-                if (colorMap[tag]) {
-                    return colorMap[tag]; // Specific tag color
-                }
-                return colorMap[prefix] || 'bg-gray-600'; // Default to prefix color or grey
-            };
-
-
-          // Delete a student
-          const deleteStudent = (id) => {
-            if (window.confirm('Tem certeza que deseja excluir este aluno?')) {
-              setStudents(students.filter(student => student.id !== id));
-              // Also remove from selection if deleted
-              setSelectedStudentIds(prev => {
-                  const newSet = new Set(prev);
-                  newSet.delete(id);
-                  return newSet;
-              });
-            }
-          };
-
-          // Save a student (add or update)
-          const saveStudent = (studentToSave) => {
-            if (studentToSave.id) {
-              // Update existing student
-              setStudents(students.map(s =>
-                s.id === studentToSave.id ? studentToSave : s
-              ));
-            } else {
-              // Add new student
-              setStudents([...students, { ...studentToSave, id: crypto.randomUUID() }]);
-            }
-            setEditingStudent(null); // Go back to list view
-          };
-
-          // Toggle archive status for a student
-          const handleToggleArchive = (id, newIsArchivedStatus) => {
-              setStudents(prevStudents =>
-                  prevStudents.map(student =>
-                      student.id === id ? { ...student, isArchived: newIsArchivedStatus } : student
-                  )
-              );
-              setSelectedStudentIds(prev => {
-                  const newSet = new Set(prev);
-                  newSet.delete(id); // Remove from selection if toggled archive status
-                  return newSet;
-              });
-          };
-
-
-          // Function to export student data to XLSX
-          // dataToExport can be either an array of student objects (for filtered/all)
-          // or a Set of student IDs (for selected)
-          const exportToXLSX = (dataToExport, fileName = 'alunos.xlsx') => {
-            let finalData = [];
-
-            // Check if dataToExport is a Set (meaning it's selected IDs)
-            if (dataToExport instanceof Set) {
-                finalData = students.filter(student => dataToExport.has(student.id));
-            } else {
-                // Otherwise, assume it's an array of student objects (e.g., filteredStudents)
-                finalData = dataToExport;
-            }
-
-            if (finalData.length === 0) {
-                alert('Nenhum aluno para exportar.');
-                return;
-            }
-
-            const worksheetData = finalData.map(student => {
-              const orientation = getTagLabel(student.status.find(tag => tag.startsWith('orientation-')) || '');
-              const device = getTagLabel(student.status.find(tag => tag.startsWith('device-')) || '');
-              const difficulty = getTagLabel(student.status.find(tag => tag.startsWith('diff-')) || '');
-              const ativo = getTagLabel(student.status.find(tag => tag.startsWith('ativo-')) || '');
-              const boleto = getTagLabel(student.status.find(tag => tag.startsWith('boleto-')) || '');
-              const forumDiscursiva = getTagLabel(student.status.find(tag => tag.startsWith('forum-discursiva-')) || '');
-              const level = getTagLabel(student.status.find(tag => tag.startsWith('level-')) || '');
-              const simulado = getTagLabel(student.status.find(tag => tag.startsWith('simulado-')) || '');
-              const motivoInativo = getTagLabel(student.status.find(tag => tag.startsWith('motivo-inativo-')) || ''); // New field
-
-              return {
-                'ID': student.id,
-                'Nome do Aluno': student.name,
-                'Curso': student.course,
-                'Data de Ingresso': student.entryDate,
-                'Data Última Interação': student.lastInteractionDate,
-                'Arquivado': student.isArchived ? 'Sim' : 'Não', // Include new field
-                'Nível do Aluno': level,
-                'Orientação': orientation,
-                'Dispositivo': device,
-                'Dificuldade AVA': difficulty,
-                'Status Ativo': ativo,
-                'Emitir Boleto': boleto,
-                'Fórum/Discursiva': forumDiscursiva,
-                'USA SIMULADO': simulado,
-                'Motivo Inativo': motivoInativo // New column
-              };
-            });
-
-            const ws = XLSX.utils.json_to_sheet(worksheetData);
-            const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, "Alunos");
-
-            const excelBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
-            const dataBlob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=UTF-8' });
-
-            saveAs(dataBlob, fileName);
-            setSelectedStudentIds(new Set()); // Clear selection after export
-          };
-
-          // Function to import student data from XLSX
-          const importFromXLSX = (event) => {
-            const file = event.target.files[0];
-            if (!file) {
-              return;
-            }
-
-            const reader = new FileReader();
-            reader.onload = (e) => {
-              try {
-                const data = new Uint8Array(e.target.result);
-                const workbook = XLSX.read(data, { type: 'array' });
-
-                const sheetName = workbook.SheetNames[0];
-                const worksheet = workbook.Sheets[sheetName];
-
-                const jsonStudents = XLSX.utils.sheet_to_json(worksheet);
-
-                const importedStudents = jsonStudents.map(item => {
-                    const studentId = crypto.randomUUID();
-
-                    const statusArray = [
-                        getTagValue(item['Orientação'] || ''),
-                        getTagValue(item['Dispositivo'] || ''),
-                        getTagValue(item['Dificuldade AVA'] || ''),
-                        getTagValue(item['Status Ativo'] || ''),
-                        getTagValue(item['Emitir Boleto'] || ''),
-                        getTagValue(item['Fórum/Discursiva'] || ''),
-                        getTagValue(item['Nível do Aluno'] || ''),
-                        getTagValue(item['USA SIMULADO'] || ''),
-                        getTagValue(item['Motivo Inativo'] || '') // New field
-                    ].filter(tag => tag && tag !== '');
-
-                    return {
-                        id: studentId,
-                        name: item['Nome do Aluno'] || 'Nome Desconhecido',
-                        course: item['Curso'] || 'Curso Desconhecido',
-                        entryDate: item['Data de Ingresso'] || '',
-                        lastInteractionDate: item['Data Última Interação'] || '',
-                        isArchived: item['Arquivado'] === 'Sim', // Read new field
-                        status: statusArray
-                    };
-                });
-
-                setStudents(importedStudents);
-                alert('Dados importados com sucesso!');
-
-              } catch (error) {
-                console.error("Error importing file:", error);
-                alert('Erro ao importar arquivo. Certifique-se de que é um arquivo XLSX válido e no formato correto.');
-              } finally {
-                  event.target.value = null;
-              }
-            };
-
-            reader.readAsArrayBuffer(file);
-          };
-
-          // Function to trigger the hidden file input click
-          const triggerImport = () => {
-            fileInputRef.current.click();
-          };
-
-          // Function to clear search term
-          const clearSearch = () => {
-            setSearchTerm('');
-          };
-
-          // Function to clear all student data
-          const clearAllStudents = () => {
-            if (window.confirm('ATENÇÃO: Tem certeza que deseja APAGAR TODOS os dados de alunos? Esta ação é irreversível.')) {
-              setStudents([]);
-              localStorage.removeItem('students');
-              alert('Todos os dados de alunos foram zerados.');
-              setIsMenuOpen(false);
-              setSelectedStudentIds(new Set()); // Clear selection
-            }
-          };
-
-          // Function to update unique IDs for all students and clear local storage
-          const updateUniqueIds = () => {
-            if (window.confirm('Tem certeza que deseja atualizar os IDs de todos os alunos e limpar o cache da página? Isso pode ser útil para corrigir IDs duplicados ou inválidos e garantir que a aplicação use os dados mais recentes.')) {
-              const seenIds = new Set();
-              const updatedStudents = students.map(student => {
-                let newId = student.id;
-                if (typeof newId !== 'string' || seenIds.has(newId)) {
-                  newId = crypto.randomUUID();
-                }
-                seenIds.add(newId);
-                return { ...student, id: newId };
-              });
-              setStudents(updatedStudents);
-
-              localStorage.setItem('students', JSON.stringify(updatedStudents));
-
-              alert('IDs dos alunos atualizados e cache da página limpo com sucesso! A página será recarregada.');
-              window.location.reload();
-            }
-          };
-
-
-          // Function to check for duplicate students (same name and course)
-          const isDuplicateStudent = (currentStudent) => {
-            const count = students.filter(student =>
-              student.name.toLowerCase() === currentStudent.name.toLowerCase() &&
-              currentStudent.course.toLowerCase() === student.course.toLowerCase() &&
-              student.id !== currentStudent.id // Exclude itself when checking for duplicates
-            ).length;
-            return count > 0; // If count is greater than 0, it means there are other duplicates
-          };
-
-          // Handle student selection
-          const handleStudentSelect = (id, isChecked) => {
-              setSelectedStudentIds(prev => {
-                  const newSet = new Set(prev);
-                  if (isChecked) {
-                      newSet.add(id);
-                  } else {
-                      newSet.delete(id);
-                  }
-                  return newSet;
-              });
-          };
-
-          // Clear all selected students
-          const clearSelection = () => {
-              setSelectedStudentIds(new Set());
-              setIsMenuOpen(false); // Close menu after action
-          };
-
-
-          // Student card component with inline editing
-          const StudentCard = ({ student, onEdit, onDelete, isDuplicate, isSelected, onSelect, onToggleArchive }) => {
-            const [editingStatus, setEditingStatus] = useState(null);
-
-            const extractStatusValue = (prefix) => {
-              return student.status.find(tag => tag.startsWith(prefix)) || '';
-            };
-
-            // Handle inline status change
-            const handleInlineStatusChange = (prefix, newValue) => {
-                const newStatusArray = student.status.filter(tag => !tag.startsWith(prefix));
-                if (newValue) {
-                    newStatusArray.push(newValue);
-                }
-
-                const updatedStudent = {
-                    ...student,
-                    status: newStatusArray.filter(tag => tag && tag !== '')
-                };
-                onEdit(updatedStudent);
-                setEditingStatus(null);
-            };
-
-            const renderStatusTag = (tag) => {
-                const prefix = tag.split('-')[0] + '-';
-
-                if (tag.startsWith('ativo-')) {
-                    const isActive = tag === 'ativo-true';
-                    const circleColor = isActive ? 'bg-green-500' : 'bg-red-500';
-                    const label = isActive ? 'Ativo' : 'Inativo';
-
-                    const toggleActiveStatus = () => {
-                        const newStatusValue = isActive ? 'ativo-false' : 'ativo-true';
-                        const newStatusArray = student.status.filter(s => !s.startsWith('ativo-'));
-                        newStatusArray.push(newStatusValue);
-                        const updatedStudent = { ...student, status: newStatusArray };
-                        onEdit(updatedStudent);
-                    };
-
-                    return (
-                        <span
-                            key={tag}
-                            className="status-tag flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium bg-gray-700 text-gray-100 cursor-pointer hover:bg-gray-600 transition-colors"
-                            onClick={toggleActiveStatus}
-                            title={`Clique para ${isActive ? 'desativar' : 'ativar'}`}
-                        >
-                            <span className={`w-3 h-3 rounded-full ${circleColor}`}></span>
-                            {label}
-                        </span>
-                    );
-                }
-
-                if (editingStatus && editingStatus.prefix === prefix) {
-                    let options = [];
-                    switch (prefix) {
-                        case 'orientation-':
-                            options = [
-                                { value: 'orientation-video', label: 'Vídeo Tutorial' },
-                                { value: 'orientation-presencial', label: 'Presencial' }
-                            ];
-                            break;
-                        case 'device-':
-                            options = [
-                                { value: 'device-app', label: 'App' },
-                                { value: 'device-site', label: 'Site' }
-                            ];
-                            break;
-                        case 'diff-':
-                            options = [
-                                { value: 'diff-critico', label: 'AVA - Crítico' },
-                                { value: 'diff-sabe', label: 'AVA - Sabe' },
-                                { value: 'diff-dicas', label: 'AVA - Dicas' }
-                            ];
-                            break;
-                        case 'boleto-':
-                            options = [
-                                { value: 'boleto-sabe', label: 'Boleto (Sabe)' },
-                                { value: 'boleto-nao-sabe', label: 'Boleto (Não Sabe)' }
-                            ];
-                            break;
-                        case 'forum-discursiva-':
-                            options = [
-                                { value: 'forum-discursiva-sabe', label: 'Fórum/Discursiva (Sabe Finalizar)' },
-                                { value: 'forum-discursiva-nao-sabe', label: 'Fórum/Discursiva (Não Sabe Finalizar)' }
-                            ];
-                            break;
-                        case 'level-':
-                            options = [
-                                { value: 'level-veterano', label: 'Nível: Veterano' },
-                                { value: 'level-novato', label: 'Nível: Novato' }
-                            ];
-                            break;
-                        case 'simulado-':
-                            options = [
-                                { value: 'simulado-sim', label: 'SIM' },
-                                { value: 'simulado-nao', label: 'NÃO' },
-                                { value: 'simulado-ajuda', label: 'USA/REQUER AJUDA' }
-                            ];
-                            break;
-                        case 'motivo-inativo-':
-                            options = [
-                                { value: 'motivo-inativo-trancou', label: 'Trancou' },
-                                { value: 'motivo-inativo-desistente', label: 'Desistente' },
-                                { value: 'motivo-inativo-pendente', label: 'Pendente-$' },
-                                { value: 'motivo-inativo-finalizou', label: 'Finalizou' },
-                                { value: 'motivo-inativo-diplomado', label: 'Diplomado(a)' }
-                            ];
-                            break;
-                        default:
-                            options = [];
-                    }
-
-                    return (
-                         <select
-                            key={tag}
-                            value={editingStatus.currentValue}
-                            onChange={(e) => handleInlineStatusChange(prefix, e.target.value)}
-                            onBlur={() => setEditingStatus(null)}
-                            className="px-2 py-1 text-sm bg-gray-700 rounded-lg border border-gray-600 text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
-                            autoFocus
-                         >
-                            <option value="">Selecione...</option>
-                            {options.map(option => (
-                                <option key={option.value} value={option.value}>{option.label}</option>
-                            ))}
-                         </select>
-                    );
-                } else {
-                    return (
-                        <span
-                            key={tag}
-                            className={`status-tag px-3 py-1 rounded-full text-sm font-medium cursor-pointer hover:opacity-80 transition-opacity ${getTagColor(tag)}`}
-                            onClick={() => setEditingStatus({ prefix: prefix, currentValue: tag })}
-                        >
-                            {getTagLabel(tag)}
-                        </span>
-                    );
-                }
-            };
-
-
-            const isInactive = student.status.includes('ativo-false');
-            const motivoInativoTag = student.status.find(tag => tag.startsWith('motivo-inativo-'));
-
-            return (
-              // Added flex and items-center to align checkbox
-              <div className={`student-card bg-gray-800/70 backdrop-blur-lg rounded-xl p-4 mb-4 relative flex items-start gap-3 ${student.isArchived ? 'opacity-70 border-purple-500' : ''} ${isDuplicate ? 'border-2 border-red-500' : ''}`}>
-                {student.isArchived && (
-                    <span className="absolute top-0 left-0 bg-purple-600 text-white text-xs px-2 py-1 rounded-br-lg z-10">Arquivado</span>
-                )}
-                <input
-                    type="checkbox"
-                    checked={isSelected}
-                    onChange={(e) => onSelect(student.id, e.target.checked)}
-                    className="mt-1 w-5 h-5 text-blue-600 bg-gray-700 border-gray-600 rounded focus:ring-blue-500"
-                />
-                <div className="flex-grow"> {/* This div wraps the student info and status tags */}
-                  <div className="student-info">
-                    <h3 className="student-name text-xl font-bold text-blue-400 mb-1">
-                      {student.name}
-                    </h3>
-                    <p className="student-course text-gray-400 text-sm">
-                      {student.course}
-                      {student.entryDate && ( // Display entry date if available
-                          <span className="ml-2 text-gray-500 text-xs">({student.entryDate})</span>
-                      )}
-                    </p>
-                    {student.lastInteractionDate && ( // Display last interaction date if available
-                        <p className="text-gray-500 text-xs mt-1">Última Interação: {student.lastInteractionDate}</p>
-                    )}
-                  </div>
-                  <div className="status-group flex flex-wrap gap-1 mt-2">
-                    {/* Always render 'ativo-' tag */}
-                    {student.status.filter(tag => tag.startsWith('ativo-')).map((tag) => (
-                        renderStatusTag(tag)
-                    ))}
-
-                    {/* Render 'motivo-inativo-' if student is inactive or if a reason is selected */}
-                    {isInactive && (motivoInativoTag && motivoInativoTag !== 'motivo-inativo-' ? renderStatusTag(motivoInativoTag) : renderStatusTag('motivo-inativo-'))}
-
-                    {/* Render other tags ONLY if student is active */}
-                    {!isInactive && (
-                        <>
-                            {student.status.filter(tag => tag.startsWith('level-')).map((tag) => (
-                                renderStatusTag(tag)
-                            ))}
-                            {student.status.filter(tag => tag.endsWith('-nao-sabe') || tag.startsWith('diff-critico')).map((tag) => (
-                                renderStatusTag(tag)
-                            ))}
-                            {student.status.filter(tag => tag.startsWith('simulado-') && tag !== 'simulado-').map((tag) => (
-                                renderStatusTag(tag)
-                            ))}
-                            {student.status.filter(tag => !tag.startsWith('ativo-') && !tag.startsWith('level-') && !tag.endsWith('-nao-sabe') && !tag.startsWith('diff-critico') && !tag.startsWith('simulado-') && !tag.startsWith('motivo-inativo-')).map((tag) => (
-                                renderStatusTag(tag)
-                            ))}
-                        </>
-                    )}
-                  </div>
-                </div>
-                <div className="student-actions absolute top-3 right-3 flex gap-2">
-                  <button
-                    onClick={() => {
-                        console.log("Botão Editar clicado para aluno:", student.id);
-                        onEdit(student); // Pass the entire student object for editing
-                    }}
-                    className="action-btn text-gray-400 hover:text-blue-400 transition-colors"
-                    title="Editar"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-                    </svg>
-                  </button>
-                  <button
-                    onClick={() => onToggleArchive(student.id, !student.isArchived)}
-                    className="action-btn text-gray-400 hover:text-purple-400 transition-colors"
-                    title={student.isArchived ? "Desarquivar" : "Arquivar"}
-                  >
-                      {student.isArchived ? (
-                          // Icon for unarchive (e.g., folder open)
-                          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                              <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
-                              <path d="M12 11v6"></path>
-                              <path d="M9 14h6"></path>
-                          </svg>
-                      ) : (
-                          // Icon for archive (e.g., folder with minus)
-                          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                              <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
-                              <line x1="9" y1="14" x2="15" y2="14"></line>
-                          </svg>
-                      )}
-                  </button>
-                  <button
-                    onClick={() => onDelete(student.id)}
-                    className="action-btn text-gray-400 hover:text-red-400 transition-colors"
-                    title="Excluir"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <polyline points="3 6 5 6 21 6"></polyline>
-                      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                      <line x1="10" y1="11" x2="10" y2="17"></line>
-                      <line x1="14" y1="11" x2="14" y2="17"></line>
-                    </svg>
-                  </button>
-                </div>
-              </div>
-            );
-          };
-
-          // New component for Add/Edit Student Form
-          const AddEditStudentForm = ({ studentToEdit, onSave, onCancel, getTagValue }) => {
-            const [formData, setFormData] = useState({
-              name: '',
-              course: '',
-              entryDate: '',
-              lastInteractionDate: '',
-              isArchived: false, // New field
-              level: '',
-              orientation: '',
-              device: '',
-              difficulty: '',
-              ativo: 'ativo-true',
-              boleto: '',
-              forumDiscursiva: '',
-              simulado: '', // New field
-              motivoInativo: '' // New field
-            });
-
-            useEffect(() => {
-              console.log("Rendering AddEditStudentForm, studentToEdit:", studentToEdit);
-              if (studentToEdit && studentToEdit.id) { // Editing existing student
-                const extractStatus = (prefix) => studentToEdit.status.find(tag => tag.startsWith(prefix)) || '';
-                setFormData({
-                  name: studentToEdit.name,
-                  course: studentToEdit.course,
-                  entryDate: studentToEdit.entryDate,
-                  lastInteractionDate: studentToEdit.lastInteractionDate,
-                  isArchived: studentToEdit.isArchived || false, // Populate new field
-                  level: extractStatus('level-'),
-                  orientation: extractStatus('orientation-'),
-                  device: extractStatus('device-'),
-                  difficulty: extractStatus('diff-'),
-                  ativo: extractStatus('ativo-'),
-                  boleto: extractStatus('boleto-'),
-                  forumDiscursiva: extractStatus('forum-discursiva-'),
-                  simulado: extractStatus('simulado-'),
-                  motivoInativo: extractStatus('motivo-inativo-') // Populate new field
-                });
-              } else { // Adding new student or no student to edit
-                setFormData({
-                  name: '',
-                  course: '',
-                  entryDate: '',
-                  lastInteractionDate: '',
-                  isArchived: false, // Reset for new student
-                  level: '',
-                  orientation: '',
-                  device: '',
-                  difficulty: '',
-                  ativo: 'ativo-true',
-                  boleto: '',
-                  forumDiscursiva: '',
-                  simulado: '',
-                  motivoInativo: '' // Reset for new student
-                });
-              }
-            }, [studentToEdit]);
-
-            const handleSubmit = () => {
-              if (!formData.name || !formData.course) {
-                alert('Por favor, preencha o Nome do Aluno e o Curso.');
-                return;
-              }
-
-              const newStatus = [
-                  formData.orientation,
-                  formData.device,
-                  formData.difficulty,
-                  formData.ativo || 'ativo-true',
-                  formData.boleto,
-                  formData.forumDiscursiva,
-                  formData.level,
-                  formData.simulado,
-                  formData.motivoInativo // Include new field
-              ].filter(tag => tag && tag !== '');
-
-              const studentData = {
-                id: studentToEdit ? studentToEdit.id : undefined, // Keep ID if editing, undefined if new
-                name: formData.name,
-                course: formData.course,
-                entryDate: formData.entryDate,
-                lastInteractionDate: formData.lastInteractionDate,
-                isArchived: formData.isArchived, // Include new field
-                status: newStatus
-              };
-              onSave(studentData);
-            };
-
-            return (
-              <div className="full-page-form-container">
-                <div className="form-content">
-                  <h1 className="text-2xl font-bold text-blue-400 mb-4">
-                    {studentToEdit && studentToEdit.id ? 'Editar Aluno' : 'Adicionar Novo Aluno'}
-                  </h1>
-                  <div className="space-y-3">
-                    <div>
-                      <label className="block text-sm font-medium mb-1">Nome <span className="text-red-500">*</span></label>
-                      <input
-                        type="text"
-                        value={formData.name}
-                        onChange={(e) => setFormData({...formData, name: e.target.value})}
-                        className="w-full px-3 py-2 bg-gray-700 rounded-lg border border-gray-600 text-white"
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium mb-1">Curso <span className="text-red-500">*</span></label>
-                      <input
-                        type="text"
-                        value={formData.course}
-                        onChange={(e) => setFormData({...formData, course: e.target.value})}
-                        className="w-full px-3 py-2 bg-gray-700 rounded-lg border border-gray-600 text-white"
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium mb-1">Data de Ingresso (Ex: 2025.1)</label>
-                      <input
-                        type="text"
-                        value={formData.entryDate}
-                        onChange={(e) => setFormData({...formData, entryDate: e.target.value})}
-                        className="w-full px-3 py-2 bg-gray-700 rounded-lg border border-gray-600 text-white"
-                        placeholder="Ex: 2025.1"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium mb-1">Última Interação (AAAA-MM-DD)</label>
-                      <input
-                        type="date"
-                        value={formData.lastInteractionDate}
-                        onChange={(e) => setFormData({...formData, lastInteractionDate: e.target.value})}
-                        className="w-full px-3 py-2 bg-gray-700 rounded-lg border border-gray-600 text-white"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium mb-1">Nível do Aluno</label>
-                      <select
-                        value={formData.level}
-                        onChange={(e) => setFormData({...formData, level: e.target.value})}
-                        className="w-full px-3 py-2 bg-gray-700 rounded-lg border border-gray-600 text-white"
-                      >
-                        <option value="">Selecione...</option>
-                        <option value="level-veterano">Veterano</option>
-                        <option value="level-novato">Novato</option>
-                      </select>
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                      <div>
-                        <label className="block text-sm font-medium mb-1">Orientação</label>
-                        <select
-                          value={formData.orientation}
-                          onChange={(e) => setFormData({...formData, orientation: e.target.value})}
-                          className="w-full px-3 py-2 bg-gray-700 rounded-lg border border-gray-600 text-white"
-                        >
-                          <option value="">Selecione...</option>
-                          <option value="orientation-video">Vídeo Tutorial</option>
-                          <option value="orientation-presencial">Presencial</option>
-                        </select>
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium mb-1">Dispositivo</label>
-                        <select
-                          value={formData.device}
-                          onChange={(e) => setFormData({...formData, device: e.target.value})}
-                          className="w-full px-3 py-2 bg-gray-700 rounded-lg border border-gray-600 text-white"
-                        >
-                          <option value="">Selecione...</option>
-                          <option value="device-app">App</option>
-                          <option value="device-site">Site</option>
-                        </select>
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium mb-1">Dificuldade</label>
-                        <select
-                          value={formData.difficulty}
-                          onChange={(e) => setFormData({...formData, difficulty: e.target.value})}
-                          className="w-full px-3 py-2 bg-gray-700 rounded-lg border border-gray-600 text-white"
-                        >
-                          <option value="">Selecione...</option>
-                          <option value="diff-critico">AVA - Crítico</option>
-                          <option value="diff-sabe">AVA - Sabe</option>
-                          <option value="diff-dicas">AVA - Dicas</option>
-                        </select>
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium mb-1">Status Ativo</label>
-                        <select
-                          value={formData.ativo}
-                          onChange={(e) => setFormData({...formData, ativo: e.target.value})}
-                          className="w-full px-3 py-2 bg-gray-700 rounded-lg border border-gray-600 text-white"
-                        >
-                          <option value="">Selecione...</option>
-                          <option value="ativo-true">Ativo</option>
-                          <option value="ativo-false">Inativo</option>
-                        </select>
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium mb-1">Emitir Boleto</label>
-                        <select
-                          value={formData.boleto}
-                          onChange={(e) => setFormData({...formData, boleto: e.target.value})}
-                          className="w-full px-3 py-2 bg-gray-700 rounded-lg border border-gray-600 text-white"
-                        >
-                          <option value="">Selecione...</option>
-                          <option value="boleto-sabe">Sabe</option>
-                          <option value="boleto-nao-sabe">Não Sabe</option>
-                        </select>
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium mb-1">Fórum/Discursiva</label>
-                        <select
-                          value={formData.forumDiscursiva}
-                          onChange={(e) => setFormData({...formData, forumDiscursiva: e.target.value})}
-                          className="w-full px-3 py-2 bg-gray-700 rounded-lg border border-gray-600 text-white"
-                        >
-                          <option value="">Selecione...</option>
-                          <option value="forum-discursiva-sabe">Fórum/Discursiva (Sabe Finalizar)</option>
-                          <option value="forum-discursiva-nao-sabe">Fórum/Discursiva (Não Sabe Finalizar)</option>
-                        </select>
-                      </div>
-                      <div> {/* New dropdown for USA SIMULADO */}
-                        <label className="block text-sm font-medium mb-1">USA SIMULADO</label>
-                        <select
-                          value={formData.simulado}
-                          onChange={(e) => setFormData({...formData, simulado: e.target.value})}
-                          className="w-full px-3 py-2 bg-gray-700 rounded-lg border border-gray-600 text-white"
-                        >
-                          <option value="">Selecione...</option>
-                          <option value="simulado-sim">SIM</option>
-                          <option value="simulado-nao">NÃO</option>
-                          <option value="simulado-ajuda">USA/REQUER AJUDA</option>
-                        </select>
-                      </div>
-                      <div> {/* New dropdown for Motivo Inativo */}
-                        <label className="block text-sm font-medium mb-1">Motivo Inativo</label>
-                        <select
-                          value={formData.motivoInativo}
-                          onChange={(e) => setFormData({...formData, motivoInativo: e.target.value})}
-                          className="w-full px-3 py-2 bg-gray-700 rounded-lg border border-gray-600 text-white"
-                        >
-                          <option value="">Selecione...</option>
-                          <option value="motivo-inativo-trancou">Trancou</option>
-                          <option value="motivo-inativo-desistente">Desistente</option>
-                          <option value="motivo-inativo-pendente">Pendente-$</option>
-                          <option value="motivo-inativo-finalizou">Finalizou</option>
-                          <option value="motivo-inativo-diplomado">Diplomado(a)</option>
-                        </select>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2 mt-4"> {/* New checkbox for archived status */}
-                        <input
-                            type="checkbox"
-                            id="isArchived"
-                            checked={formData.isArchived}
-                            onChange={(e) => setFormData({...formData, isArchived: e.target.checked})}
-                            className="w-5 h-5 text-blue-600 bg-gray-700 border-gray-600 rounded focus:ring-blue-500"
-                        />
-                        <label htmlFor="isArchived" className="text-sm font-medium text-gray-300">Arquivado</label>
-                    </div>
-                    <div className="flex gap-3 pt-2">
-                      <button
-                        onClick={handleSubmit}
-                        className="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors text-white"
-                      >
-                        Salvar
-                      </button>
-                      <button
-                        onClick={onCancel}
-                        className="px-4 py-2 bg-gray-600 hover:bg-gray-700 rounded-lg transition-colors text-white"
-                      >
-                        Cancelar
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            );
-          };
-
-
-          return (
-            <div className="min-h-screen bg-gradient-to-br from-gray-900 to-red-900 text-gray-100">
-              {/* Debugging log for editingStudent state */}
-              {console.log('App renderizado, editingStudent:', editingStudent)}
-              {/* Navigation */}
-              <nav className="navbar sticky top-0 z-10 flex justify-between items-center p-4 bg-black/50 backdrop-blur-md">
-                {/* Container for the count circle and title */}
-                <div className="flex items-center">
-                    {/* Student Count Circle - Displays count of filtered students and changes color */}
-                    <div className={`student-count-circle ${countCircleColorClass}`}>
-                        {filteredStudents.length}
-                    </div>
-                    <div className="logo text-2xl font-bold text-blue-400">Plataforma AVA</div>
-                    {/* New tag for Relatório-Adm-Uninta */}
-                    <a
-                        href="https://uniesbra4jf.github.io/relatorio-Uninta/"
-                        target="_blank"
-                        className="ml-4 px-3 py-1 rounded-full text-sm font-bold bg-red-700 text-white hover:bg-red-600 transition-colors md:block"
-                        title="Abrir Relatório-Adm-Uninta em uma nova aba"
-                    >
-                        Relatório-Adm-Uninta
-                    </a>
-                    
-                     <a
-                        href="https://uniesbra4jf.github.io/Manual-Adm-UNINTA/"
-                        target="_blank"
-                        className="ml-4 px-3 py-1 rounded-full text-sm font-bold bg-blu-700 text-white hover:bg-red-600 transition-colors md:block"
-                        title="Abrir Relatório-Adm-Uninta em uma nova aba"
-                    >
-                        Manual-Adm-UNINTA
-                    </a>
-                    
-                </div>
-                {/* Settings menu with icon and dropdown */}
-                <div className="settings-menu-container relative" ref={menuRef}> {/* Add ref and class */}
-                    <button
-                        onClick={() => setIsMenuOpen(!isMenuOpen)}
-                        className="settings-button text-gray-300 hover:text-blue-400 transition-colors focus:outline-none"
-                        aria-label="Menu de Configurações"
-                    >
-                        {/* Settings Icon (Feather Icons) */}
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="feather feather-settings">
-                            <circle cx="12" cy="12" r="3"></circle>
-                            <path d="M19.4 15a1.65 1.65 0 0 0 .3 1.67l-.2.2c-.39.39-.66 1.11-.66 1.67V21h-3.73a1.65 1.65 0 0 0-1.65-1.65h-.79a1.65 1.65 0 0 0-1.65 1.65H3v-3.73a1.65 1.65 0 0 0-.66-1.67l-.2-.2a1.65 1.65 0 0 0 .3-1.67l-.2-.2c.39-.39 1.11-.66 1.67-.66H3v-3.73a1.65 1.65 0 0 0 1.65-1.65v-.79a1.65 1.65 0 0 0-1.65-1.65H3V3h3.73a1.65 1.65 0 0 0 1.65 1.65h.79a1.65 1.65 0 0 0 1.65-1.65H21v3.73c.56 0 1.3.27 1.67.66l.2.2a1.65 1.65 0 0 0 0 2.34l-.2.2c-.39.39-1.11.66-1.67.66z"></path>
-                        </svg>
-                    </button>
-                    {/* Dropdown Menu */}
-                    {isMenuOpen && (
-                      <div className="absolute right-0 mt-2 w-48 bg-gray-800 rounded-md shadow-lg py-1 z-20">
-                        {/* Menu Item: Configurações */}
-                        <a
-                            href="#"
-                            className="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-700"
-                            onClick={() => {
-                                alert('Funcionalidade de Configurações (em desenvolvimento)'); // Placeholder action
-                                setIsMenuOpen(false); // Close menu on click
-                            }}
-                        >
-                            Configurações
-                        </a>
-                        {/* Menu Item: Exportar para XLSX (Todos) */}
-                         <a
-                            href="#"
-                            className="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-700"
-                            onClick={() => {
-                                // Export the currently filtered students
-                                exportToXLSX(filteredStudents, 'alunos_filtrados.xlsx');
-                                setIsMenuOpen(false); // Close menu on click
-                            }}
-                        >
-                            Exportar para XLSX (Filtrados)
-                        </a>
-                        {/* New Menu Item: Exportar Selecionados para XLSX */}
-                        <a
-                            href="#"
-                            className={`block px-4 py-2 text-sm ${selectedStudentIds.size > 0 ? 'text-blue-300 hover:bg-gray-700' : 'text-gray-500 cursor-not-allowed'}`}
-                            onClick={(e) => {
-                                if (selectedStudentIds.size > 0) {
-                                    exportToXLSX(selectedStudentIds, 'alunos_selecionados.xlsx'); // Export only selected
-                                } else {
-                                    alert('Nenhum aluno selecionado para exportar.');
-                                }
-                                setIsMenuOpen(false); // Close menu on click
-                            }}
-                        >
-                            Exportar Selecionados para XLSX
-                        </a>
-                        {/* Menu Item: Importar de XLSX */}
-                         <a
-                            href="#"
-                            className="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-700"
-                            onClick={() => {
-                                triggerImport(); // Trigger the file input click
-                                setIsMenuOpen(false); // Close menu on click
-                            }}
-                        >
-                            Importar de XLSX
-                        </a>
-                        {/* New Menu Item: Gestão de Materiais Didáticos */}
-                         <a
-                            href="https://fbiluoficial.github.io/uninta-disciplina/" // Set the href
-                            target="_blank" // Open in a new tab
-                            className="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-700"
-                            onClick={() => {
-                                setIsMenuOpen(false); // Close menu on click
-                            }}
-                        >
-                            ✨Gestão de Materiais Didáticos
-                        </a>
-
-                          
-                        {/* New Menu Item: Atualizar IDs Únicos */}
-                          
-                        {/* New Menu Item: Atualizar IDs Únicos */}
-                        <a
-                            href="#"
-                            className="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-700"
-                            onClick={updateUniqueIds} // Call the new function
-                        >
-                            Atualizar IDs Únicos
-                        </a>
-                        {/* New Menu Item: Limpar Seleção */}
-                        <a
-                            href="#"
-                            className={`block px-4 py-2 text-sm ${selectedStudentIds.size > 0 ? 'text-yellow-300 hover:bg-gray-700' : 'text-gray-500 cursor-not-allowed'}`}
-                            onClick={(e) => {
-                                if (selectedStudentIds.size > 0) {
-                                    clearSelection();
-                                } else {
-                                    alert('Nenhum aluno selecionado para limpar.');
-                                }
-                            }}
-                        >
-                            Limpar Seleção ({selectedStudentIds.size})
-                        </a>
-                        {/* New Menu Item: Zerar Todos */}
-                         <a
-                            href="#"
-                            className="block px-4 py-2 text-sm text-red-400 hover:bg-gray-700"
-                            onClick={clearAllStudents} // Call the clearAllStudents function
-                        >
-                            Zerar Todos
-                        </a>
-                      </div>
-                    )}
-                </div>
-              </nav>
-
-              {/* Hidden file input for import */}
-              <input
-                type="file"
-                ref={fileInputRef}
-                onChange={importFromXLSX}
-                accept=".xlsx"
-                className="hidden-file-input"
-              />
-
-
-              {/* Main Content */}
-              <main className="container mx-auto px-4 py-8">
-                {/* Filters */}
-                <div className="filters flex flex-wrap gap-4 mb-8">
-                  <div className="flex-grow min-w-[200px] search-input-container"> {/* Added search-input-container class */}
-                    <input
-                      type="text"
-                      placeholder="Buscar aluno..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="search-input w-full px-4 py-2 bg-gray-800/50 rounded-lg border border-gray-700 text-white placeholder-gray-400 pr-10" /* Added pr-10 for button space */
-                    />
-                    {searchTerm && ( /* Conditionally render clear button */
-                        <button
-                            onClick={clearSearch}
-                            className="clear-button"
-                            aria-label="Limpar busca"
-                        >
-                            &times; {/* HTML entity for 'x' */}
-                        </button>
-                    )}
-                  </div>
-                  <div className="min-w-[200px]">
-                    <select
-                      value={filterStatus}
-                      onChange={(e) => {
-                          console.log('Filtro de status alterado para:', e.target.value); // Debugging log
-                          setFilterStatus(e.target.value);
-                      }}
-                      className="filter-select w-full px-4 py-2 bg-gray-800/50 rounded-lg border border-gray-700 text-white"
-                    >
-                      <option value="">Filtrar por status...</option>
-                      <option value="orientation-video">Vídeo Tutorial</option>
-                      <option value="orientation-presencial">Presencial</option>
-                      <option value="device-app">App</option>
-                      <option value="device-site">Site</option>
-                      <option value="diff-critico">AVA - Crítico</option>
-                      <option value="diff-sabe">AVA - Sabe</option>
-                      <option value="diff-dicas">AVA - Dicas</option>
-                      <option value="ativo-true">Ativo</option>
-                      <option value="ativo-false">Inativo</option>
-                      <option value="boleto-sabe">Boleto (Sabe)</option>
-                      <option value="boleto-nao-sabe">Boleto (Não Sabe)</option>
-                      <option value="forum-discursiva-sabe">Fórum/Discursiva (Sabe Finalizar)</option>
-                      <option value="forum-discursiva-nao-sabe">Fórum/Discursiva (Não Sabe Finalizar)</option>
-                       <option value="level-veterano">Nível: Veterano</option>
-                       <option value="level-novato">Nível: Novato</option>
-                       <option value="simulado-sim">USA SIMULADO: SIM</option>
-                       <option value="simulado-nao">USA SIMULADO: NÃO</option>
-                       <option value="simulado-ajuda">USA SIMULADO: USA/REQUER AJUDA</option>
-                       <option value="motivo-inativo-trancou">Motivo Inativo: Trancou</option>
-                       <option value="motivo-inativo-desistente">Motivo Inativo: Desistente</option>
-                       <option value="motivo-inativo-pendente">Motivo Inativo: Pendente-$</option>
-                       <option value="motivo-inativo-finalizou">Motivo Inativo: Finalizou</option>
-                       <option value="motivo-inativo-diplomado">Motivo Inativo: Diplomado(a)</option>
+<body>
+
+    <!-- CABEÇALHO FIXO -->
+    <header>
+        <div class="header-left">
+            <div class="logo">To-do-ADM</div>
+            <div class="dropdown">
+                <button class="menu-button dropdown-toggle">Arquivo ▾</button>
+                <div class="dropdown-content">
+                    <input type="file" id="importFile" accept=".json" style="display: none;">
+                    <button id="importBtn" class="dropdown-item">Importar JSON...</button>
+                    <select id="exportSelect" class="dropdown-item">
+                        <option value="" disabled selected>Exportar como...</option>
+                        <option value="json">JSON</option>
+                        <option value="csv">CSV</option>
                     </select>
-                  </div>
-                  {/* New dropdown for view mode */}
-                  <div className="min-w-[200px]">
-                    <select
-                      value={viewMode}
-                      onChange={(e) => setViewMode(e.target.value)}
-                      className="filter-select w-full px-4 py-2 bg-gray-800/50 rounded-lg border border-gray-700 text-white"
-                    >
-                      <option value="active">Mostrar Ativos</option>
-                      <option value="inactive">Mostrar Inativos</option>
-                      <option value="archived">Mostrar Arquivados</option>
-                      <option value="all">Mostrar Todos</option>
-                    </select>
-                  </div>
                 </div>
-
-                {/* Student List */}
-                <div className="students-container">
-                  {filteredStudents.length > 0 ? (
-                    filteredStudents.map(student => (
-                      <StudentCard
-                        key={student.id}
-                        student={student}
-                        onEdit={setEditingStudent}
-                        onDelete={deleteStudent}
-                        isDuplicate={isDuplicateStudent(student)}
-                        isSelected={selectedStudentIds.has(student.id)}
-                        onSelect={handleStudentSelect}
-                        onToggleArchive={handleToggleArchive} // Pass the new toggle archive function
-                      />
-                    ))
-                  ) : (
-                    <p className="text-center py-8 text-gray-400">Nenhum aluno encontrado com os filtros aplicados.</p>
-                  )}
-                </div>
-              </main>
-
-              {/* Add/Edit Student Form (Full Page) */}
-              {editingStudent !== null && (
-                <AddEditStudentForm
-                  studentToEdit={editingStudent}
-                  onSave={saveStudent}
-                  onCancel={() => setEditingStudent(null)}
-                  getTagValue={getTagValue}
-                />
-              )}
-
-              {/* Floating Action Button */}
-              {editingStudent === null && ( // Only show FAB if not adding/editing
-                <button
-                  onClick={() => {
-                      console.log("FAB clicado, definindo editingStudent para objeto vazio");
-                      setEditingStudent({}); // Set to empty object for new student
-                  }}
-                  className="fab fixed bottom-6 right-6 bg-blue-600 hover:bg-blue-700 text-white rounded-full w-14 h-14 flex items-center justify-center shadow-lg transition-colors focus:outline-none z-50"
-                  aria-label="Adicionar aluno"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <line x1="12" y1="5" x2="12" y2="19"></line>
-                    <line x1="5" y1="12" x2="19" y2="12"></line>
-                  </svg>
-                </button>
-              )}
             </div>
-          );
-        }
+            <div class="dropdown">
+                <button class="menu-button dropdown-toggle ai-button">✨ IA ▾</button>
+                <div class="dropdown-content">
+                    <button id="generateTagsBtn" class="dropdown-item">Gerar/Atualizar Tags</button>
+                    <button id="smartFocusBtn" class="dropdown-item">Foco Inteligente</button>
+                </div>
+            </div>
+        </div>
+        <div class="header-right">
+            <div class="menu-item">
+                <label title="Ordenar por Prioridade" style="font-size: 1.5em; cursor: pointer; display: flex; align-items: center;">
+                    <input type="checkbox" id="prioritySortToggle" style="display: none;"> ⇅
+                </label>
+            </div>
+            <div class="search-container">
+                <input type="text" id="searchInput" placeholder="Buscar...">
+                <input type="checkbox" id="searchMode" title="Ativar busca por IA">
+            </div>
+            <div class="menu-item">
+                <select id="filterStatus">
+                    <option value="">Todos Status</option>
+                    <option value="Aberto">Aberto</option>
+                    <option value="Andamento">Em Andamento</option>
+                    <option value="Finalizado">Finalizado</option>
+                    <option value="Aguardando">Aguardando</option>
+                </select>
+            </div>
+            <div class="menu-item">
+                <label style="font-size: 0.8em; margin-right: 5px; display: flex; align-items: center; cursor: pointer;">
+                    <input type="checkbox" id="showCompleted" checked> Mostrar Finalizados
+                </label>
+            </div>
+            <div class="dropdown">
+                <button id="notificationBtn" class="menu-button dropdown-toggle">
+                    🔔
+                    <span id="notification-count" style="display: none;">0</span>
+                </button>
+                <div id="notification-list" class="dropdown-content">
+                    <!-- Notificações serão inseridas aqui -->
+                </div>
+            </div>
+            <div class="dropdown">
+                <button class="menu-button dropdown-toggle">⚙️</button>
+                <div class="dropdown-content">
+                    <button id="setApiKeyBtn" class="dropdown-item">Definir Chave de API</button>
+                    <button id="autoBackupBtn" class="dropdown-item">Backup Automático...</button>
+                    <button id="archiveTasksBtn" class="dropdown-item">Arquivar Concluídas (+30d)</button>
+                    <div class="dropdown-item">
+                        <label style="cursor: pointer; display: flex; align-items: center; width: 100%;">
+                            <input type="checkbox" id="showArchivedToggle" style="margin-right: 10px;"> Ver Arquivados
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
 
-        // Render the App component into the root div
-        const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<App />);
+    <!-- PAINEL KANBAN / LISTA -->
+    <main id="kanbanBoard"></main>
 
+    <!-- BOTÃO ADICIONAR FLUTUANTE -->
+    <button id="addTicketFab" class="fab">+</button>
+
+    <!-- MODAL PARA NOVO/EDITAR TICKET -->
+    <div id="ticketModal" class="modal">
+        <div class="modal-content">
+            <span class="close-button">&times;</span>
+            <h2 id="modalTitle">Novo Ticket</h2>
+            <form id="ticketForm">
+                <input type="hidden" id="ticketId">
+                <div class="form-grid">
+                    <div class="form-field full-width">
+                        <label for="ticketTitle">Título do Ticket</label>
+                        <input type="text" id="ticketTitle" required maxlength="38">
+                    </div>
+                    <div class="form-field">
+                        <label for="ticketStatus">Status</label>
+                        <select id="ticketStatus" required></select>
+                    </div>
+                     <div class="form-field">
+                        <label for="ticketPriority">Prioridade</label>
+                        <select id="ticketPriority" required>
+                            <option value="Baixa">Baixa</option>
+                            <option value="Media">Média</option>
+                            <option value="Alta">Alta</option>
+                        </select>
+                    </div>
+                     <div class="form-field">
+                        <label for="ticketStartDate">Data de Início</label>
+                        <input type="date" id="ticketStartDate" required>
+                    </div>
+                    <div class="form-field">
+                        <label for="ticketDeadline">Prazo Final</label>
+                        <input type="date" id="ticketDeadline" required>
+                    </div>
+                    <div class="form-field">
+                        <label for="ticketUser">Usuário</label>
+                        <input type="text" id="ticketUser">
+                    </div>
+                    <div class="form-field">
+                        <label for="ticketPassword">Senha</label>
+                        <input type="text" id="ticketPassword">
+                    </div>
+                    <div class="form-field full-width">
+                        <label for="ticketSubtasks">Sub-tarefas (uma por linha)</label>
+                        <textarea id="ticketSubtasks" rows="4"></textarea>
+                    </div>
+                    <div class="form-field full-width">
+                        <label>Status de Comunicação</label>
+                        <div class="checkbox-group">
+                            <label><input type="checkbox" id="ticketAviseiRegiana"> Avisei a Regiana</label>
+                            <label><input type="checkbox" id="ticketComuniqueiAluno"> Comuniquei o aluno</label>
+                            <label><input type="checkbox" id="ticketAguardandoRetorno"> Aguardando retorno do aluno</label>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-buttons">
+                    <button type="button" id="deleteTicketBtn" class="btn-delete" style="display:none;">Excluir</button>
+                    <button type="button" class="btn-cancel">Cancelar</button>
+                    <button type="submit" class="btn-save">Salvar</button>
+                </div>
+            </form>
+            <div id="ticket-history" class="modal-extra-section" style="display:none;">
+                <h4>Histórico de Alterações</h4>
+                <ul id="history-list"></ul>
+            </div>
+        </div>
+    </div>
+    
+    <!-- MODAL PARA CONFIRMAÇÃO E ALERTAS -->
+    <div id="alertModal" class="modal">
+        <div class="modal-content" style="max-width: 450px;">
+            <span class="close-button">&times;</span>
+            <h2 id="alertModalTitle">Atenção</h2>
+            <div id="alertModalMessage" style="margin: 20px 0; line-height: 1.5;"></div>
+            <div id="alertModalButtons" class="form-buttons">
+                <!-- Buttons will be injected here by JS -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- VARIÁVEIS E CONSTANTES GLOBAIS ---
+            const kanbanBoard = document.getElementById('kanbanBoard');
+            const ticketForm = document.getElementById('ticketForm');
+            const searchInput = document.getElementById('searchInput');
+            const searchMode = document.getElementById('searchMode');
+            const filterStatus = document.getElementById('filterStatus');
+            const addTicketFab = document.getElementById('addTicketFab');
+            const showCompletedCheckbox = document.getElementById('showCompleted');
+            const notificationList = document.getElementById('notification-list');
+            const notificationCount = document.getElementById('notification-count');
+            const prioritySortToggle = document.getElementById('prioritySortToggle');
+            const generateTagsBtn = document.getElementById('generateTagsBtn');
+            const smartFocusBtn = document.getElementById('smartFocusBtn');
+            const archiveTasksBtn = document.getElementById('archiveTasksBtn');
+            const showArchivedToggle = document.getElementById('showArchivedToggle');
+
+
+            let tickets = [];
+            let googleApiKey = '';
+            let editCount = 0;
+            let autoBackupCount = 5; // Default
+            const statuses = ['Aberto', 'Andamento', 'Aguardando', 'Finalizado'];
+            const statusColors = {
+                Aberto: 'var(--status-aberto)', Andamento: 'var(--status-andamento)',
+                Finalizado: 'var(--status-finalizado)', Aguardando: 'var(--status-aguardando)',
+            };
+            const priorityColors = {
+                Alta: 'var(--priority-alta)', Media: 'var(--priority-media)', Baixa: 'var(--priority-baixa)',
+            };
+            const tagColors = ['#4a4e69', '#9a8c98', '#c9ada7', '#f2e9e4', '#22223b'];
+            
+            // --- FUNÇÕES UTILITÁRIAS ---
+            const normalizeText = (text) => {
+                if (!text) return '';
+                return text
+                    .toLowerCase()
+                    .normalize("NFD")
+                    .replace(/[\u0300-\u036f]/g, "");
+            };
+            
+            const showModal = (title, message, buttons) => {
+                return new Promise((resolve) => {
+                    const modal = document.getElementById('alertModal');
+                    const modalTitle = document.getElementById('alertModalTitle');
+                    const modalMessage = document.getElementById('alertModalMessage');
+                    const modalButtons = document.getElementById('alertModalButtons');
+                    const closeButton = modal.querySelector('.close-button');
+
+                    modalTitle.textContent = title;
+                    modalMessage.innerHTML = message;
+                    modalButtons.innerHTML = ''; 
+
+                    const closeHandler = (value) => {
+                        modal.style.display = 'none';
+                        newCloseButton.removeEventListener('click', closeEventHandler);
+                        resolve(value);
+                    };
+                    
+                    const closeEventHandler = () => closeHandler(null);
+
+                    const newCloseButton = closeButton.cloneNode(true);
+                    closeButton.parentNode.replaceChild(newCloseButton, closeButton);
+                    newCloseButton.addEventListener('click', closeEventHandler);
+
+                    buttons.forEach(btnConfig => {
+                        const buttonEl = document.createElement('button');
+                        buttonEl.textContent = btnConfig.text;
+                        buttonEl.className = btnConfig.class;
+                        buttonEl.addEventListener('click', () => closeHandler(btnConfig.value));
+                        modalButtons.appendChild(buttonEl);
+                    });
+
+                    modal.style.display = 'block';
+                });
+            };
+
+
+            // --- FUNÇÕES DE LÓGICA DE DADOS ---
+            const loadData = () => {
+                const data = localStorage.getItem('todo-adm-tickets-v9');
+                googleApiKey = localStorage.getItem('todo-adm-google-api-key') || '';
+                autoBackupCount = parseInt(localStorage.getItem('todo-adm-autobackup-count') || '5', 10);
+                editCount = parseInt(localStorage.getItem('todo-adm-edit-count') || '0', 10);
+                tickets = data ? JSON.parse(data).map(normalizeTicket) : [];
+                renderNotifications();
+            };
+            
+            const normalizeTicket = (ticket) => {
+                let normalized = { ...ticket };
+
+                if (normalized.requirements) {
+                    if (typeof normalized.requirements === 'string') {
+                        normalized.subtasks = normalized.requirements.split(',')
+                            .map(name => name.trim()).filter(name => name)
+                            .map(name => ({ name: name, completed: false }));
+                    } else if (Array.isArray(normalized.requirements)) {
+                        normalized.subtasks = normalized.requirements.map(req => ({
+                            name: req.name,
+                            completed: req.completed || false
+                        }));
+                    }
+                    delete normalized.requirements;
+                }
+
+                if (!normalized.subtasks) normalized.subtasks = [];
+                if (!normalized.history) normalized.history = [];
+                if (typeof normalized.aviseiRegiana === 'undefined') normalized.aviseiRegiana = false;
+                if (typeof normalized.comuniqueiAluno === 'undefined') normalized.comuniqueiAluno = false;
+                if (typeof normalized.aguardandoRetorno === 'undefined') normalized.aguardandoRetorno = false;
+                if (!normalized.lastSeen) normalized.lastSeen = new Date().toISOString();
+                if (!normalized.user) normalized.user = '';
+                if (!normalized.password) normalized.password = '';
+                if (!normalized.tags) normalized.tags = [];
+                if (typeof normalized.archived === 'undefined') normalized.archived = false;
+                if (!normalized.completionDate) normalized.completionDate = null;
+
+
+                return normalized;
+            };
+
+            const saveData = (trackEdit = true) => {
+                localStorage.setItem('todo-adm-tickets-v9', JSON.stringify(tickets));
+                renderNotifications();
+
+                if (trackEdit && autoBackupCount > 0) {
+                    editCount++;
+                    localStorage.setItem('todo-adm-edit-count', editCount.toString());
+                    if (editCount >= autoBackupCount) {
+                        handleAutoBackup();
+                        editCount = 0; 
+                        localStorage.setItem('todo-adm-edit-count', '0');
+                    }
+                }
+            };
+            
+            const addLogEntry = (ticket, action, user = "Usuário") => {
+                if (!ticket.history) ticket.history = [];
+                ticket.history.unshift({ action, user, timestamp: new Date().toISOString() });
+                if (ticket.history.length > 20) ticket.history.pop();
+            };
+
+            // --- RENDERIZAÇÃO DA UI ---
+            const toggleUIForView = (isArchivedView) => {
+                addTicketFab.style.display = isArchivedView ? 'none' : 'block';
+                const controlsToToggle = [filterStatus, showCompletedCheckbox, searchInput, searchMode, prioritySortToggle, generateTagsBtn.parentElement.querySelector('.ai-button')];
+                controlsToToggle.forEach(control => {
+                    if (control) control.disabled = isArchivedView;
+                });
+
+                if (isArchivedView) {
+                    filterStatus.value = ''; // Reseta o filtro de status
+                }
+            };
+
+
+            const renderBoard = async () => {
+                const showArchived = showArchivedToggle.checked;
+                toggleUIForView(showArchived);
+
+                const filteredTickets = await getFilteredTickets();
+                kanbanBoard.innerHTML = ''; 
+
+                if (showArchived) {
+                    kanbanBoard.innerHTML = '<h2 style="padding: 20px 20px 0; color: #aaa;">Tarefas Arquivadas</h2>';
+                    renderListView(filteredTickets);
+                } else if (filterStatus.value) { 
+                    renderListView(filteredTickets.filter(t => t.status === filterStatus.value));
+                } else { 
+                    renderKanbanView(filteredTickets);
+                    setupDragAndDrop();
+                }
+            };
+
+            const renderKanbanView = (filteredTickets) => {
+                kanbanBoard.className = ''; 
+                kanbanBoard.style.padding = '20px'; 
+                if (filteredTickets.length === 0 && tickets.length > 0 && !showArchivedToggle.checked) {
+                    kanbanBoard.innerHTML = '<p style="padding: 20px; color: #aaa;">Nenhum ticket encontrado com os filtros atuais.</p>';
+                }
+                
+                const visibleStatuses = statuses;
+
+                visibleStatuses.forEach(status => {
+                    if (!showCompletedCheckbox.checked && status === 'Finalizado') return;
+                    
+                    const column = document.createElement('div');
+                    column.className = 'status-column';
+                    column.id = `column-${status.replace(/\s+/g, '')}`;
+                    column.dataset.status = status;
+                    column.style.borderColor = statusColors[status];
+
+                    const ticketsInColumn = filteredTickets.filter(t => t.status === status);
+
+                    if (prioritySortToggle.checked) {
+                        const priorityOrder = { 'Alta': 0, 'Media': 1, 'Baixa': 2 };
+                        ticketsInColumn.sort((a, b) => priorityOrder[a.priority] - priorityOrder[b.priority]);
+                    }
+
+                    column.innerHTML = `
+                        <div class="column-header">
+                            <span>${status}</span>
+                            <span class="ticket-count">${ticketsInColumn.length}</span>
+                        </div>
+                        <div class="tickets-container"></div>
+                    `;
+                    kanbanBoard.appendChild(column);
+                    
+                    const ticketsContainer = column.querySelector('.tickets-container');
+                    ticketsInColumn.forEach(ticket => {
+                        const ticketCard = createTicketCard(ticket);
+                        ticketsContainer.appendChild(ticketCard);
+                    });
+                });
+            };
+
+            const renderListView = (ticketsToList) => {
+                const isArchivedView = showArchivedToggle.checked;
+                kanbanBoard.className = 'list-view';
+                if(!isArchivedView) kanbanBoard.style.padding = '0'; 
+                
+                if (ticketsToList.length === 0) {
+                     if (!isArchivedView) {
+                        kanbanBoard.innerHTML = '<p style="padding: 20px; color: #aaa;">Nenhum ticket encontrado para este status.</p>';
+                     }
+                    return;
+                }
+
+                if (prioritySortToggle.checked && !isArchivedView) {
+                    const priorityOrder = { 'Alta': 0, 'Media': 1, 'Baixa': 2 };
+                    ticketsToList.sort((a, b) => priorityOrder[a.priority] - priorityOrder[b.priority]);
+                }
+                
+                ticketsToList.forEach(ticket => {
+                    const ticketRow = createTicketRow(ticket);
+                    kanbanBoard.appendChild(ticketRow);
+                });
+            };
+
+            const createChecklistHTML = (subtasks, ticketId, isListView = false) => {
+                if (!subtasks || subtasks.length === 0) return null;
+
+                const sortedTasks = [...subtasks].sort((a, b) => a.completed - b.completed);
+                const completedCount = subtasks.filter(t => t.completed).length;
+                const totalCount = subtasks.length;
+                const progress = totalCount > 0 ? (completedCount / totalCount) * 100 : 0;
+
+                const itemsHTML = sortedTasks.map((task, index) => `
+                    <div class="checklist-item">
+                        <input type="checkbox" id="task-${ticketId}-${index}" data-task-name="${task.name}" ${task.completed ? 'checked' : ''}>
+                        <label for="task-${ticketId}-${index}">${task.name}</label>
+                    </div>
+                `).join('');
+
+                const progressHTML = `
+                    <div class="checklist-progress">
+                        <span>${completedCount}/${totalCount}</span>
+                        <div class="progress-bar">
+                            <div class="progress-bar-inner" style="width: ${progress}%;"></div>
+                        </div>
+                    </div>
+                `;
+
+                const itemsContainerHTML = `
+                    <div class="checklist-items">
+                        ${itemsHTML}
+                    </div>
+                    ${sortedTasks.length > (isListView ? 2 : 3) ? '<button class="toggle-checklist">Ver mais...</button>' : ''}
+                `;
+
+                return { progressHTML, itemsContainerHTML };
+            };
+            
+            const createCopyIconHTML = (type, value) => {
+                if (type === 'usuário') {
+                    const iconSVG = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M8 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm2-3a2 2 0 1 1-4 0 2 2 0 0 1 4 0zm4 8c0 1-1 1-1 1H3s-1 0-1-1 1-4 6-4 6 3 6 4zm-1-.004c-.001-.246-.154-.986-.832-1.664C11.516 10.68 10.289 10 8 10c-2.29 0-3.516.68-4.168 1.332-.678.678-.83 1.418-.832 1.664h10z"/></svg>';
+                    return `<span class="copy-icon" title="Copiar ${type}" data-copy="${value}">${iconSVG}</span>`;
+                } else if (type === 'senha') {
+                    return `<span class="copy-icon key-icon" title="Copiar ${type}" data-copy="${value}">🗝️</span>`;
+                }
+                return '';
+            };
+
+            const createTagsHTML = (tags) => {
+                if (!tags || tags.length === 0) return '';
+                const tagsHTML = tags.map((tag, index) => {
+                    const color = tagColors[index % tagColors.length];
+                    return `<span class="tag-item" style="border-color: ${color}; color: ${color};">${tag}</span>`;
+                }).join('');
+                return `<div class="tags-container">${tagsHTML}</div>`;
+            };
+
+            const createTicketCard = (ticket) => {
+                const card = document.createElement('div');
+                card.className = 'ticket-card';
+                card.draggable = true;
+                card.dataset.id = ticket.id;
+                card.style.borderColor = statusColors[ticket.status];
+
+                const now = new Date();
+                const deadline = new Date(ticket.deadline);
+                const isOverdue = deadline < now && ticket.status !== 'Finalizado';
+                const nearingDeadline = !isOverdue && (deadline - now) / (1000 * 3600) <= 24 && ticket.status !== 'Finalizado';
+                
+                let communicationHTML = '';
+                if (ticket.aviseiRegiana || ticket.comuniqueiAluno || ticket.aguardandoRetorno) {
+                    communicationHTML += '<div class="communication-status">';
+                    if (ticket.aviseiRegiana) communicationHTML += '<span class="comm-icon" title="Regiana foi avisada">R</span>';
+                    if (ticket.comuniqueiAluno) communicationHTML += '<span class="comm-icon" title="Aluno comunicado">A</span>';
+                    if (ticket.aguardandoRetorno) communicationHTML += '<span class="comm-icon" title="Aguardando retorno do aluno">⏳</span>';
+                    communicationHTML += '</div>';
+                }
+
+                let iconsHTML = '';
+                if (ticket.user) iconsHTML += createCopyIconHTML('usuário', ticket.user);
+                if (ticket.password) iconsHTML += createCopyIconHTML('senha', ticket.password);
+
+                const iconGroupContent = iconsHTML + communicationHTML;
+                const iconGroupHTML = iconGroupContent ? `<div class="icon-group">${iconGroupContent}</div>` : '';
+
+
+                const checklist = createChecklistHTML(ticket.subtasks, ticket.id, false);
+                const checklistHTML = checklist ? `
+                    <div class="checklist">
+                        ${checklist.progressHTML}
+                        ${checklist.itemsContainerHTML}
+                    </div>` : '';
+                
+                const tagsHTML = createTagsHTML(ticket.tags);
+
+
+                card.innerHTML = `
+                    <div class="ticket-header">
+                        <select data-id="${ticket.id}" class="card-status-select">
+                            ${statuses.map(s => `<option value="${s}" ${s === ticket.status ? 'selected' : ''}>${s}</option>`).join('')}
+                        </select>
+                        <span class="ticket-priority" style="background-color: ${priorityColors[ticket.priority]}">${ticket.priority}</span>
+                    </div>
+                    <div class="ticket-content">
+                        <strong>${ticket.title}</strong>
+                        ${checklistHTML}
+                        ${tagsHTML}
+                    </div>
+                    <div class="ticket-footer">
+                        <div class="footer-left">
+                           ${iconGroupHTML}
+                           <span class="last-seen">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M16 8s-3-5.5-8-5.5S0 8 0 8s3 5.5 8 5.5S16 8 16 8zM1.173 8a13.133 13.133 0 0 1 1.66-2.043C4.12 4.668 5.88 3.5 8 3.5c2.12 0 3.879 1.168 5.168 2.457A13.133 13.133 0 0 1 14.828 8c-.058.087-.122.183-.195.288-.335.48-.83 1.12-1.465 1.755C11.879 11.332 10.119 12.5 8 12.5c-2.12 0-3.879-1.168-5.168-2.457A13.134 13.134 0 0 1 1.172 8z"/><path d="M8 5.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5zM4.5 8a3.5 3.5 0 1 1 7 0 3.5 3.5 0 0 1-7 0z"/></svg>
+                                <span class="last-seen-text">${formatTimeAgo(ticket.lastSeen)}</span>
+                           </span>
+                        </div>
+                        <div class="deadline-wrapper ${isOverdue || nearingDeadline ? 'alert' : ''}">
+                            <span>Prazo: ${new Date(ticket.deadline).toLocaleDateString()}</span>
+                        </div>
+                    </div>
+                `;
+                
+                card.querySelector('.card-status-select').addEventListener('click', (e) => e.stopPropagation());
+                card.querySelector('.card-status-select').addEventListener('change', handleQuickStatusChange);
+
+                card.addEventListener('click', (e) => {
+                    if (e.target.closest('.copy-icon')) {
+                        return;
+                    }
+                    if (e.target.classList.contains('toggle-checklist')) {
+                         e.stopPropagation();
+                         const container = e.target.previousElementSibling;
+                         container.classList.toggle('expanded');
+                         e.target.textContent = container.classList.contains('expanded') ? 'Ver menos' : 'Ver mais...';
+                    } else if (e.target.matches('.checklist-item, .checklist-item *')) {
+                        e.stopPropagation();
+                        const item = e.target.closest('.checklist-item');
+                        const checkbox = item.querySelector('input[type="checkbox"]');
+                        if (e.target !== checkbox) {
+                            checkbox.checked = !checkbox.checked;
+                        }
+                        handleSubtaskCheck(ticket.id, checkbox.dataset.taskName, checkbox.checked);
+                    } else {
+                        handleMarkAsSeen(ticket.id);
+                        openModal('ticketModal', ticket.id);
+                    }
+                });
+
+                return card;
+            };
+
+            const createTicketRow = (ticket) => {
+                const row = document.createElement('div');
+                row.className = 'ticket-row';
+                row.dataset.id = ticket.id;
+                row.style.borderColor = statusColors[ticket.status];
+
+                const now = new Date();
+                const deadline = new Date(ticket.deadline);
+                const isOverdue = deadline < now && ticket.status !== 'Finalizado' && !ticket.archived;
+                const nearingDeadline = !isOverdue && (deadline - now) / (1000 * 3600) <= 24 && ticket.status !== 'Finalizado' && !ticket.archived;
+
+                let communicationHTML = '';
+                if (ticket.aviseiRegiana || ticket.comuniqueiAluno || ticket.aguardandoRetorno) {
+                    communicationHTML += '<div class="communication-status">';
+                    if (ticket.aviseiRegiana) communicationHTML += '<span class="comm-icon" title="Regiana foi avisada">R</span>';
+                    if (ticket.comuniqueiAluno) communicationHTML += '<span class="comm-icon" title="Aluno comunicado">A</span>';
+                    if (ticket.aguardandoRetorno) communicationHTML += '<span class="comm-icon" title="Aguardando retorno do aluno">⏳</span>';
+                    communicationHTML += '</div>';
+                }
+
+                let iconsHTML = '';
+                if (ticket.user) iconsHTML += createCopyIconHTML('usuário', ticket.user);
+                if (ticket.password) iconsHTML += createCopyIconHTML('senha', ticket.password);
+
+                const iconGroupContent = iconsHTML + communicationHTML;
+                const iconGroupHTML = iconGroupContent ? `<div class="icon-group">${iconGroupContent}</div>` : '';
+
+                const checklist = createChecklistHTML(ticket.subtasks, ticket.id, true);
+                const checklistProgressHTML = checklist ? checklist.progressHTML : '<div style="width: 120px;"></div>'; // Placeholder for alignment
+                
+                const tagsHTML = createTagsHTML(ticket.tags);
+
+                const bottomContent = (checklist ? checklist.itemsContainerHTML : '') + tagsHTML;
+                const checklistItemsHTML = bottomContent ? `<div class="ticket-row-bottom">${bottomContent}</div>` : '';
+
+
+                row.innerHTML = `
+                    <div class="ticket-row-top">
+                        <div class="ticket-row-left">
+                            <strong>${ticket.title}</strong>
+                        </div>
+                        <div class="ticket-row-right">
+                            ${iconGroupHTML}
+                            ${checklistProgressHTML}
+                            <span class="last-seen" title="Última visualização">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M16 8s-3-5.5-8-5.5S0 8 0 8s3 5.5 8 5.5S16 8 16 8zM1.173 8a13.133 13.133 0 0 1 1.66-2.043C4.12 4.668 5.88 3.5 8 3.5c2.12 0 3.879 1.168 5.168 2.457A13.133 13.133 0 0 1 14.828 8c-.058.087-.122.183-.195.288-.335.48-.83 1.12-1.465 1.755C11.879 11.332 10.119 12.5 8 12.5c-2.12 0-3.879-1.168-5.168-2.457A13.134 13.134 0 0 1 1.172 8z"/><path d="M8 5.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5zM4.5 8a3.5 3.5 0 1 1 7 0 3.5 3.5 0 0 1-7 0z"/></svg>
+                                <span class="last-seen-text">${formatTimeAgo(ticket.lastSeen)}</span>
+                            </span>
+                            <span class="ticket-priority" style="background-color: ${priorityColors[ticket.priority]}">${ticket.priority}</span>
+                            <div class="deadline-wrapper ${isOverdue || nearingDeadline ? 'alert' : ''}">
+                                <span>${ticket.archived ? `Concluído: ${new Date(ticket.completionDate).toLocaleDateString()}` : `Prazo: ${new Date(ticket.deadline).toLocaleDateString()}`}</span>
+                            </div>
+                            <select data-id="${ticket.id}" class="card-status-select" ${ticket.archived ? 'disabled' : ''}>
+                                ${statuses.map(s => `<option value="${s}" ${s === ticket.status ? 'selected' : ''}>${s}</option>`).join('')}
+                            </select>
+                        </div>
+                    </div>
+                    ${checklistItemsHTML}
+                `;
+
+                row.querySelector('.ticket-row-top').addEventListener('click', (e) => {
+                    if (e.target.closest('.card-status-select, .comm-icon, .copy-icon, .toggle-checklist')) {
+                        return;
+                    }
+                    handleMarkAsSeen(ticket.id);
+                    openModal('ticketModal', ticket.id);
+                });
+
+                row.querySelector('.card-status-select').addEventListener('change', handleQuickStatusChange);
+
+                if (checklist) {
+                    const toggleBtn = row.querySelector('.toggle-checklist');
+                    if (toggleBtn) {
+                        toggleBtn.addEventListener('click', (e) => {
+                            e.stopPropagation();
+                            const container = row.querySelector('.checklist-items');
+                            container.classList.toggle('expanded');
+                            toggleBtn.textContent = container.classList.contains('expanded') ? 'Ver menos' : 'Ver mais...';
+                        });
+                    }
+                    row.querySelectorAll('.checklist-item').forEach(item => {
+                        item.addEventListener('click', e => {
+                            e.stopPropagation();
+                            const checkbox = item.querySelector('input[type="checkbox"]');
+                            if (e.target !== checkbox) checkbox.checked = !checkbox.checked;
+                            handleSubtaskCheck(ticket.id, checkbox.dataset.taskName, checkbox.checked);
+                        });
+                    });
+                }
+
+                return row;
+            };
+
+            const getFilteredTickets = async () => {
+                const showArchived = showArchivedToggle.checked;
+                let baseTickets = tickets.filter(t => t.archived === showArchived);
+
+                if (showArchived) {
+                    baseTickets.sort((a, b) => new Date(b.completionDate) - new Date(a.completionDate));
+                    return baseTickets;
+                }
+
+                const normalizedSearchTerm = normalizeText(searchInput.value);
+                
+                if (searchMode.checked && normalizedSearchTerm) {
+                    searchInput.disabled = true;
+                    searchInput.placeholder = 'Pesquisando com IA...';
+                    try {
+                        const aiFilteredIds = await performAISearch(normalizedSearchTerm, baseTickets);
+                        baseTickets = baseTickets.filter(t => aiFilteredIds.includes(t.id));
+                    } catch (error) {
+                        await showModal('Erro na Busca', `Erro na busca com IA: ${error.message}`, [{ text: 'OK', value: 'ok', class: 'btn-cancel' }]);
+                    } finally {
+                        searchInput.disabled = false;
+                        searchInput.placeholder = 'Buscar...';
+                    }
+                } else if (normalizedSearchTerm) {
+                    baseTickets = baseTickets.filter(ticket => 
+                        (normalizeText(ticket.title).includes(normalizedSearchTerm)) ||
+                        (ticket.subtasks && ticket.subtasks.some(r => normalizeText(r.name).includes(normalizedSearchTerm)))
+                    );
+                }
+
+                return baseTickets.filter(ticket => {
+                    return showCompletedCheckbox.checked || ticket.status !== 'Finalizado';
+                });
+            };
+
+            // --- LÓGICA DE IA ---
+            const performAISearch = async (query, ticketsToSearch) => {
+                if (!googleApiKey) throw new Error("Chave de API do Google não definida. Por favor, defina nas configurações.");
+                
+                const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${googleApiKey}`;
+                
+                const simplifiedTickets = ticketsToSearch.map(({ id, title, subtasks, priority, deadline }) => ({ 
+                    id, 
+                    title, 
+                    subtasks: subtasks.map(r => r.name).join(', '), 
+                    priority, 
+                    deadline 
+                }));
+
+                const prompt = `Você é um assistente de kanban. Analise as tarefas JSON. A data atual é ${new Date().toLocaleDateString()}. Pesquisa do usuário: "${query}". Retorne um array JSON com os IDs das tarefas mais relevantes. Lista: ${JSON.stringify(simplifiedTickets)}. Responda apenas com o array de IDs.`;
+
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { response_mime_type: "application/json" } })
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.error.message || "Erro na API do Google.");
+                }
+
+                const data = await response.json();
+                return JSON.parse(data.candidates[0].content.parts[0].text);
+            };
+
+            const generateTagsForTicket = async (ticket) => {
+                if (!googleApiKey) {
+                    console.error("Chave de API do Google não definida.");
+                    return;
+                }
+
+                const pendingSubtasks = ticket.subtasks.filter(st => !st.completed).map(st => st.name);
+                if (pendingSubtasks.length === 0) {
+                    ticket.tags = [];
+                    return;
+                }
+                
+                const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${googleApiKey}`;
+                const subtasksText = pendingSubtasks.join(', ');
+                const prompt = `Analise a seguinte lista de tarefas pendentes: "${subtasksText}". Com base nelas, gere até 4 tags curtas de uma ou duas palavras que resumam os temas principais. Retorne as tags em um array JSON. Exemplo: ["Contrato", "Financeiro", "Documentação"]`;
+
+                try {
+                    const response = await fetch(API_URL, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { response_mime_type: "application/json" } })
+                    });
+                    if (!response.ok) {
+                        const error = await response.json();
+                        throw new Error(error.error.message || "Erro ao gerar tags.");
+                    }
+                    const data = await response.json();
+                    const newTags = JSON.parse(data.candidates[0].content.parts[0].text);
+                    if (Array.isArray(newTags)) {
+                        ticket.tags = newTags;
+                    }
+                } catch (error) {
+                    console.error(`Erro ao gerar tags para o ticket ${ticket.id}:`, error);
+                }
+            };
+
+            const handleSmartFocus = async () => {
+                if (!googleApiKey) {
+                    await showModal('Aviso', 'Por favor, defina sua Chave de API do Google nas configurações (⚙️) antes de usar as funções de IA.', [{ text: 'OK', value: 'ok', class: 'btn-cancel' }]);
+                    return;
+                }
+
+                const activeTickets = tickets.filter(t => t.status !== 'Finalizado' && !t.archived);
+
+                if (activeTickets.length === 0) {
+                    await showModal('Foco Inteligente', 'Parabéns! Você não tem nenhuma tarefa ativa para focar.', [{ text: 'OK', value: 'ok', class: 'btn-save' }]);
+                    return;
+                }
+
+                smartFocusBtn.textContent = 'Analisando...';
+                smartFocusBtn.disabled = true;
+
+                try {
+                    const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${googleApiKey}`;
+                    const simplifiedTickets = activeTickets.map(({ id, title, priority, deadline, status }) => ({ id, title, priority, deadline, status }));
+                    const today = new Date().toISOString().split('T')[0];
+                    const prompt = `Você é um assistente de produtividade. A data de hoje é ${today}. Com base na lista de tarefas a seguir, qual é a tarefa MAIS IMPORTANTE que o usuário deve focar agora? Considere a prioridade mais alta e o prazo mais próximo como fatores principais. Retorne APENAS o 'id' da tarefa sugerida em formato JSON, como {"id": "12345"}. Lista de tarefas: ${JSON.stringify(simplifiedTickets)}`;
+
+                    const response = await fetch(API_URL, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { response_mime_type: "application/json" } })
+                    });
+
+                    if (!response.ok) {
+                        const error = await response.json();
+                        throw new Error(error.error.message || "Erro na API.");
+                    }
+
+                    const data = await response.json();
+                    const result = JSON.parse(data.candidates[0].content.parts[0].text);
+                    const recommendedId = result.id;
+                    
+                    if (showArchivedToggle.checked) {
+                        showArchivedToggle.checked = false;
+                        await renderBoard();
+                    }
+                    
+                    const cardToHighlight = document.querySelector(`.ticket-card[data-id="${recommendedId}"], .ticket-row[data-id="${recommendedId}"]`);
+                    
+                    if (cardToHighlight) {
+                        cardToHighlight.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        cardToHighlight.classList.add('focus-highlight');
+                        setTimeout(() => cardToHighlight.classList.remove('focus-highlight'), 2000);
+                    } else {
+                         const recommendedTicket = tickets.find(t => t.id === recommendedId);
+                         await showModal('Foco Inteligente', `A próxima tarefa sugerida é: "${recommendedTicket.title}". Ela não está visível na sua visualização atual.`, [{ text: 'OK', value: 'ok', class: 'btn-cancel' }]);
+                    }
+
+                } catch (error) {
+                    await showModal('Erro', `Não foi possível sugerir uma tarefa: ${error.message}`, [{ text: 'OK', value: 'ok', class: 'btn-cancel' }]);
+                } finally {
+                    smartFocusBtn.textContent = 'Foco Inteligente';
+                    smartFocusBtn.disabled = false;
+                }
+            };
+
+
+            // --- NOTIFICAÇÕES ---
+            const renderNotifications = () => {
+                notificationList.innerHTML = '';
+                const now = new Date();
+                let count = 0;
+
+                const urgentTickets = tickets.filter(ticket => {
+                    if (ticket.status === 'Finalizado' || ticket.archived) return false;
+                    const deadline = new Date(ticket.deadline);
+                    const hoursRemaining = (deadline - now) / (1000 * 3600);
+                    return hoursRemaining <= 24;
+                });
+
+                if (urgentTickets.length === 0) {
+                    notificationList.innerHTML = '<div class="notification-item"><p>Nenhuma notificação</p></div>';
+                    notificationCount.style.display = 'none';
+                    return;
+                }
+
+                urgentTickets.sort((a, b) => new Date(a.deadline) - new Date(b.deadline));
+
+                urgentTickets.forEach(ticket => {
+                    const deadline = new Date(ticket.deadline);
+                    const isOverdue = deadline < now;
+                    const message = isOverdue ? 'Ticket Atrasado!' : 'Vence em menos de 24h!';
+                    
+                    const item = document.createElement('div');
+                    item.className = 'notification-item';
+                    item.dataset.ticketId = ticket.id;
+                    item.innerHTML = `
+                        <div class="notification-info">
+                            <p><strong>${ticket.title}</strong></p>
+                            <small style="color: ${isOverdue ? 'var(--priority-alta)' : 'var(--status-aberto)'}">${message}</small>
+                        </div>
+                        <select data-id="${ticket.id}" class="card-status-select">
+                            ${statuses.map(s => `<option value="${s}" ${s === ticket.status ? 'selected' : ''}>${s}</option>`).join('')}
+                        </select>
+                    `;
+                    notificationList.appendChild(item);
+                });
+
+                count = urgentTickets.length;
+                notificationCount.textContent = count;
+                notificationCount.style.display = count > 0 ? 'flex' : 'none';
+            };
+
+            const requestNotificationPermission = () => {
+                if ('Notification' in window && Notification.permission !== 'granted' && Notification.permission !== 'denied') {
+                    Notification.requestPermission();
+                }
+            };
+
+            const checkDeadlinesForDesktop = () => {
+                const now = new Date();
+                tickets.forEach(ticket => {
+                    if (ticket.status === 'Finalizado' || ticket.archived) return;
+                    const deadline = new Date(ticket.deadline);
+                    const hoursRemaining = (deadline - now) / (1000 * 3600);
+                    if (hoursRemaining > 0 && hoursRemaining <= 24) {
+                        showDesktopNotification(`Ticket próximo do prazo: "${ticket.title}"`, `O prazo termina em menos de 24 horas.`);
+                    }
+                });
+            };
+
+            const showDesktopNotification = (title, body) => {
+                if ('Notification' in window && Notification.permission === 'granted') {
+                    new Notification(title, { body });
+                }
+            };
+
+            // --- MODAL E FORMULÁRIOS ---
+            const openModal = (modalId, ticketId = null) => {
+                const modal = document.getElementById(modalId);
+                if (modalId === 'ticketModal') setupTicketModal(ticketId);
+                modal.style.display = 'block';
+            };
+
+            const closeModal = (modalId) => document.getElementById(modalId).style.display = 'none';
+
+            const setupTicketModal = (ticketId) => {
+                ticketForm.reset();
+                document.getElementById('ticket-history').style.display = 'none';
+                document.getElementById('ticketStatus').innerHTML = statuses.map(s => `<option value="${s}">${s}</option>`).join('');
+
+                if (ticketId) {
+                    const ticket = tickets.find(t => t.id === ticketId);
+                    document.getElementById('modalTitle').textContent = 'Editar Ticket';
+                    
+                    document.getElementById('ticketId').value = ticket.id;
+                    document.getElementById('ticketTitle').value = ticket.title;
+                    document.getElementById('ticketStatus').value = ticket.status;
+                    document.getElementById('ticketPriority').value = ticket.priority;
+                    document.getElementById('ticketStartDate').value = ticket.startDate;
+                    document.getElementById('ticketDeadline').value = ticket.deadline;
+                    document.getElementById('ticketUser').value = ticket.user || '';
+                    document.getElementById('ticketPassword').value = ticket.password || '';
+                    document.getElementById('ticketAviseiRegiana').checked = ticket.aviseiRegiana;
+                    document.getElementById('ticketComuniqueiAluno').checked = ticket.comuniqueiAluno;
+                    document.getElementById('ticketAguardandoRetorno').checked = ticket.aguardandoRetorno;
+                    
+                    if (Array.isArray(ticket.subtasks)) {
+                        document.getElementById('ticketSubtasks').value = ticket.subtasks.map(r => r.name).join('\n');
+                    } else {
+                         document.getElementById('ticketSubtasks').value = '';
+                    }
+
+                    if (ticket.history?.length > 0) renderHistoryInModal(ticket.history);
+                    document.getElementById('deleteTicketBtn').style.display = 'inline-block';
+                } else {
+                    document.getElementById('modalTitle').textContent = 'Novo Ticket';
+                    document.getElementById('ticketId').value = '';
+                    document.getElementById('ticketStartDate').value = new Date().toISOString().split('T')[0];
+                    document.getElementById('deleteTicketBtn').style.display = 'none';
+                }
+            };
+            
+            const renderHistoryInModal = (history) => {
+                const historyContainer = document.getElementById('ticket-history');
+                historyContainer.style.display = 'block';
+                document.getElementById('history-list').innerHTML = history.map(log => 
+                    `<li>${new Date(log.timestamp).toLocaleString()}: ${log.action} (por ${log.user})</li>`
+                ).join('');
+            };
+
+            // --- HANDLERS DE EVENTOS ---
+            const capitalizeWords = (str) => {
+                return str.toLowerCase().replace(/\b\w/g, char => char.toUpperCase());
+            };
+
+            const handleFormSubmit = async (e) => {
+                e.preventDefault();
+                const id = document.getElementById('ticketId').value;
+                const newTitle = capitalizeWords(document.getElementById('ticketTitle').value.trim());
+
+                const normalizedNewTitle = newTitle.toLowerCase();
+                const isDuplicate = tickets.some(ticket => 
+                    ticket.id !== id && 
+                    ticket.title.toLowerCase() === normalizedNewTitle &&
+                    !ticket.archived
+                );
+
+                if (isDuplicate) {
+                    await showModal('Título Duplicado', 'Já existe um card ativo com este título. Por favor, use um título diferente.', [{ text: 'OK', value: 'ok', class: 'btn-cancel' }]);
+                    return;
+                }
+                
+                const originalTicket = id ? { ...tickets.find(t => t.id === id) } : null;
+                
+                const newSubtasksString = document.getElementById('ticketSubtasks').value.trim();
+                const newSubtasksNames = newSubtasksString.split('\n').map(name => name.trim()).filter(name => name);
+                
+                const newSubtasks = newSubtasksNames.map(name => {
+                    const existingTask = originalTicket?.subtasks.find(r => r.name === name);
+                    return { name: name, completed: existingTask ? existingTask.completed : false };
+                });
+
+                const ticketData = {
+                    id: id || Date.now().toString(),
+                    title: newTitle,
+                    status: document.getElementById('ticketStatus').value,
+                    startDate: document.getElementById('ticketStartDate').value,
+                    deadline: document.getElementById('ticketDeadline').value,
+                    priority: document.getElementById('ticketPriority').value,
+                    user: document.getElementById('ticketUser').value.trim(),
+                    password: document.getElementById('ticketPassword').value.trim(),
+                    subtasks: newSubtasks,
+                    aviseiRegiana: document.getElementById('ticketAviseiRegiana').checked,
+                    comuniqueiAluno: document.getElementById('ticketComuniqueiAluno').checked,
+                    aguardandoRetorno: document.getElementById('ticketAguardandoRetorno').checked,
+                    history: originalTicket?.history || [],
+                    tags: originalTicket?.tags || [],
+                    archived: originalTicket?.archived || false,
+                    lastSeen: new Date().toISOString()
+                };
+
+                // Lógica de Data de Conclusão
+                if (originalTicket && originalTicket.status !== 'Finalizado' && ticketData.status === 'Finalizado') {
+                    ticketData.completionDate = new Date().toISOString();
+                } else if (originalTicket && originalTicket.status === 'Finalizado' && ticketData.status !== 'Finalizado') {
+                    ticketData.completionDate = null;
+                } else {
+                    ticketData.completionDate = originalTicket?.completionDate || null;
+                }
+
+
+                await generateTagsForTicket(ticketData);
+
+                if (id) {
+                    const index = tickets.findIndex(t => t.id === id);
+                    const changes = getChanges(originalTicket, ticketData);
+                    if (changes) addLogEntry(ticketData, `Ticket editado: ${changes}`);
+                    tickets[index] = ticketData;
+                } else {
+                    addLogEntry(ticketData, 'Ticket criado.');
+                    tickets.push(ticketData);
+                }
+                saveData();
+                renderBoard();
+                closeModal('ticketModal');
+            };
+            
+            const getChanges = (oldT, newT) => Object.keys(newT).filter(key => key !== 'history' && JSON.stringify(oldT[key]) !== JSON.stringify(newT[key])).map(key => `${key} alterado`).join(', ');
+
+            const handleDeleteTicket = async () => {
+                const choice = await showModal(
+                    'Excluir Ticket',
+                    'Tem certeza que deseja excluir este ticket? Esta ação não pode ser desfeita.',
+                    [
+                        { text: 'Excluir', value: 'delete', class: 'btn-delete' },
+                        { text: 'Cancelar', value: null, class: 'btn-cancel' }
+                    ]
+                );
+
+                if (choice === 'delete') {
+                    const id = document.getElementById('ticketId').value;
+                    tickets = tickets.filter(t => t.id !== id);
+                    saveData();
+                    renderBoard();
+                    closeModal('ticketModal');
+                }
+            };
+            
+            const handleSetApiKey = async () => {
+                const message = `
+                    <p>Insira sua chave de API do Google AI Studio:</p>
+                    <input type="text" id="apiKeyInput" class="form-field" style="width: 100%; margin-top: 10px;" value="${googleApiKey}">
+                `;
+                const choice = await showModal(
+                    'Definir Chave de API',
+                    message,
+                    [
+                        { text: 'Salvar', value: 'save', class: 'btn-save' },
+                        { text: 'Cancelar', value: null, class: 'btn-cancel' }
+                    ]
+                );
+
+                if (choice === 'save') {
+                    const key = document.getElementById('apiKeyInput').value;
+                    if (key !== null) {
+                        googleApiKey = key.trim();
+                        localStorage.setItem('todo-adm-google-api-key', googleApiKey);
+                        await showModal('Sucesso', 'Chave de API salva com sucesso!', [{ text: 'OK', value: 'ok', class: 'btn-save' }]);
+                    }
+                }
+            };
+
+            const handleQuickStatusChange = (e) => {
+                e.stopPropagation();
+                const ticketId = e.target.dataset.id;
+                const newStatus = e.target.value;
+                const ticketToUpdate = tickets.find(t => t.id === ticketId);
+
+                if (ticketToUpdate && ticketToUpdate.status !== newStatus) {
+                    addLogEntry(ticketToUpdate, `Status alterado de "${ticketToUpdate.status}" para "${newStatus}"`);
+                    const oldStatus = ticketToUpdate.status;
+                    ticketToUpdate.status = newStatus;
+
+                    if (newStatus === 'Finalizado' && oldStatus !== 'Finalizado') {
+                        ticketToUpdate.completionDate = new Date().toISOString();
+                    } else if (newStatus !== 'Finalizado' && oldStatus === 'Finalizado') {
+                        ticketToUpdate.completionDate = null;
+                    }
+
+                    updateLastSeenTimestamp(ticketToUpdate);
+                    saveData();
+                    renderBoard();
+                }
+            };
+
+            const handleSubtaskCheck = async (ticketId, taskName, isChecked) => {
+                const ticket = tickets.find(t => t.id === ticketId);
+                if (!ticket) return;
+
+                const task = ticket.subtasks.find(r => r.name === taskName);
+                if (!task) return;
+
+                task.completed = isChecked;
+                addLogEntry(ticket, `Sub-tarefa "${taskName}" marcada como ${task.completed ? 'concluída' : 'pendente'}.`);
+                updateLastSeenTimestamp(ticket);
+                
+                await generateTagsForTicket(ticket); // Atualiza as tags
+                saveData();
+
+                const currentElement = document.querySelector(`.ticket-card[data-id="${ticketId}"], .ticket-row[data-id="${ticketId}"]`);
+                if (currentElement) {
+                    let newElement;
+                    if (currentElement.classList.contains('ticket-card')) {
+                        newElement = createTicketCard(ticket);
+                    } else {
+                        newElement = createTicketRow(ticket);
+                    }
+                    currentElement.replaceWith(newElement);
+                } else {
+                    renderBoard();
+                }
+            };
+
+            const handleMarkAsSeen = (ticketId) => {
+                const ticket = tickets.find(t => t.id === ticketId);
+                if (ticket) {
+                    updateLastSeenTimestamp(ticket);
+                    saveData(false); 
+                    const currentElement = document.querySelector(`.ticket-card[data-id="${ticketId}"], .ticket-row[data-id="${ticketId}"]`);
+                    if (currentElement) {
+                        const lastSeenEl = currentElement.querySelector('.last-seen-text');
+                        if (lastSeenEl) {
+                            lastSeenEl.textContent = formatTimeAgo(ticket.lastSeen);
+                        }
+                    }
+                }
+            };
+            
+            const updateLastSeenTimestamp = (ticket) => {
+                if (ticket) {
+                    ticket.lastSeen = new Date().toISOString();
+                }
+            };
+
+            // --- DRAG & DROP, IMPORT/EXPORT, BACKUP ---
+            const setupDragAndDrop = () => {
+                document.querySelectorAll('.ticket-card').forEach(card => {
+                    card.addEventListener('dragstart', e => e.target.classList.add('dragging'));
+                    card.addEventListener('dragend', e => e.target.classList.remove('dragging'));
+                });
+                document.querySelectorAll('.status-column').forEach(column => {
+                    column.addEventListener('dragover', e => { e.preventDefault(); });
+                    column.addEventListener('drop', e => {
+                        e.preventDefault();
+                        const cardId = document.querySelector('.dragging')?.dataset.id;
+                        if (!cardId) return;
+                        const ticket = tickets.find(t => t.id === cardId);
+                        const newStatus = column.dataset.status;
+                        if (ticket.status !== newStatus) {
+                            addLogEntry(ticket, `Status movido de "${ticket.status}" para "${newStatus}"`);
+                            const oldStatus = ticket.status;
+                            ticket.status = newStatus;
+
+                            if (newStatus === 'Finalizado' && oldStatus !== 'Finalizado') {
+                                ticket.completionDate = new Date().toISOString();
+                            } else if (newStatus !== 'Finalizado' && oldStatus === 'Finalizado') {
+                                ticket.completionDate = null;
+                            }
+
+                            updateLastSeenTimestamp(ticket);
+                            saveData();
+                            renderBoard();
+                        }
+                    });
+                });
+            };
+
+            const handleExport = async (format) => {
+                if (tickets.length === 0) {
+                    await showModal('Aviso', 'Nenhum ticket para exportar.', [{ text: 'OK', value: 'ok', class: 'btn-cancel' }]);
+                    return;
+                }
+                const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+                const filename = `todo-adm-backup-${timestamp}.${format}`;
+                let content, mimeType;
+
+                if (format === 'json') {
+                    content = JSON.stringify(tickets, null, 2);
+                    mimeType = 'application/json';
+                } else if (format === 'csv') {
+                    const headers = Object.keys(tickets[0] || {}).join(',');
+                    const rows = tickets.map(t => {
+                        return Object.values(t).map(val => {
+                            let value = '';
+                            if (typeof val === 'string') {
+                                value = val.replace(/"/g, '""');
+                            } else if (typeof val === 'object' && val !== null) {
+                                value = JSON.stringify(val).replace(/"/g, '""');
+                            } else {
+                                value = String(val);
+                            }
+                            return `"${value}"`;
+                        }).join(',');
+                    });
+                    content = `${headers}\n${rows.join('\n')}`;
+                    mimeType = 'text/csv;charset=utf-8;';
+                }
+                if (content) {
+                    const a = document.createElement('a');
+                    a.href = URL.createObjectURL(new Blob([content], { type: mimeType }));
+                    a.download = filename;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(a.href);
+                }
+            };
+
+            const handleImport = (event) => {
+                const file = event.target.files[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = async (e) => { 
+                    try {
+                        if (!file.name.endsWith('.json')) {
+                            throw new Error('Formato de arquivo não suportado. Use JSON.');
+                        }
+                        const importedData = JSON.parse(e.target.result);
+                        if (!Array.isArray(importedData)) throw new Error('O arquivo JSON não contém um array de tickets válido.');
+                        
+                        const importedTickets = importedData.map(normalizeTicket);
+
+                        const mergeChoice = await showModal(
+                            'Importar Tickets', 
+                            'Deseja mesclar os tickets importados com os existentes? Clicar em "Substituir" apagará todos os tickets atuais.',
+                            [
+                                { text: 'Mesclar', value: 'merge', class: 'btn-save' },
+                                { text: 'Substituir', value: 'replace', class: 'btn-delete' },
+                                { text: 'Cancelar', value: null, class: 'btn-cancel' }
+                            ]
+                        );
+
+                        if (mergeChoice === 'merge') {
+                            const existingIds = new Set(tickets.map(t => t.id));
+                            tickets.push(...importedTickets.filter(t => !existingIds.has(t.id)));
+                        } else if (mergeChoice === 'replace') {
+                            tickets = importedTickets;
+                        } else {
+                            return;
+                        }
+
+                        saveData();
+                        renderBoard();
+                        await showModal('Sucesso', 'Dados importados com sucesso!', [{ text: 'OK', value: 'ok', class: 'btn-save' }]);
+                    } catch (error) {
+                        await showModal('Erro', 'Erro ao importar arquivo: ' + error.message, [{ text: 'OK', value: 'ok', class: 'btn-cancel' }]);
+                    } finally {
+                        event.target.value = ''; 
+                    }
+                };
+                reader.readAsText(file);
+            };
+            
+            const handleAutoBackup = () => {
+                if (tickets.length === 0) return; 
+
+                const now = new Date();
+                const hours = now.getHours().toString().padStart(2, '0');
+                const minutes = now.getMinutes().toString().padStart(2, '0');
+                const filename = `Backup-${hours}${minutes}.json`;
+
+                const content = JSON.stringify(tickets, null, 2);
+                const mimeType = 'application/json';
+
+                const a = document.createElement('a');
+                a.href = URL.createObjectURL(new Blob([content], { type: mimeType }));
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(a.href);
+            };
+
+            const handleAutoBackupSettings = async () => {
+                const currentSetting = autoBackupCount > 0 ? autoBackupCount : 'desativado';
+                const message = `
+                    <p>A cada quantas edições o backup automático deve ser feito? (Atual: ${currentSetting})</p>
+                    <p>Digite um número (ex: 5) ou 0 para desativar.</p>
+                    <input type="number" id="backupCountInput" class="form-field" style="width: 100%; margin-top: 10px;" value="${autoBackupCount}">
+                `;
+                const choice = await showModal(
+                    'Backup Automático',
+                    message,
+                    [
+                        { text: 'Salvar', value: 'save', class: 'btn-save' },
+                        { text: 'Cancelar', value: null, class: 'btn-cancel' }
+                    ]
+                );
+
+                if (choice === 'save') {
+                    const newCountStr = document.getElementById('backupCountInput').value;
+                    if (newCountStr !== null) {
+                        const newCount = parseInt(newCountStr, 10);
+                        if (!isNaN(newCount) && newCount >= 0) {
+                            autoBackupCount = newCount;
+                            localStorage.setItem('todo-adm-autobackup-count', autoBackupCount.toString());
+                            editCount = 0;
+                            localStorage.setItem('todo-adm-edit-count', '0');
+                            const successMessage = autoBackupCount > 0 ? `Backup automático configurado para cada ${autoBackupCount} edições.` : 'Backup automático desativado.';
+                            await showModal('Sucesso', successMessage, [{ text: 'OK', value: 'ok', class: 'btn-save' }]);
+                        } else {
+                            await showModal('Erro', 'Por favor, insira um número válido.', [{ text: 'OK', value: 'ok', class: 'btn-cancel' }]);
+                        }
+                    }
+                }
+            };
+            
+            const archiveOldTasks = async () => {
+                const thirtyDaysAgo = new Date();
+                thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+                let archivedCount = 0;
+
+                tickets.forEach(ticket => {
+                    if (ticket.status === 'Finalizado' && !ticket.archived && ticket.completionDate) {
+                        if (new Date(ticket.completionDate) < thirtyDaysAgo) {
+                            ticket.archived = true;
+                            archivedCount++;
+                        }
+                    }
+                });
+
+                if (archivedCount > 0) {
+                    saveData();
+                    renderBoard();
+                    await showModal('Sucesso', `${archivedCount} tarefa(s) concluída(s) há mais de 30 dias foram arquivadas.`, [{ text: 'OK', value: 'ok', class: 'btn-save' }]);
+                } else {
+                    await showModal('Aviso', 'Nenhuma tarefa concluída há mais de 30 dias para arquivar.', [{ text: 'OK', value: 'ok', class: 'btn-cancel' }]);
+                }
+            };
+
+            const formatTimeAgo = (isoString) => {
+                if (!isoString) return '';
+                const now = new Date();
+                const seenDate = new Date(isoString);
+                const diffSeconds = (now - seenDate) / 1000;
+                const diffMinutes = diffSeconds / 60;
+                const diffHours = diffMinutes / 60;
+                const diffDays = Math.floor(diffHours / 24);
+
+                if (diffMinutes < 1) return 'agora';
+                if (diffMinutes < 60) return `há ${Math.round(diffMinutes)} min`;
+                if (diffHours < 6) return `há ${Math.round(diffHours)}h`;
+
+                const isToday = now.toDateString() === seenDate.toDateString();
+                if (isToday) {
+                    const seenHour = seenDate.getHours();
+                    if (seenHour < 12) return 'hoje de manhã';
+                    if (seenHour < 18) return 'hoje à tarde';
+                    return 'hoje à noite';
+                }
+
+                const yesterday = new Date();
+                yesterday.setDate(now.getDate() - 1);
+                if (yesterday.toDateString() === seenDate.toDateString()) {
+                    return 'ontem';
+                }
+
+                return `há ${diffDays} dias`;
+            };
+
+            const updateAllVisibleTimestamps = () => {
+                document.querySelectorAll('.ticket-card[data-id], .ticket-row[data-id]').forEach(el => {
+                    const ticket = tickets.find(t => t.id === el.dataset.id);
+                    if (ticket && ticket.lastSeen) {
+                        const lastSeenEl = el.querySelector('.last-seen-text');
+                        if (lastSeenEl) {
+                            lastSeenEl.textContent = formatTimeAgo(ticket.lastSeen);
+                        }
+                    }
+                });
+            };
+
+            // --- INICIALIZAÇÃO E LISTENERS ---
+            addTicketFab.addEventListener('click', () => openModal('ticketModal'));
+            document.querySelector('#ticketModal .close-button').addEventListener('click', () => closeModal('ticketModal'));
+            document.querySelector('#ticketModal .btn-cancel').addEventListener('click', () => closeModal('ticketModal'));
+            ticketForm.addEventListener('submit', handleFormSubmit);
+            document.getElementById('deleteTicketBtn').addEventListener('click', handleDeleteTicket);
+            document.getElementById('setApiKeyBtn').addEventListener('click', handleSetApiKey);
+            document.getElementById('autoBackupBtn').addEventListener('click', handleAutoBackupSettings);
+            archiveTasksBtn.addEventListener('click', archiveOldTasks);
+            showArchivedToggle.addEventListener('change', renderBoard);
+            smartFocusBtn.addEventListener('click', handleSmartFocus);
+
+
+            generateTagsBtn.addEventListener('click', async () => {
+                if (!googleApiKey) {
+                    await showModal('Aviso', 'Por favor, defina sua Chave de API do Google nas configurações (⚙️) antes de usar as funções de IA.', [{ text: 'OK', value: 'ok', class: 'btn-cancel' }]);
+                    return;
+                }
+                generateTagsBtn.textContent = 'Gerando...';
+                generateTagsBtn.disabled = true;
+
+                for (const ticket of tickets) {
+                    if(!ticket.archived) await generateTagsForTicket(ticket);
+                }
+                
+                saveData(false); // Salva sem contar como edição
+                renderBoard();
+
+                generateTagsBtn.textContent = 'Gerar/Atualizar Tags';
+                generateTagsBtn.disabled = false;
+                await showModal('Sucesso', 'Tags geradas/atualizadas para todos os cards!', [{ text: 'OK', value: 'ok', class: 'btn-save' }]);
+            });
+
+
+            document.querySelectorAll('.dropdown-toggle').forEach(btn => {
+                btn.addEventListener('click', e => {
+                    e.stopPropagation();
+                    const dropdown = btn.nextElementSibling;
+                    document.querySelectorAll('.dropdown-content').forEach(d => {
+                        if (d !== dropdown) d.classList.remove('show');
+                    });
+                    dropdown.classList.toggle('show');
+                });
+            });
+            
+            window.addEventListener('click', (e) => {
+                if (!e.target.closest('.dropdown')) {
+                    document.querySelectorAll('.dropdown-content').forEach(d => d.classList.remove('show'));
+                }
+            });
+            
+            notificationList.addEventListener('click', (e) => {
+                const target = e.target;
+                if (target.closest('.notification-item') && !target.matches('select')) {
+                    const ticketId = target.closest('.notification-item').dataset.ticketId;
+                    const card = document.querySelector(`.ticket-card[data-id="${ticketId}"]`);
+                    if (card) {
+                        card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        card.classList.add('flash');
+                        setTimeout(() => card.classList.remove('flash'), 1000);
+                    }
+                    notificationList.classList.remove('show');
+                }
+            });
+            notificationList.addEventListener('change', handleQuickStatusChange);
+
+
+            document.getElementById('importBtn').addEventListener('click', () => document.getElementById('importFile').click());
+            document.getElementById('importFile').addEventListener('change', handleImport);
+            document.getElementById('exportSelect').addEventListener('change', e => { if (e.target.value) { handleExport(e.target.value); e.target.value = ''; } });
+
+            kanbanBoard.addEventListener('click', (e) => {
+                const copyTarget = e.target.closest('.copy-icon');
+                if (copyTarget) {
+                    e.stopPropagation();
+                    const textToCopy = copyTarget.dataset.copy;
+                    
+                    const textArea = document.createElement("textarea");
+                    textArea.value = textToCopy;
+                    textArea.style.position = "fixed";
+                    textArea.style.top = "-9999px";
+                    textArea.style.left = "-9999px";
+                    document.body.appendChild(textArea);
+                    textArea.focus();
+                    textArea.select();
+                    try {
+                        document.execCommand('copy');
+                        copyTarget.style.color = 'var(--status-finalizado)';
+                        setTimeout(() => {
+                            copyTarget.style.color = ''; // Reseta o estilo inline para a classe CSS assumir
+                        }, 1000);
+                    } catch (err) {
+                        copyTarget.style.color = 'var(--priority-alta)';
+                         setTimeout(() => {
+                            copyTarget.style.color = ''; // Reseta o estilo inline para a classe CSS assumir
+                        }, 1000);
+                    }
+                    document.body.removeChild(textArea);
+                }
+            });
+
+            let searchTimeout;
+            searchInput.addEventListener('input', () => {
+                clearTimeout(searchTimeout);
+                searchTimeout = setTimeout(renderBoard, 500); // Debounce para evitar buscas excessivas
+            });
+            searchMode.addEventListener('change', () => searchInput.classList.toggle('ai-active', searchMode.checked));
+            filterStatus.addEventListener('change', renderBoard);
+            showCompletedCheckbox.addEventListener('change', renderBoard);
+            prioritySortToggle.addEventListener('change', renderBoard);
+
+            loadData();
+            renderBoard();
+            requestNotificationPermission();
+            setInterval(checkDeadlinesForDesktop, 60 * 1000 * 5); // Verifica prazos a cada 5 minutos
+            setInterval(updateAllVisibleTimestamps, 60000); // Atualiza os tempos a cada minuto
+        });
     </script>
 </body>
 </html>
+
