@@ -82,14 +82,35 @@
         <div class="container mx-auto flex justify-between items-center gap-4">
             <h1 class="text-xl sm:text-2xl font-bold text-[#2F3C7E] whitespace-nowrap">Projeto EJA</h1>
             
-            <div class="flex flex-1 justify-end items-center gap-2 sm:gap-4">
-                 <input type="search" id="search-input" placeholder="Buscar..." class="w-full max-w-xs px-4 py-2 border border-gray-300 rounded-2xl focus:ring-2 focus:ring-[#4A90E2] focus:outline-none transition">
-                <button id="import-json-btn" class="action-button text-white font-semibold py-2 px-5 rounded-2xl shadow-md transition-transform duration-300">Importar JSON</button>
-                <input type="file" id="json-file-input" class="hidden" accept=".json">
-                <button id="export-json-btn" class="action-button text-white font-semibold py-2 px-5 rounded-2xl shadow-md transition-transform duration-300">Exportar JSON</button>
-                <button id="export-pdf-btn" class="action-button text-white font-semibold py-2 px-5 rounded-2xl shadow-md transition-transform duration-300">Exportar PDF</button>
+            <!-- Desktop Menu -->
+            <nav class="hidden md:flex flex-1 justify-end items-center gap-2">
+                <input type="search" id="search-input-desktop" placeholder="Buscar..." class="w-full max-w-xs px-4 py-2 border border-gray-300 rounded-2xl focus:ring-2 focus:ring-[#4A90E2] focus:outline-none transition">
+                <button id="import-json-btn-desktop" class="action-button text-white font-semibold py-2 px-4 rounded-2xl shadow-md transition-transform duration-300 text-sm">Importar JSON</button>
+                <button id="export-json-btn-desktop" class="action-button text-white font-semibold py-2 px-4 rounded-2xl shadow-md transition-transform duration-300 text-sm">Exportar JSON</button>
+                <button id="export-pdf-btn-desktop" class="action-button text-white font-semibold py-2 px-4 rounded-2xl shadow-md transition-transform duration-300 text-sm">Exportar PDF</button>
+                <button id="share-pdf-btn-desktop" class="action-button text-white font-semibold py-2 px-4 rounded-2xl shadow-md transition-transform duration-300 text-sm hidden">Compartilhar PDF</button>
+            </nav>
+
+            <!-- Mobile Menu Button -->
+            <div class="md:hidden">
+                <button id="mobile-menu-button" class="p-2 rounded-md text-[#2F3C7E] focus:outline-none focus:ring-2 focus:ring-inset focus:ring-[#4A90E2]">
+                    <svg class="h-6 w-6" id="menu-open-icon" stroke="currentColor" fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+                    <svg class="h-6 w-6 hidden" id="menu-close-icon" stroke="currentColor" fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
             </div>
         </div>
+
+        <!-- Mobile Menu Panel -->
+        <div id="mobile-menu" class="md:hidden hidden bg-white shadow-lg absolute top-full right-0 w-full">
+            <div class="px-4 pt-2 pb-4 space-y-3">
+                 <input type="search" id="search-input-mobile" placeholder="Buscar..." class="w-full px-4 py-2 border border-gray-300 rounded-2xl focus:ring-2 focus:ring-[#4A90E2] focus:outline-none transition">
+                 <button id="import-json-btn-mobile" class="w-full text-left action-button text-white font-semibold py-2 px-4 rounded-2xl shadow-md">Importar JSON</button>
+                 <button id="export-json-btn-mobile" class="w-full text-left action-button text-white font-semibold py-2 px-4 rounded-2xl shadow-md">Exportar JSON</button>
+                 <button id="export-pdf-btn-mobile" class="w-full text-left action-button text-white font-semibold py-2 px-4 rounded-2xl shadow-md">Exportar PDF</button>
+                 <button id="share-pdf-btn-mobile" class="w-full text-left action-button text-white font-semibold py-2 px-4 rounded-2xl shadow-md hidden">Compartilhar PDF</button>
+            </div>
+        </div>
+        <input type="file" id="json-file-input" class="hidden" accept=".json">
     </header>
 
     <!-- Main Content -->
@@ -134,7 +155,6 @@
 
             let projectData = {};
 
-            // Function to generate the HTML for each card
             function createCardHTML(section) {
                 const fieldsHTML = section.fields.map(field => `
                     <div class="mb-4">
@@ -156,60 +176,41 @@
                             </div>
                             <button class="edit-btn text-[#4A90E2] font-semibold flex-shrink-0">Editar</button>
                         </div>
-                        <div class="summary-content px-6 pb-6 text-gray-600 italic truncate">
-                             Nenhum conteúdo salvo.
-                        </div>
+                        <div class="summary-content px-6 pb-6 text-gray-600 italic truncate">Nenhum conteúdo salvo.</div>
                         <div class="card-content px-6">
                             ${fieldsHTML}
                             <div class="flex justify-end py-4">
-                                <button class="save-btn action-button text-white font-semibold py-2 px-8 rounded-2xl shadow-md transition-transform duration-300" data-section="${section.id}">
-                                    Salvar
-                                </button>
+                                <button class="save-btn action-button text-white font-semibold py-2 px-8 rounded-2xl shadow-md transition-transform duration-300" data-section="${section.id}">Salvar</button>
                             </div>
                         </div>
                     </div>
                 `;
             }
             
-            // Populate the form with cards
             formContainer.innerHTML = sections.map(createCardHTML).join('');
 
-            // --- Event Listeners and Functions ---
-            
-            // Autosave to localStorage
-            const autoSave = () => {
-                localStorage.setItem('ejaProjectData', JSON.stringify(projectData));
-            };
+            const autoSave = () => localStorage.setItem('ejaProjectData', JSON.stringify(projectData));
 
-            // Load data from localStorage
             const loadData = (data) => {
                 projectData = data || {};
                 Object.keys(projectData).forEach(fieldId => {
                     const element = document.getElementById(fieldId);
-                    if (element) {
-                        element.value = projectData[fieldId];
-                    }
+                    if (element) element.value = projectData[fieldId];
                 });
                 updateAllSummaries();
             };
 
             const loadFromLocalStorage = () => {
                 const savedData = localStorage.getItem('ejaProjectData');
-                if (savedData) {
-                    loadData(JSON.parse(savedData));
-                }
+                if (savedData) loadData(JSON.parse(savedData));
             };
 
-            // Update card summary
             function updateSummary(sectionId) {
                 const card = formContainer.querySelector(`.card[data-id="${sectionId}"]`);
                 if (!card) return;
                 const summaryEl = card.querySelector('.summary-content');
-                
                 const sectionFields = sections.find(s => s.id === sectionId).fields;
-                let summaryText = sectionFields.map(field => projectData[field.id] || '')
-                                               .join(' ')
-                                               .trim();
+                let summaryText = sectionFields.map(field => projectData[field.id] || '').join(' ').trim();
 
                 if (summaryText) {
                     summaryEl.textContent = summaryText;
@@ -220,19 +221,15 @@
                 }
             }
             
-            function updateAllSummaries() {
-                sections.forEach(section => updateSummary(section.id));
-            }
+            const updateAllSummaries = () => sections.forEach(section => updateSummary(section.id));
 
-            // Card toggle functionality
             formContainer.addEventListener('click', (e) => {
                 const cardHeader = e.target.closest('.card-header');
                 const editBtn = e.target.closest('.edit-btn');
                 const saveBtn = e.target.closest('.save-btn');
                 
                 if (cardHeader || editBtn) {
-                    const card = (cardHeader || editBtn).closest('.card');
-                    card.classList.toggle('expanded');
+                    (cardHeader || editBtn).closest('.card').classList.toggle('expanded');
                 }
                 
                 if (saveBtn) {
@@ -242,9 +239,7 @@
 
                     sectionFields.forEach(field => {
                         const inputElement = document.getElementById(field.id);
-                        if (inputElement) {
-                            projectData[field.id] = inputElement.value;
-                        }
+                        if (inputElement) projectData[field.id] = inputElement.value;
                     });
 
                     autoSave();
@@ -254,27 +249,18 @@
                 }
             });
 
-            // Show notification
             function showNotification(message, type = 'error') {
                 const notification = document.getElementById('notification');
                 const notificationMessage = document.getElementById('notification-message');
                 
                 notificationMessage.textContent = message;
                 notification.className = `fixed top-5 right-5 text-white py-3 px-6 rounded-2xl shadow-lg transition-transform transform z-50 ${type === 'success' ? 'bg-green-500' : 'bg-red-500'}`;
-                
                 notification.classList.remove('translate-x-[150%]');
-                notification.classList.add('translate-x-0');
-
-                setTimeout(() => {
-                    notification.classList.remove('translate-x-0');
-                    notification.classList.add('translate-x-[150%]');
-                }, 3000);
+                setTimeout(() => notification.classList.add('translate-x-[150%]'), 3000);
             }
 
-            // Validation
             function validateProject() {
-                const title = projectData.titulo_projeto || '';
-                if (!title.trim()) {
+                if (! (projectData.titulo_projeto || '').trim()) {
                     showNotification('Por favor, preencha o "Título do projeto" antes de exportar.');
                     const requiredCard = document.querySelector('.card[data-id="acao_educativa"]');
                     if (requiredCard && !requiredCard.classList.contains('expanded')) {
@@ -286,147 +272,174 @@
                 return true;
             }
 
-            // JSON Import/Export
-            const importBtn = document.getElementById('import-json-btn');
-            const fileInput = document.getElementById('json-file-input');
-            const exportJsonBtn = document.getElementById('export-json-btn');
+            // --- Menu and Actions Logic ---
 
-            importBtn.addEventListener('click', () => fileInput.click());
+            // Mobile menu toggle
+            const mobileMenuBtn = document.getElementById('mobile-menu-button');
+            const mobileMenu = document.getElementById('mobile-menu');
+            const menuOpenIcon = document.getElementById('menu-open-icon');
+            const menuCloseIcon = document.getElementById('menu-close-icon');
+
+            mobileMenuBtn.addEventListener('click', () => {
+                mobileMenu.classList.toggle('hidden');
+                menuOpenIcon.classList.toggle('hidden');
+                menuCloseIcon.classList.toggle('hidden');
+            });
+
+            // JSON Import
+            const fileInput = document.getElementById('json-file-input');
+            const handleImport = () => fileInput.click();
             
             fileInput.addEventListener('change', (event) => {
                 const file = event.target.files[0];
                 if (!file) return;
-
                 const reader = new FileReader();
                 reader.onload = (e) => {
                     try {
-                        const importedData = JSON.parse(e.target.result);
-                        loadData(importedData);
+                        loadData(JSON.parse(e.target.result));
                         autoSave();
                         showNotification('Projeto importado com sucesso!', 'success');
                     } catch (error) {
-                        showNotification('Erro ao ler o arquivo JSON. Verifique o formato.');
-                        console.error("JSON Parse Error:", error);
+                        showNotification('Erro ao ler o arquivo JSON.');
                     }
                 };
                 reader.readAsText(file);
-                fileInput.value = ''; // Reset for next import
+                fileInput.value = '';
             });
 
-            exportJsonBtn.addEventListener('click', () => {
+            // JSON Export
+            const handleExportJson = () => {
                 if (!validateProject()) return;
                 const title = projectData.titulo_projeto || 'sem_titulo';
                 const dataStr = JSON.stringify(projectData, null, 4);
-                const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
-                const exportFileDefaultName = `projeto-eja-${title.replace(/ /g, '_')}.json`;
-                
-                const linkElement = document.createElement('a');
-                linkElement.setAttribute('href', dataUri);
-                linkElement.setAttribute('download', exportFileDefaultName);
-                linkElement.click();
-            });
-
-            // PDF Export
-            const exportPdfBtn = document.getElementById('export-pdf-btn');
-            const loadingOverlay = document.getElementById('loading-overlay');
-
-            exportPdfBtn.addEventListener('click', async () => {
-                if (!validateProject()) return;
-
-                loadingOverlay.classList.remove('hidden');
-
+                const dataUri = 'data:application/json;charset=utf-8,' + encodeURIComponent(dataStr);
+                const link = document.createElement('a');
+                link.setAttribute('href', dataUri);
+                link.setAttribute('download', `projeto-eja-${title.replace(/ /g, '_')}.json`);
+                link.click();
+            };
+            
+            // PDF Generation
+            const generatePdfBlob = async () => {
                 const { jsPDF } = window.jspdf;
                 const doc = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
-                
                 const pageMargin = 20;
                 const pageContentWidth = doc.internal.pageSize.getWidth() - (pageMargin * 2);
-                const pageContentHeight = doc.internal.pageSize.getHeight() - pageMargin;
                 let yPos = pageMargin;
 
-                const addWrappedText = ({ text, style = 'normal', size = 12, spaceAfter = 5 }) => {
-                    doc.setFont('helvetica', style);
+                const addWrappedText = (text, size, style, spaceAfter) => {
                     doc.setFontSize(size);
+                    doc.setFont('helvetica', style);
                     const lines = doc.splitTextToSize(text || 'Não preenchido', pageContentWidth);
-                    
+                    const pageHeight = doc.internal.pageSize.getHeight() - pageMargin;
+
                     lines.forEach(line => {
-                        if (yPos > pageContentHeight) {
+                        if (yPos > pageHeight) {
                             doc.addPage();
                             yPos = pageMargin;
                         }
                         doc.text(line, pageMargin, yPos);
-                        yPos += (size * 0.4); // Adjust line height based on font size
+                        yPos += (size * 0.5);
                     });
                     yPos += spaceAfter;
                 };
-
-                // --- Building the PDF ---
+                
                 // Title Page
-                yPos = 80;
-                doc.setFontSize(22);
-                doc.setFont('helvetica', 'bold');
-                doc.text('PROJETO DA AÇÃO EDUCATIVA EM EJA', doc.internal.pageSize.getWidth() / 2, yPos, { align: 'center' });
-                yPos += 20;
-
-                doc.setFontSize(16);
-                doc.setFont('helvetica', 'normal');
-                doc.text(projectData.titulo_projeto || 'Título não definido', doc.internal.pageSize.getWidth() / 2, yPos, { align: 'center' });
-                yPos += 50;
-
-                doc.text(`Estagiário(a): ${projectData.estagiario || ''}`, doc.internal.pageSize.getWidth() / 2, yPos, { align: 'center' });
+                addWrappedText('PROJETO DA AÇÃO EDUCATIVA EM EJA', 22, 'bold', 20);
+                addWrappedText(projectData.titulo_projeto || 'Título não definido', 16, 'normal', 50);
+                addWrappedText(`Estagiário(a): ${projectData.estagiario || ''}`, 12, 'normal', 0);
                 
                 doc.addPage();
                 yPos = pageMargin;
-                
-                // Add sections to PDF
+
+                // Content
                 for (const section of sections) {
-                     if (yPos > pageContentHeight - 20) { // Check space for header
+                    if (yPos > doc.internal.pageSize.getHeight() - pageMargin - 20) {
                         doc.addPage();
                         yPos = pageMargin;
                     }
-                    
-                    addWrappedText({ text: section.title, style: 'bold', size: 14, spaceAfter: 8 });
-
-                    let content = '';
-                    if (section.fields.length > 1) {
-                        content = section.fields.map(field => `${field.label}:\n${projectData[field.id] || ''}`).join('\n\n');
-                    } else {
-                        content = projectData[section.fields[0].id] || '';
-                    }
-
-                    addWrappedText({ text: content, size: 12, spaceAfter: 15 });
+                    addWrappedText(section.title, 14, 'bold', 8);
+                    const content = section.fields.length > 1 ?
+                        section.fields.map(f => `${f.label}:\n${projectData[f.id] || ''}`).join('\n\n') :
+                        projectData[section.fields[0].id] || '';
+                    addWrappedText(content, 12, 'normal', 15);
                 }
 
-                const pdfFileName = `Projeto_EJA_${(projectData.titulo_projeto || 'sem_titulo').replace(/ /g, '_')}.pdf`;
-                doc.save(pdfFileName);
+                return doc.output('blob');
+            };
+
+            // PDF Export
+            const handleExportPdf = async () => {
+                if (!validateProject()) return;
+                document.getElementById('loading-overlay').classList.remove('hidden');
+                const blob = await generatePdfBlob();
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = `Projeto_EJA_${(projectData.titulo_projeto || 'sem_titulo').replace(/ /g, '_')}.pdf`;
+                link.click();
+                URL.revokeObjectURL(url);
+                document.getElementById('loading-overlay').classList.add('hidden');
+            };
+
+            // PDF Share
+            const handleSharePdf = async () => {
+                if (!validateProject()) return;
+                document.getElementById('loading-overlay').classList.remove('hidden');
+                const blob = await generatePdfBlob();
+                const fileName = `Projeto_EJA_${(projectData.titulo_projeto || 'sem_titulo').replace(/ /g, '_')}.pdf`;
+                const file = new File([blob], fileName, { type: 'application/pdf' });
                 
-                loadingOverlay.classList.add('hidden');
-            });
-
-            // Search Functionality
-            const searchInput = document.getElementById('search-input');
-            searchInput.addEventListener('input', (e) => {
-                const searchTerm = e.target.value.toLowerCase().trim();
-                const allCards = document.querySelectorAll('.card');
-
-                allCards.forEach(card => {
-                    const sectionId = card.dataset.id;
-                    const section = sections.find(s => s.id === sectionId);
-                    
-                    const titleMatch = section.title.toLowerCase().includes(searchTerm);
-                    
-                    const contentMatch = section.fields.some(field => {
-                        const content = projectData[field.id] || '';
-                        return content.toLowerCase().includes(searchTerm);
+                try {
+                    await navigator.share({
+                        files: [file],
+                        title: `Projeto EJA: ${projectData.titulo_projeto}`,
+                        text: 'Confira o projeto da ação educativa em EJA.'
                     });
-                    
-                    if (searchTerm === '' || titleMatch || contentMatch) {
-                        card.classList.remove('hidden');
-                    } else {
-                        card.classList.add('hidden');
-                    }
+                } catch (error) {
+                   if (error.name !== 'AbortError') {
+                        showNotification('Erro ao compartilhar o arquivo.');
+                        console.error('Share error:', error);
+                   }
+                } finally {
+                    document.getElementById('loading-overlay').classList.add('hidden');
+                }
+            };
+            
+            // --- Event Binding ---
+            const actionMap = {
+                'import-json': handleImport,
+                'export-json': handleExportJson,
+                'export-pdf': handleExportPdf,
+                'share-pdf': handleSharePdf,
+            };
+
+            ['desktop', 'mobile'].forEach(device => {
+                Object.keys(actionMap).forEach(action => {
+                    const btn = document.getElementById(`${action}-btn-${device}`);
+                    if (btn) btn.addEventListener('click', actionMap[action]);
                 });
             });
 
+            // Search
+            ['desktop', 'mobile'].forEach(device => {
+                const searchInput = document.getElementById(`search-input-${device}`);
+                searchInput.addEventListener('input', (e) => {
+                    const searchTerm = e.target.value.toLowerCase().trim();
+                    document.querySelectorAll('.card').forEach(card => {
+                        const cardText = card.innerText.toLowerCase();
+                        card.classList.toggle('hidden', !cardText.includes(searchTerm));
+                    });
+                });
+            });
+
+            // Conditionally show share button
+            const dummyFile = new File([""], "dummy.pdf", { type: "application/pdf" });
+            if (navigator.canShare && navigator.canShare({ files: [dummyFile] })) {
+                document.getElementById('share-pdf-btn-desktop').classList.remove('hidden');
+                document.getElementById('share-pdf-btn-mobile').classList.remove('hidden');
+            }
+            
             // Initial load
             loadFromLocalStorage();
         });
