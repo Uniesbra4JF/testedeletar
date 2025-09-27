@@ -113,7 +113,7 @@
             // --- DATA STRUCTURES ---
             const projectSections = [
                 { id: 'identificacao', title: '1. Identificação do Projeto', fields: [{ id: 'estagiario', label: 'Estagiário(a)'}, { id: 'local_acao', label: 'Local da ação'}, { id: 'gestor_local', label: 'Gestor do local'}, { id: 'endereco', label: 'Endereço'}] },
-                { id: 'introducao', title: '2. Introdução', fields: [{ id: 'introducao_text'}] }, { id: 'objetivos', title: '3. Objetivos', fields: [{ id: 'objetivo_geral', label: '3.1 Objetivo Geral'}, { id: 'objetivos_especificos', label: '3.2 Objetivos Específicos'}] }, { id: 'justificativa', title: '4. Justificativa', fields: [{ id: 'justificativa_text'}] }, { id: 'revisao_literatura', title: '5. Revisão da Literatura', fields: [{ id: 'revisao_literatura_text'}] }, { id: 'metodologia', title: '6. Metodologia', fields: [{ id: 'metodologia_text'}] }, { id: 'acao_educativa', title: '7. Ação Educativa', fields: [{ id: 'data_acao', label: 'Data'}, { id: 'publico_alvo', label: 'Público-alvo'}, { id: 'turno', label: 'Turno'}, { id: 'semestre_atual', label: 'Semestre atual'}, { id: 'local_aplicacao', label: 'Local'}, { id: 'titulo_projeto', label: 'Título do projeto (obrigatório)', required: true }] }, { id: 'recursos', title: '7.1 Recursos', fields: [{ id: 'recursos_text'}] }, { id: 'referencias_proj', title: 'Referências (Projeto)', fields: [{ id: 'referencias_proj_text'}] }, { id: 'avaliacao', title: '8. Avaliação', fields: [{ id: 'avaliacao_text'}] }, { id: 'resultados_esperados', title: '9. Resultados esperados', fields: [{ id: 'resultados_esperados_text'}] }, { id: 'anexos_apendices_proj', title: 'Anexos/Apêndices (Projeto)', fields: [{ id: 'anexos_apendices_proj_text'}] }
+                { id: 'introducao', title: '2. Introdução', fields: [{ id: 'introducao_text'}] }, { id: 'objetivos', title: '3. Objetivos', fields: [{ id: 'objetivo_geral', label: '3.1 Objetivo Geral'}, { id: 'objetivos_especificos', label: '3.2 Objetivos Específicos'}] }, { id: 'justificativa', title: '4. Justificativa', fields: [{ id: 'justificativa_text'}] }, { id: 'revisao_literatura', title: '5. Revisão da Literatura', fields: [{ id: 'revisao_literatura_text'}] }, { id: 'metodologia', title: '6. Metodologia', fields: [{ id: 'metodologia_text'}] }, { id: 'acao_educativa', title: '7. Ação Educativa', fields: [{ id: 'data_acao', label: 'Data'}, { id: 'publico_alvo', label: 'Público-alvo'}, { id: 'turno', label: 'Turno'}, { id: 'semestre_atual', label: 'Semestre atual'}, { id: 'local_aplicacao', label: 'Local'}, { id: 'titulo_projeto', label: 'Título do projeto (obrigatório)', required: true }] }, { id: 'recursos', title: '7.1 Recursos', fields: [{ id: 'recursos_text'}] }, { id: 'referencias_proj', title: 'Referências (Projeto)', fields: [{ id: 'referencias_proj_text'}] }, { id: 'avaliacao', title: '8. Avaliação', fields: [{ id: 'avaliacao_text'}] }, { id: 'resultados_esperados', title: '9. Resultados esperados', fields: [{ id: 'resultados_esperados_text'}] }
             ];
 
             const reportSections = [
@@ -121,8 +121,7 @@
                 { id: 'revisao_report', title: '2. Revisão de Literatura', info: 'Levantamento bibliográfico sobre a temática "Estágio Supervisionado em EJA".', fields: [{ id: 'revisao_report_text' }] },
                 { id: 'relato_experiencia', title: '3. Relato de Experiência', info: 'Descreva sua experiência completa com o estágio em EJA, do início ao fim, incluindo desafios.', fields: [{ id: 'relato_experiencia_text' }] },
                 { id: 'conclusao_report', title: '4. Conclusão', info: 'Observações gerais, resultados obtidos, dificuldades, aprendizados e reflexões sobre a prática.', fields: [{ id: 'conclusao_report_text' }] },
-                { id: 'referencias_report', title: 'Referências (Relatório)', info: 'Liste os autores e obras citados ao longo do relatório.', fields: [{ id: 'referencias_report_text' }] },
-                { id: 'anexos_apendices_report', title: 'Anexos/Apêndices (Relatório)', info: 'Inclua a carta de apresentação, termo de compromisso, projeto, ficha de frequência, etc.', fields: [{ id: 'anexos_apendices_report_text' }] }
+                { id: 'referencias_report', title: 'Referências (Relatório)', info: 'Liste os autores e obras citados ao longo do relatório.', fields: [{ id: 'referencias_report_text' }] }
             ];
             
             let projectData = {};
@@ -382,4 +381,5 @@
     </script>
 </body>
 </html>
+
 
