@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Projeto da Ação Educativa em EJA</title>
+    <title>Projeto e Relatório - Ação Educativa em EJA</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -32,26 +32,13 @@
         }
 
         .card.expanded .card-content {
-            max-height: 2000px; /* Adjust as needed for content */
+            max-height: 2000px;
             opacity: 1;
             visibility: visible;
         }
 
-        .card .summary-content {
-            display: block;
-        }
-
-        .card.expanded .summary-content {
-            display: none;
-        }
-
         .action-button {
             background-image: linear-gradient(to right, #4A90E2, #7B61FF);
-        }
-
-        .action-button:hover {
-            transform: scale(1.05);
-            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
         }
         
         .loader {
@@ -80,368 +67,317 @@
     <!-- Header / Menu -->
     <header class="bg-white shadow-sm sticky top-0 z-40 py-4 px-4 sm:px-8">
         <div class="container mx-auto flex justify-between items-center gap-4">
-            <h1 class="text-xl sm:text-2xl font-bold text-[#2F3C7E] whitespace-nowrap">Projeto EJA</h1>
+            <h1 id="page-title" class="text-xl sm:text-2xl font-bold text-[#2F3C7E] whitespace-nowrap">Projeto EJA</h1>
             
-            <!-- Desktop Menu -->
             <nav class="hidden md:flex flex-1 justify-end items-center gap-2">
                 <input type="search" id="search-input-desktop" placeholder="Buscar..." class="w-full max-w-xs px-4 py-2 border border-gray-300 rounded-2xl focus:ring-2 focus:ring-[#4A90E2] focus:outline-none transition">
-                <button id="import-json-btn-desktop" class="action-button text-white font-semibold py-2 px-4 rounded-2xl shadow-md transition-transform duration-300 text-sm">Importar JSON</button>
-                <button id="export-json-btn-desktop" class="action-button text-white font-semibold py-2 px-4 rounded-2xl shadow-md transition-transform duration-300 text-sm">Exportar JSON</button>
-                <button id="export-pdf-btn-desktop" class="action-button text-white font-semibold py-2 px-4 rounded-2xl shadow-md transition-transform duration-300 text-sm">Exportar PDF</button>
-                <button id="share-pdf-btn-desktop" class="action-button text-white font-semibold py-2 px-4 rounded-2xl shadow-md transition-transform duration-300 text-sm hidden">Compartilhar PDF</button>
+                <button data-action="toggle-page" class="action-button text-white font-semibold py-2 px-4 rounded-2xl shadow-md text-sm">Relatório Final</button>
+                <button data-action="import-json" class="action-button text-white font-semibold py-2 px-4 rounded-2xl shadow-md text-sm">Importar JSON</button>
+                <button data-action="export-json" class="action-button text-white font-semibold py-2 px-4 rounded-2xl shadow-md text-sm">Exportar JSON</button>
+                <button data-action="export-pdf" class="action-button text-white font-semibold py-2 px-4 rounded-2xl shadow-md text-sm">Exportar PDF</button>
+                <button data-action="share-pdf" class="action-button text-white font-semibold py-2 px-4 rounded-2xl shadow-md text-sm hidden">Compartilhar PDF</button>
             </nav>
 
-            <!-- Mobile Menu Button -->
             <div class="md:hidden">
-                <button id="mobile-menu-button" class="p-2 rounded-md text-[#2F3C7E] focus:outline-none focus:ring-2 focus:ring-inset focus:ring-[#4A90E2]">
-                    <svg class="h-6 w-6" id="menu-open-icon" stroke="currentColor" fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
-                    <svg class="h-6 w-6 hidden" id="menu-close-icon" stroke="currentColor" fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-                </button>
+                <button id="mobile-menu-button" class="p-2 rounded-md text-[#2F3C7E]"><svg class="h-6 w-6" id="menu-open-icon" stroke="currentColor" fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg><svg class="h-6 w-6 hidden" id="menu-close-icon" stroke="currentColor" fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
             </div>
         </div>
 
-        <!-- Mobile Menu Panel -->
         <div id="mobile-menu" class="md:hidden hidden bg-white shadow-lg absolute top-full right-0 w-full">
             <div class="px-4 pt-2 pb-4 space-y-3">
-                 <input type="search" id="search-input-mobile" placeholder="Buscar..." class="w-full px-4 py-2 border border-gray-300 rounded-2xl focus:ring-2 focus:ring-[#4A90E2] focus:outline-none transition">
-                 <button id="import-json-btn-mobile" class="w-full text-left action-button text-white font-semibold py-2 px-4 rounded-2xl shadow-md">Importar JSON</button>
-                 <button id="export-json-btn-mobile" class="w-full text-left action-button text-white font-semibold py-2 px-4 rounded-2xl shadow-md">Exportar JSON</button>
-                 <button id="export-pdf-btn-mobile" class="w-full text-left action-button text-white font-semibold py-2 px-4 rounded-2xl shadow-md">Exportar PDF</button>
-                 <button id="share-pdf-btn-mobile" class="w-full text-left action-button text-white font-semibold py-2 px-4 rounded-2xl shadow-md hidden">Compartilhar PDF</button>
+                 <input type="search" id="search-input-mobile" placeholder="Buscar..." class="w-full px-4 py-2 border border-gray-300 rounded-2xl">
+                 <button data-action="toggle-page" class="w-full text-left action-button text-white font-semibold py-2 px-4 rounded-2xl shadow-md">Relatório Final</button>
+                 <button data-action="import-json" class="w-full text-left action-button text-white font-semibold py-2 px-4 rounded-2xl shadow-md">Importar JSON</button>
+                 <button data-action="export-json" class="w-full text-left action-button text-white font-semibold py-2 px-4 rounded-2xl shadow-md">Exportar JSON</button>
+                 <button data-action="export-pdf" class="w-full text-left action-button text-white font-semibold py-2 px-4 rounded-2xl shadow-md">Exportar PDF</button>
+                 <button data-action="share-pdf" class="w-full text-left action-button text-white font-semibold py-2 px-4 rounded-2xl shadow-md hidden">Compartilhar PDF</button>
             </div>
         </div>
         <input type="file" id="json-file-input" class="hidden" accept=".json">
     </header>
 
-    <!-- Main Content -->
-    <main id="project-form" class="container mx-auto p-4 sm:p-8">
-        <!-- Cards will be dynamically inserted here by JavaScript -->
+    <!-- Page: Project -->
+    <main id="page-project" class="container mx-auto p-4 sm:p-8">
+        <!-- Project cards will be dynamically inserted here -->
     </main>
+    
+    <!-- Page: Report -->
+    <main id="page-report" class="container mx-auto p-4 sm:p-8 hidden">
+        <!-- Report cards will be dynamically inserted here -->
+    </main>
+
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            const formContainer = document.getElementById('project-form');
             
-            // Structure of the project sections
-            const sections = [
-                { id: 'identificacao', title: '1. Identificação do Projeto da Ação Educativa em EJA', info: 'Preencha os dados de identificação do estagiário e do local da ação.', fields: [
-                    { id: 'estagiario', label: 'Estagiário(a)', type: 'input' },
-                    { id: 'local_acao', label: 'Local da ação educativa', type: 'input' },
-                    { id: 'gestor_local', label: 'Gestor do local da ação educativa', type: 'input' },
-                    { id: 'endereco', label: 'Endereço', type: 'input' }
-                ]},
-                { id: 'introducao', title: '2. Introdução', info: 'Descreva o local da ação, seu histórico, estrutura física, humana e a atuação da gestão.', fields: [{ id: 'introducao_text', type: 'textarea' }] },
-                { id: 'objetivos', title: '3. Objetivos', info: 'Defina o que se pretende alcançar com o projeto.', fields: [
-                    { id: 'objetivo_geral', label: '3.1 Objetivo Geral', info: 'Informe um objetivo de forma geral (Ex: Contribuir, Possibilitar...).', type: 'textarea' },
-                    { id: 'objetivos_especificos', label: '3.2 Objetivos Específicos', info: 'Informe três objetivos de forma específica.', type: 'textarea' }
-                ]},
-                { id: 'justificativa', title: '4. Justificativa do Tema do Projeto', info: 'Descreva as observações e dificuldades encontradas que levaram à escolha do tema.', fields: [{ id: 'justificativa_text', type: 'textarea' }] },
-                { id: 'revisao_literatura', title: '5. Revisão da Literatura', info: 'Fundamente teoricamente o tema do projeto com base em autores e obras relevantes.', fields: [{ id: 'revisao_literatura_text', type: 'textarea' }] },
-                { id: 'metodologia', title: '6. Metodologia', info: 'Mencione o que, como, quando e onde você vai aplicar sua ação educativa.', fields: [{ id: 'metodologia_text', type: 'textarea' }] },
-                { id: 'acao_educativa', title: '7. Ação Educativa – Onde, Quando, O que e Com Quem foi aplicada', info: 'Detalhe a aplicação da sua ação educativa.', fields: [
-                    { id: 'data_acao', label: 'Data', type: 'input' },
-                    { id: 'publico_alvo', label: 'Público-alvo', type: 'input' },
-                    { id: 'turno', label: 'Turno', type: 'input' },
-                    { id: 'semestre_atual', label: 'Semestre atual', type: 'input' },
-                    { id: 'local_aplicacao', label: 'Local', type: 'input' },
-                    { id: 'titulo_projeto', label: 'Título do projeto (campo obrigatório)', type: 'input', required: true }
-                ]},
-                { id: 'recursos', title: '7.1 Recursos a serem utilizados', info: 'Liste todos os materiais e recursos que serão usados na ação educativa.', fields: [{ id: 'recursos_text', type: 'textarea' }] },
-                { id: 'referencias', title: 'Referências utilizadas', info: 'Liste todas as referências (livros, textos) usadas na construção do projeto, seguindo as normas da ABNT.', fields: [{ id: 'referencias_text', type: 'textarea' }] },
-                { id: 'avaliacao', title: '8. Avaliação', info: 'Descreva como os resultados do projeto serão avaliados.', fields: [{ id: 'avaliacao_text', type: 'textarea' }] },
-                { id: 'resultados_esperados', title: '9. Resultados esperados', info: 'Descreva o que se espera alcançar e melhorar com a aplicação do projeto.', fields: [{ id: 'resultados_esperados_text', type: 'textarea' }] },
-                { id: 'anexos_apendices', title: 'Anexos/Apêndices', info: 'Anexos: materiais prontos utilizados. Apêndices: materiais produzidos por você (fotos, atividades).', fields: [{ id: 'anexos_apendices_text', type: 'textarea' }] }
+            // --- DATA STRUCTURES ---
+            const projectSections = [
+                { id: 'identificacao', title: '1. Identificação do Projeto', fields: [{ id: 'estagiario', label: 'Estagiário(a)'}, { id: 'local_acao', label: 'Local da ação'}, { id: 'gestor_local', label: 'Gestor do local'}, { id: 'endereco', label: 'Endereço'}] },
+                { id: 'introducao', title: '2. Introdução', fields: [{ id: 'introducao_text'}] }, { id: 'objetivos', title: '3. Objetivos', fields: [{ id: 'objetivo_geral', label: '3.1 Objetivo Geral'}, { id: 'objetivos_especificos', label: '3.2 Objetivos Específicos'}] }, { id: 'justificativa', title: '4. Justificativa', fields: [{ id: 'justificativa_text'}] }, { id: 'revisao_literatura', title: '5. Revisão da Literatura', fields: [{ id: 'revisao_literatura_text'}] }, { id: 'metodologia', title: '6. Metodologia', fields: [{ id: 'metodologia_text'}] }, { id: 'acao_educativa', title: '7. Ação Educativa', fields: [{ id: 'data_acao', label: 'Data'}, { id: 'publico_alvo', label: 'Público-alvo'}, { id: 'turno', label: 'Turno'}, { id: 'semestre_atual', label: 'Semestre atual'}, { id: 'local_aplicacao', label: 'Local'}, { id: 'titulo_projeto', label: 'Título do projeto (obrigatório)', required: true }] }, { id: 'recursos', title: '7.1 Recursos', fields: [{ id: 'recursos_text'}] }, { id: 'referencias_proj', title: 'Referências (Projeto)', fields: [{ id: 'referencias_proj_text'}] }, { id: 'avaliacao', title: '8. Avaliação', fields: [{ id: 'avaliacao_text'}] }, { id: 'resultados_esperados', title: '9. Resultados esperados', fields: [{ id: 'resultados_esperados_text'}] }, { id: 'anexos_apendices_proj', title: 'Anexos/Apêndices (Projeto)', fields: [{ id: 'anexos_apendices_proj_text'}] }
             ];
 
+            const reportSections = [
+                { id: 'intro_report', title: '1. Introdução do Relatório', info: 'Apresente o documento, o tipo de estágio, curso, instituição, local e orientador.', fields: [{ id: 'intro_report_text' }] },
+                { id: 'revisao_report', title: '2. Revisão de Literatura', info: 'Levantamento bibliográfico sobre a temática "Estágio Supervisionado em EJA".', fields: [{ id: 'revisao_report_text' }] },
+                { id: 'relato_experiencia', title: '3. Relato de Experiência', info: 'Descreva sua experiência completa com o estágio em EJA, do início ao fim, incluindo desafios.', fields: [{ id: 'relato_experiencia_text' }] },
+                { id: 'conclusao_report', title: '4. Conclusão', info: 'Observações gerais, resultados obtidos, dificuldades, aprendizados e reflexões sobre a prática.', fields: [{ id: 'conclusao_report_text' }] },
+                { id: 'referencias_report', title: 'Referências (Relatório)', info: 'Liste os autores e obras citados ao longo do relatório.', fields: [{ id: 'referencias_report_text' }] },
+                { id: 'anexos_apendices_report', title: 'Anexos/Apêndices (Relatório)', info: 'Inclua a carta de apresentação, termo de compromisso, projeto, ficha de frequência, etc.', fields: [{ id: 'anexos_apendices_report_text' }] }
+            ];
+            
             let projectData = {};
+            let reportData = {};
+            let currentPage = 'project'; // 'project' or 'report'
 
-            function createCardHTML(section) {
+            // --- UI & PAGE LOGIC ---
+            const pageTitleEl = document.getElementById('page-title');
+            const pageProjectEl = document.getElementById('page-project');
+            const pageReportEl = document.getElementById('page-report');
+            const togglePageBtns = document.querySelectorAll('[data-action="toggle-page"]');
+
+            const showPage = (pageId) => {
+                currentPage = pageId;
+                if (pageId === 'project') {
+                    pageProjectEl.classList.remove('hidden');
+                    pageReportEl.classList.add('hidden');
+                    pageTitleEl.textContent = 'Projeto EJA';
+                    togglePageBtns.forEach(btn => btn.textContent = 'Relatório Final');
+                } else {
+                    pageProjectEl.classList.add('hidden');
+                    pageReportEl.classList.remove('hidden');
+                    pageTitleEl.textContent = 'Relatório Final';
+                    togglePageBtns.forEach(btn => btn.textContent = 'Voltar ao Projeto');
+                }
+                window.scrollTo(0, 0);
+            };
+
+            // --- DYNAMIC CONTENT GENERATION ---
+            const createCardHTML = (section, page) => {
                 const fieldsHTML = section.fields.map(field => `
                     <div class="mb-4">
                         ${field.label ? `<label for="${field.id}" class="block text-md font-semibold text-[#2F3C7E] mb-2">${field.label}${field.required ? '<span class="text-red-500">*</span>' : ''}</label>` : ''}
-                        ${field.info && field.label ? `<p class="text-sm text-gray-500 mb-2">${field.info}</p>` : ''}
-                        ${field.type === 'input' ? 
-                            `<input type="text" id="${field.id}" data-section="${section.id}" class="w-full p-3 border border-gray-300 rounded-2xl focus:ring-2 focus:ring-[#4A90E2] focus:outline-none transition bg-gray-50">` : 
-                            `<textarea id="${field.id}" data-section="${section.id}" rows="8" class="w-full p-3 border border-gray-300 rounded-2xl focus:ring-2 focus:ring-[#4A90E2] focus:outline-none transition bg-gray-50"></textarea>`
-                        }
-                    </div>
-                `).join('');
+                        <textarea id="${field.id}" data-page="${page}" rows="8" class="w-full p-3 border border-gray-300 rounded-2xl focus:ring-2 focus:ring-[#4A90E2] focus:outline-none transition bg-gray-50"></textarea>
+                    </div>`).join('');
 
                 return `
-                    <div class="card bg-white rounded-2xl shadow-md mb-6 transition-all duration-300" data-id="${section.id}">
+                    <div class="card bg-white rounded-2xl shadow-md mb-6" data-id="${section.id}" data-page="${page}">
                         <div class="card-header p-6 cursor-pointer flex justify-between items-start gap-4">
-                            <div>
-                                <h2 class="text-xl font-bold text-[#2F3C7E]">${section.title}</h2>
-                                <p class="text-sm text-gray-500 mt-1">${section.info}</p>
-                            </div>
+                            <div><h2 class="text-xl font-bold text-[#2F3C7E]">${section.title}</h2><p class="text-sm text-gray-500 mt-1">${section.info || ''}</p></div>
                             <button class="edit-btn text-[#4A90E2] font-semibold flex-shrink-0">Editar</button>
                         </div>
-                        <div class="summary-content px-6 pb-6 text-gray-600 italic truncate">Nenhum conteúdo salvo.</div>
-                        <div class="card-content px-6">
-                            ${fieldsHTML}
-                            <div class="flex justify-end py-4">
-                                <button class="save-btn action-button text-white font-semibold py-2 px-8 rounded-2xl shadow-md transition-transform duration-300" data-section="${section.id}">Salvar</button>
-                            </div>
-                        </div>
-                    </div>
-                `;
-            }
+                        <div class="summary-content px-6 pb-6 text-gray-600 italic truncate">Nenhum conteúdo.</div>
+                        <div class="card-content px-6">${fieldsHTML}<div class="flex justify-end py-4"><button class="save-btn action-button text-white font-semibold py-2 px-8 rounded-2xl">Salvar</button></div></div>
+                    </div>`;
+            };
             
-            formContainer.innerHTML = sections.map(createCardHTML).join('');
+            pageProjectEl.innerHTML = projectSections.map(s => createCardHTML(s, 'project')).join('');
+            pageReportEl.innerHTML = reportSections.map(s => createCardHTML(s, 'report')).join('');
 
-            const autoSave = () => localStorage.setItem('ejaProjectData', JSON.stringify(projectData));
-
-            const loadData = (data) => {
-                projectData = data || {};
-                Object.keys(projectData).forEach(fieldId => {
-                    const element = document.getElementById(fieldId);
-                    if (element) element.value = projectData[fieldId];
-                });
-                updateAllSummaries();
+            // --- DATA HANDLING ---
+            const autoSave = () => {
+                if (currentPage === 'project') localStorage.setItem('ejaProjectData', JSON.stringify(projectData));
+                else localStorage.setItem('ejaReportData', JSON.stringify(reportData));
             };
 
-            const loadFromLocalStorage = () => {
-                const savedData = localStorage.getItem('ejaProjectData');
-                if (savedData) loadData(JSON.parse(savedData));
+            const loadData = () => {
+                const savedProject = localStorage.getItem('ejaProjectData');
+                const savedReport = localStorage.getItem('ejaReportData');
+                projectData = savedProject ? JSON.parse(savedProject) : {};
+                reportData = savedReport ? JSON.parse(savedReport) : {};
+
+                [...projectSections, ...reportSections].forEach(section => {
+                    const data = section.id.includes('_report') || section.id.includes('relato') ? reportData : projectData;
+                    section.fields.forEach(field => {
+                        const el = document.getElementById(field.id);
+                        if (el) el.value = data[field.id] || '';
+                    });
+                    updateSummary(section.id);
+                });
             };
 
             function updateSummary(sectionId) {
-                const card = formContainer.querySelector(`.card[data-id="${sectionId}"]`);
+                const card = document.querySelector(`.card[data-id="${sectionId}"]`);
                 if (!card) return;
+
+                const page = card.dataset.page;
+                const sections = page === 'project' ? projectSections : reportSections;
+                const data = page === 'project' ? projectData : reportData;
+
                 const summaryEl = card.querySelector('.summary-content');
                 const sectionFields = sections.find(s => s.id === sectionId).fields;
-                let summaryText = sectionFields.map(field => projectData[field.id] || '').join(' ').trim();
+                let summaryText = sectionFields.map(field => data[field.id] || '').join(' ').trim();
 
-                if (summaryText) {
-                    summaryEl.textContent = summaryText;
-                    summaryEl.classList.remove('italic', 'text-gray-400');
-                } else {
-                    summaryEl.textContent = 'Nenhum conteúdo salvo.';
-                    summaryEl.classList.add('italic', 'text-gray-400');
-                }
+                summaryEl.textContent = summaryText ? summaryText : 'Nenhum conteúdo.';
+                summaryEl.classList.toggle('italic', !summaryText);
             }
-            
-            const updateAllSummaries = () => sections.forEach(section => updateSummary(section.id));
 
-            formContainer.addEventListener('click', (e) => {
-                const cardHeader = e.target.closest('.card-header');
-                const editBtn = e.target.closest('.edit-btn');
+            // --- EVENT LISTENERS ---
+            document.body.addEventListener('click', (e) => {
+                const cardHeader = e.target.closest('.card-header, .edit-btn');
                 const saveBtn = e.target.closest('.save-btn');
-                
-                if (cardHeader || editBtn) {
-                    (cardHeader || editBtn).closest('.card').classList.toggle('expanded');
-                }
+
+                if (cardHeader) cardHeader.closest('.card').classList.toggle('expanded');
                 
                 if (saveBtn) {
-                    const sectionId = saveBtn.dataset.section;
                     const card = saveBtn.closest('.card');
-                    const sectionFields = sections.find(s => s.id === sectionId).fields;
+                    const page = card.dataset.page;
+                    const sections = page === 'project' ? projectSections : reportSections;
+                    const data = page === 'project' ? projectData : reportData;
+                    const section = sections.find(s => s.id === card.dataset.id);
 
-                    sectionFields.forEach(field => {
-                        const inputElement = document.getElementById(field.id);
-                        if (inputElement) projectData[field.id] = inputElement.value;
+                    section.fields.forEach(field => {
+                        data[field.id] = document.getElementById(field.id).value;
                     });
-
+                    
                     autoSave();
-                    updateSummary(sectionId);
+                    updateSummary(section.id);
                     card.classList.remove('expanded');
                     showNotification('Salvo com sucesso!', 'success');
                 }
             });
+            
+            const showNotification = (message, type = 'error') => {
+                const el = document.getElementById('notification');
+                el.querySelector('p').textContent = message;
+                el.className = `fixed top-5 right-5 text-white py-3 px-6 rounded-2xl shadow-lg transition-transform transform z-50 ${type === 'success' ? 'bg-green-500' : 'bg-red-500'}`;
+                el.classList.remove('translate-x-[150%]');
+                setTimeout(() => el.classList.add('translate-x-[150%]'), 3000);
+            };
 
-            function showNotification(message, type = 'error') {
-                const notification = document.getElementById('notification');
-                const notificationMessage = document.getElementById('notification-message');
-                
-                notificationMessage.textContent = message;
-                notification.className = `fixed top-5 right-5 text-white py-3 px-6 rounded-2xl shadow-lg transition-transform transform z-50 ${type === 'success' ? 'bg-green-500' : 'bg-red-500'}`;
-                notification.classList.remove('translate-x-[150%]');
-                setTimeout(() => notification.classList.add('translate-x-[150%]'), 3000);
-            }
-
-            function validateProject() {
-                if (! (projectData.titulo_projeto || '').trim()) {
-                    showNotification('Por favor, preencha o "Título do projeto" antes de exportar.');
-                    const requiredCard = document.querySelector('.card[data-id="acao_educativa"]');
-                    if (requiredCard && !requiredCard.classList.contains('expanded')) {
-                        requiredCard.classList.add('expanded');
-                    }
+            const validateProject = () => {
+                if (!(projectData.titulo_projeto || '').trim()) {
+                    showNotification('O "Título do projeto" é obrigatório.');
+                    showPage('project');
+                    const card = document.querySelector('.card[data-id="acao_educativa"]');
+                    if(card && !card.classList.contains('expanded')) card.classList.add('expanded');
                     document.getElementById('titulo_projeto')?.focus();
                     return false;
                 }
                 return true;
-            }
+            };
 
-            // --- Menu and Actions Logic ---
+            // --- ACTIONS (Import, Export, Share) ---
+            const fileInput = document.getElementById('json-file-input');
+            const actions = {
+                'toggle-page': () => showPage(currentPage === 'project' ? 'report' : 'project'),
+                'import-json': () => fileInput.click(),
+                'export-json': () => {
+                    if (currentPage === 'project' && !validateProject()) return;
+                    const data = currentPage === 'project' ? projectData : reportData;
+                    const title = projectData.titulo_projeto || 'sem_titulo';
+                    const filename = `${currentPage}-eja-${title.replace(/ /g, '_')}.json`;
+                    
+                    const a = document.createElement('a');
+                    a.href = 'data:application/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(data, null, 4));
+                    a.download = filename;
+                    a.click();
+                },
+                'export-pdf': async () => {
+                    if (currentPage === 'project' && !validateProject()) return;
+                    document.getElementById('loading-overlay').classList.remove('hidden');
+                    const blob = await generatePdfBlob();
+                    const title = projectData.titulo_projeto || 'sem_titulo';
+                    const filename = `${currentPage === 'project' ? 'Projeto' : 'Relatorio'}_EJA_${title.replace(/ /g, '_')}.pdf`;
+                    const a = document.createElement('a');
+                    a.href = URL.createObjectURL(blob);
+                    a.download = filename;
+                    a.click();
+                    URL.revokeObjectURL(a.href);
+                    document.getElementById('loading-overlay').classList.add('hidden');
+                },
+                'share-pdf': async () => {
+                    if (currentPage === 'project' && !validateProject()) return;
+                    document.getElementById('loading-overlay').classList.remove('hidden');
+                    const blob = await generatePdfBlob();
+                    const title = projectData.titulo_projeto || 'sem_titulo';
+                    const filename = `${currentPage === 'project' ? 'Projeto' : 'Relatorio'}_EJA_${title.replace(/ /g, '_')}.pdf`;
+                    const file = new File([blob], filename, { type: 'application/pdf' });
 
-            // Mobile menu toggle
-            const mobileMenuBtn = document.getElementById('mobile-menu-button');
-            const mobileMenu = document.getElementById('mobile-menu');
-            const menuOpenIcon = document.getElementById('menu-open-icon');
-            const menuCloseIcon = document.getElementById('menu-close-icon');
+                    try {
+                        await navigator.share({ files: [file], title: `EJA: ${title}` });
+                    } catch (error) {
+                        if (error.name !== 'AbortError') showNotification('Erro ao compartilhar.');
+                    } finally {
+                        document.getElementById('loading-overlay').classList.add('hidden');
+                    }
+                }
+            };
 
-            mobileMenuBtn.addEventListener('click', () => {
-                mobileMenu.classList.toggle('hidden');
-                menuOpenIcon.classList.toggle('hidden');
-                menuCloseIcon.classList.toggle('hidden');
+            document.body.addEventListener('click', e => {
+                const action = e.target.dataset.action;
+                if (actions[action]) actions[action]();
             });
 
-            // JSON Import
-            const fileInput = document.getElementById('json-file-input');
-            const handleImport = () => fileInput.click();
-            
-            fileInput.addEventListener('change', (event) => {
-                const file = event.target.files[0];
+            fileInput.addEventListener('change', (e) => {
+                const file = e.target.files[0];
                 if (!file) return;
                 const reader = new FileReader();
-                reader.onload = (e) => {
+                reader.onload = (re) => {
                     try {
-                        loadData(JSON.parse(e.target.result));
+                        const data = JSON.parse(re.target.result);
+                        if (currentPage === 'project') projectData = data; else reportData = data;
                         autoSave();
-                        showNotification('Projeto importado com sucesso!', 'success');
-                    } catch (error) {
-                        showNotification('Erro ao ler o arquivo JSON.');
-                    }
+                        loadData();
+                        showNotification('Importado com sucesso!', 'success');
+                    } catch { showNotification('Erro ao ler arquivo JSON.'); }
                 };
                 reader.readAsText(file);
                 fileInput.value = '';
             });
 
-            // JSON Export
-            const handleExportJson = () => {
-                if (!validateProject()) return;
-                const title = projectData.titulo_projeto || 'sem_titulo';
-                const dataStr = JSON.stringify(projectData, null, 4);
-                const dataUri = 'data:application/json;charset=utf-8,' + encodeURIComponent(dataStr);
-                const link = document.createElement('a');
-                link.setAttribute('href', dataUri);
-                link.setAttribute('download', `projeto-eja-${title.replace(/ /g, '_')}.json`);
-                link.click();
-            };
-            
-            // PDF Generation
             const generatePdfBlob = async () => {
                 const { jsPDF } = window.jspdf;
-                const doc = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
-                const pageMargin = 20;
-                const pageContentWidth = doc.internal.pageSize.getWidth() - (pageMargin * 2);
-                let yPos = pageMargin;
+                const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+                const margin = 20;
+                const width = doc.internal.pageSize.getWidth() - (margin * 2);
+                let y = margin;
 
-                const addWrappedText = (text, size, style, spaceAfter) => {
+                const addText = (text, size, style, space) => {
+                    if (y > doc.internal.pageSize.getHeight() - margin - 10) { doc.addPage(); y = margin; }
                     doc.setFontSize(size);
                     doc.setFont('helvetica', style);
-                    const lines = doc.splitTextToSize(text || 'Não preenchido', pageContentWidth);
-                    const pageHeight = doc.internal.pageSize.getHeight() - pageMargin;
-
-                    lines.forEach(line => {
-                        if (yPos > pageHeight) {
-                            doc.addPage();
-                            yPos = pageMargin;
-                        }
-                        doc.text(line, pageMargin, yPos);
-                        yPos += (size * 0.5);
-                    });
-                    yPos += spaceAfter;
+                    const lines = doc.splitTextToSize(text || 'Não preenchido', width);
+                    doc.text(lines, margin, y);
+                    y += (lines.length * size * 0.4) + space;
                 };
-                
-                // Title Page
-                addWrappedText('PROJETO DA AÇÃO EDUCATIVA EM EJA', 22, 'bold', 20);
-                addWrappedText(projectData.titulo_projeto || 'Título não definido', 16, 'normal', 50);
-                addWrappedText(`Estagiário(a): ${projectData.estagiario || ''}`, 12, 'normal', 0);
-                
-                doc.addPage();
-                yPos = pageMargin;
 
-                // Content
+                const sections = currentPage === 'project' ? projectSections : reportSections;
+                const data = currentPage === 'project' ? projectData : reportData;
+
+                addText(currentPage === 'project' ? 'Projeto da Ação Educativa' : 'Relatório Final', 18, 'bold', 10);
+                addText(projectData.titulo_projeto || 'Título não definido', 14, 'normal', 20);
+
                 for (const section of sections) {
-                    if (yPos > doc.internal.pageSize.getHeight() - pageMargin - 20) {
-                        doc.addPage();
-                        yPos = pageMargin;
-                    }
-                    addWrappedText(section.title, 14, 'bold', 8);
-                    const content = section.fields.length > 1 ?
-                        section.fields.map(f => `${f.label}:\n${projectData[f.id] || ''}`).join('\n\n') :
-                        projectData[section.fields[0].id] || '';
-                    addWrappedText(content, 12, 'normal', 15);
+                    addText(section.title, 14, 'bold', 5);
+                    const content = section.fields.map(f => (f.label ? `${f.label}:\n` : '') + (data[f.id] || '')).join('\n\n');
+                    addText(content, 12, 'normal', 15);
                 }
-
                 return doc.output('blob');
             };
 
-            // PDF Export
-            const handleExportPdf = async () => {
-                if (!validateProject()) return;
-                document.getElementById('loading-overlay').classList.remove('hidden');
-                const blob = await generatePdfBlob();
-                const url = URL.createObjectURL(blob);
-                const link = document.createElement('a');
-                link.href = url;
-                link.download = `Projeto_EJA_${(projectData.titulo_projeto || 'sem_titulo').replace(/ /g, '_')}.pdf`;
-                link.click();
-                URL.revokeObjectURL(url);
-                document.getElementById('loading-overlay').classList.add('hidden');
-            };
-
-            // PDF Share
-            const handleSharePdf = async () => {
-                if (!validateProject()) return;
-                document.getElementById('loading-overlay').classList.remove('hidden');
-                const blob = await generatePdfBlob();
-                const fileName = `Projeto_EJA_${(projectData.titulo_projeto || 'sem_titulo').replace(/ /g, '_')}.pdf`;
-                const file = new File([blob], fileName, { type: 'application/pdf' });
-                
-                try {
-                    await navigator.share({
-                        files: [file],
-                        title: `Projeto EJA: ${projectData.titulo_projeto}`,
-                        text: 'Confira o projeto da ação educativa em EJA.'
+            // --- SEARCH & MENU ---
+            document.querySelectorAll('#search-input-desktop, #search-input-mobile').forEach(input => {
+                input.addEventListener('input', (e) => {
+                    const term = e.target.value.toLowerCase();
+                    document.querySelectorAll(`.card[data-page="${currentPage}"]`).forEach(card => {
+                        card.classList.toggle('hidden', !card.innerText.toLowerCase().includes(term));
                     });
-                } catch (error) {
-                   if (error.name !== 'AbortError') {
-                        showNotification('Erro ao compartilhar o arquivo.');
-                        console.error('Share error:', error);
-                   }
-                } finally {
-                    document.getElementById('loading-overlay').classList.add('hidden');
-                }
-            };
+                });
+            });
+
+            const mobileMenuBtn = document.getElementById('mobile-menu-button');
+            const mobileMenu = document.getElementById('mobile-menu');
+            mobileMenuBtn.addEventListener('click', () => {
+                mobileMenu.classList.toggle('hidden');
+                document.getElementById('menu-open-icon').classList.toggle('hidden');
+                document.getElementById('menu-close-icon').classList.toggle('hidden');
+            });
             
-            // --- Event Binding ---
-            const actionMap = {
-                'import-json': handleImport,
-                'export-json': handleExportJson,
-                'export-pdf': handleExportPdf,
-                'share-pdf': handleSharePdf,
-            };
-
-            ['desktop', 'mobile'].forEach(device => {
-                Object.keys(actionMap).forEach(action => {
-                    const btn = document.getElementById(`${action}-btn-${device}`);
-                    if (btn) btn.addEventListener('click', actionMap[action]);
-                });
-            });
-
-            // Search
-            ['desktop', 'mobile'].forEach(device => {
-                const searchInput = document.getElementById(`search-input-${device}`);
-                searchInput.addEventListener('input', (e) => {
-                    const searchTerm = e.target.value.toLowerCase().trim();
-                    document.querySelectorAll('.card').forEach(card => {
-                        const cardText = card.innerText.toLowerCase();
-                        card.classList.toggle('hidden', !cardText.includes(searchTerm));
-                    });
-                });
-            });
-
-            // Conditionally show share button
-            const dummyFile = new File([""], "dummy.pdf", { type: "application/pdf" });
-            if (navigator.canShare && navigator.canShare({ files: [dummyFile] })) {
-                document.getElementById('share-pdf-btn-desktop').classList.remove('hidden');
-                document.getElementById('share-pdf-btn-mobile').classList.remove('hidden');
+            if (navigator.share && navigator.canShare({files: [new File([""], "t.pdf", {type:"application/pdf"})]})) {
+                document.querySelectorAll('[data-action="share-pdf"]').forEach(b => b.classList.remove('hidden'));
             }
-            
-            // Initial load
-            loadFromLocalStorage();
+
+            loadData();
         });
     </script>
 </body>
