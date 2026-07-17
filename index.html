@@ -1,385 +1,786 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Projeto e Relatório - Ação Educativa em EJA</title>
-    
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    
-    <!-- Google Fonts: Inter -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    
-    <!-- jsPDF for PDF generation -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Diligência · Prospecção 26.1</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Spectral:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap');
 
-    <style>
-        /* Custom styles and animations */
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #F7F9FC;
-        }
-        
-        .card-content {
-            max-height: 0;
-            overflow: hidden;
-            transition: max-height 0.7s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.5s ease-out;
-            opacity: 0;
-            visibility: hidden;
-        }
+:root{
+  --paper:      #EAEFEA;
+  --paper-alt:  #DFE6E0;
+  --card:       #FBFCFA;
+  --ink:        #1B2A4A;
+  --ink-soft:   #4C5A73;
+  --line:       #C6D0C8;
+  --line-soft:  #D9E0DA;
 
-        .card.expanded .card-content {
-            max-height: 2000px;
-            opacity: 1;
-            visibility: visible;
-        }
+  --teal:       #0F6B5C;
+  --teal-dark:  #0B4F44;
+  --teal-tint:  #E1EDE9;
 
-        .action-button {
-            background-image: linear-gradient(to right, #4A90E2, #7B61FF);
-        }
-        
-        .loader {
-            border-top-color: #2F3C7E;
-            animation: spin 1s linear infinite;
-        }
+  --gold:       #B9862A;
+  --gold-dark:  #8F6714;
+  --gold-tint:  #F3E9D3;
 
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-    </style>
+  --wine:       #A23A50;
+  --wine-dark:  #7C2A3D;
+  --wine-tint:  #F3DEE3;
+
+  --steel:      #3E5F80;
+  --steel-dark: #2C4661;
+  --steel-tint: #DEE7EE;
+
+  --grey-tint:  #E7E7E3;
+
+  --shadow: 0 1px 2px rgba(27,42,74,0.06), 0 4px 14px rgba(27,42,74,0.06);
+  --radius: 10px;
+}
+
+*{ box-sizing: border-box; }
+html,body{ margin:0; padding:0; }
+
+body{
+  background: var(--paper);
+  color: var(--ink);
+  font-family: 'Inter', system-ui, sans-serif;
+  min-height: 100vh;
+}
+
+body::before{
+  content:"";
+  position: fixed; inset: 0;
+  pointer-events: none;
+  background-image:
+    repeating-linear-gradient(0deg, rgba(27,42,74,0.015) 0px, rgba(27,42,74,0.015) 1px, transparent 1px, transparent 3px);
+  z-index: 0;
+}
+
+a{ color: inherit; }
+.font-display{ font-family: 'Spectral', Georgia, serif; }
+.font-mono{ font-family: 'IBM Plex Mono', monospace; }
+
+/* ---------- topbar ---------- */
+.topbar{
+  position: sticky; top:0; z-index: 40;
+  background: var(--ink);
+  color: #EDF1EE;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+}
+.topbar-inner{
+  max-width: 1280px; margin:0 auto;
+  padding: 14px 20px;
+  display:flex; align-items:center; gap:20px; flex-wrap: wrap;
+}
+.brand{ display:flex; align-items:baseline; gap:10px; }
+.brand-mark{ font-family:'Spectral', serif; font-weight:700; font-size: 22px; letter-spacing: 0.3px; }
+.brand-sub{ font-size: 11.5px; color: #A9B7C4; font-family:'IBM Plex Mono', monospace; letter-spacing: 0.06em; text-transform: uppercase; }
+.topnav{ display:flex; gap: 4px; margin-left: auto; }
+.topnav button{
+  text-decoration:none; border:none; cursor:pointer;
+  font-size: 13.5px; font-weight:600; font-family:'Inter',sans-serif;
+  color: #C3CEDA; background: transparent;
+  padding: 8px 14px; border-radius: 999px; transition: all .15s ease;
+}
+.topnav button:hover{ color:#fff; background: rgba(255,255,255,0.08); }
+.topnav button.active{ color: var(--ink); background: #EDF1EE; }
+
+/* ---------- shell ---------- */
+.shell{ max-width: 1280px; margin: 0 auto; padding: 24px 20px 60px; position: relative; z-index: 1; }
+.view{ display:none; }
+.view.active{ display:block; }
+
+.page-head{ display:flex; justify-content: space-between; align-items:flex-end; gap: 16px; flex-wrap: wrap; margin-bottom: 18px; }
+.page-title{ font-family:'Spectral', serif; font-weight:700; font-size: 28px; margin:0 0 4px; color: var(--ink); }
+.page-kicker{ font-family:'IBM Plex Mono', monospace; font-size:11.5px; letter-spacing:.08em; text-transform: uppercase; color: var(--ink-soft); }
+
+/* ---------- folder tabs (curso) ---------- */
+.tabs{ display:flex; gap:6px; flex-wrap: wrap; margin-bottom: 16px; }
+.tab{
+  --tc: var(--ink-soft); --tt: var(--grey-tint);
+  border: none; cursor:pointer;
+  font-family:'Inter', sans-serif; font-weight:600; font-size: 13px;
+  color: var(--tc); background: var(--tt);
+  padding: 9px 16px 8px; border-radius: 8px 8px 0 0; position: relative;
+  transition: transform .12s ease, box-shadow .12s ease;
+  border-bottom: 3px solid transparent;
+}
+.tab .count{ font-family:'IBM Plex Mono', monospace; font-size: 11px; opacity:.75; margin-left: 6px; }
+.tab:hover{ transform: translateY(-1px); }
+.tab.active{ background: var(--card); box-shadow: var(--shadow); border-bottom: 3px solid var(--tc); }
+.tab[data-curso="edfisica"]{ --tc: var(--teal-dark); --tt: var(--teal-tint); }
+.tab[data-curso="historia"]{ --tc: var(--gold-dark); --tt: var(--gold-tint); }
+.tab[data-curso="letras"]{ --tc: var(--wine-dark); --tt: var(--wine-tint); }
+.tab[data-curso="matematica"]{ --tc: var(--steel-dark); --tt: var(--steel-tint); }
+.tab[data-curso="todos"]{ --tc: var(--ink); --tt: #E3E7E1; }
+
+/* ---------- toolbar / filters ---------- */
+.toolbar{
+  background: var(--card); border: 1px solid var(--line-soft); border-radius: var(--radius);
+  box-shadow: var(--shadow); padding: 14px 16px;
+  display:flex; flex-wrap: wrap; gap: 12px; align-items:flex-end; margin-bottom: 18px;
+}
+.field{ display:flex; flex-direction:column; gap:5px; }
+.field label{ font-size: 11px; font-weight:600; letter-spacing:.05em; text-transform:uppercase; color: var(--ink-soft); }
+.field input[type="text"], .field select{
+  font-family:'Inter',sans-serif; font-size: 13.5px;
+  border: 1px solid var(--line); border-radius: 7px;
+  padding: 8px 10px; background: #fff; color: var(--ink); min-width: 150px;
+}
+.field input[type="text"]:focus, .field select:focus{ outline: 2px solid var(--teal); outline-offset: 1px; }
+.field.search{ flex: 1 1 220px; }
+.field.search input{ width: 100%; }
+.toolbar-actions{ display:flex; gap:8px; margin-left:auto; align-items:flex-end; }
+
+.btn{
+  font-family:'Inter',sans-serif; font-weight:600; font-size: 13px;
+  border: 1px solid var(--line); background:#fff; color: var(--ink);
+  padding: 8px 14px; border-radius: 7px; cursor:pointer;
+  display:inline-flex; align-items:center; gap:6px;
+  transition: background .12s ease, color .12s ease, border-color .12s ease;
+}
+.btn:hover{ background: var(--paper-alt); }
+.btn.ghost{ background: transparent; }
+
+.view-switch{ display:flex; border:1px solid var(--line); border-radius: 999px; overflow:hidden; background:#fff; }
+.view-switch button{
+  border:none; background:transparent; cursor:pointer;
+  font-family:'Inter',sans-serif; font-weight:600; font-size: 12.5px;
+  padding: 8px 15px; color: var(--ink-soft); transition: background .12s ease, color .12s ease;
+}
+.view-switch button.active{ background: var(--ink); color: #fff; }
+
+.results-count{ font-family:'IBM Plex Mono', monospace; font-size: 12px; color: var(--ink-soft); margin: 4px 2px 12px; }
+
+/* ---------- stamps (status badges) ---------- */
+.stamp{
+  display:inline-flex; align-items:center; justify-content:center;
+  font-family:'IBM Plex Mono', monospace; font-weight:600; font-size: 10.5px;
+  letter-spacing: .06em; text-transform: uppercase; padding: 4px 10px;
+  border-radius: 3px; border: 1.5px dashed currentColor; transform: rotate(-2deg); white-space: nowrap;
+}
+.stamp.forte{ color: var(--wine-dark); background: var(--wine-tint); }
+.stamp.confirmado{ color: var(--teal-dark); background: var(--teal-tint); transform: rotate(1.5deg); }
+.stamp.aguardando{ color: var(--gold-dark); background: var(--gold-tint); transform: rotate(-1deg); }
+.stamp.sem_status{ color: #6B7280; background: #EDEEEC; border-style: dotted; transform: rotate(0deg); }
+
+.pill-curso{ display:inline-flex; align-items:center; gap:6px; font-size: 12.5px; font-weight:600; padding: 4px 10px 4px 8px; border-radius: 999px; }
+.pill-curso .dot{ width:7px; height:7px; border-radius:50%; }
+.pill-curso.edfisica{ background: var(--teal-tint); color: var(--teal-dark); }
+.pill-curso.edfisica .dot{ background: var(--teal); }
+.pill-curso.historia{ background: var(--gold-tint); color: var(--gold-dark); }
+.pill-curso.historia .dot{ background: var(--gold); }
+.pill-curso.letras{ background: var(--wine-tint); color: var(--wine-dark); }
+.pill-curso.letras .dot{ background: var(--wine); }
+.pill-curso.matematica{ background: var(--steel-tint); color: var(--steel-dark); }
+.pill-curso.matematica .dot{ background: var(--steel); }
+.pill-curso.sem_curso{ background: var(--grey-tint); color:#6B7280; }
+.pill-curso.sem_curso .dot{ background:#9CA3AF; }
+
+.tag{ font-size: 12px; font-weight:500; padding: 3px 8px; border-radius: 5px; background: var(--paper-alt); color: var(--ink-soft); white-space:nowrap; }
+.tag.warn{ background: var(--wine-tint); color: var(--wine-dark); font-weight:600; }
+.tag.ok{ background: var(--teal-tint); color: var(--teal-dark); font-weight:600; }
+.tag.unknown{ background:#EDEEEC; color:#8A8F86; font-style: italic; }
+
+/* ---------- FULL VIEW: table ---------- */
+.table-wrap{ background: var(--card); border: 1px solid var(--line-soft); border-radius: var(--radius); box-shadow: var(--shadow); overflow: auto; }
+table.full-table{ width: 100%; border-collapse: collapse; min-width: 880px; }
+table.full-table thead th{
+  position: sticky; top:0; background: var(--ink); color: #DCE4DF;
+  text-align:left; font-size: 11px; font-weight:600; letter-spacing:.06em; text-transform: uppercase;
+  padding: 12px 14px; white-space: nowrap;
+}
+table.full-table tbody tr{ border-bottom: 1px solid var(--line-soft); transition: background .1s ease; }
+table.full-table tbody tr:hover{ background: var(--paper-alt); }
+table.full-table tbody td{ padding: 12px 14px; font-size: 13.5px; vertical-align: top; }
+.nome-cell .nome{ font-weight: 600; color: var(--ink); }
+.nome-cell .obs{ display:block; font-size: 12px; color: var(--ink-soft); margin-top: 3px; max-width: 320px; font-style: italic; }
+.nivel-cell{ font-family:'IBM Plex Mono', monospace; font-size: 12.5px; }
+
+/* ---------- COMPACT VIEW: dense list ---------- */
+.compact-list{ display:none; flex-direction: column; gap: 6px; }
+.compact-row{
+  display:grid; grid-template-columns: 1.6fr auto auto auto auto;
+  align-items:center; gap: 10px;
+  background: var(--card); border:1px solid var(--line-soft);
+  border-radius: 8px; padding: 9px 12px; box-shadow: var(--shadow);
+}
+.compact-row .nome{ font-weight:600; font-size: 13.5px; }
+.compact-row .nome small{ display:block; font-weight:400; color: var(--ink-soft); font-size: 11px; font-style: italic; }
+
+body.compact .table-wrap{ display:none; }
+body.compact .compact-list{ display:flex; }
+
+.empty-state{ text-align:center; padding: 50px 20px; color: var(--ink-soft); background: var(--card); border:1px dashed var(--line); border-radius: var(--radius); }
+.empty-state strong{ display:block; color: var(--ink); font-size:16px; margin-bottom:6px; font-family:'Spectral',serif; }
+
+/* ---------- dashboard ---------- */
+.kpi-grid{ display:grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 22px; }
+.kpi-card{ background: var(--card); border:1px solid var(--line-soft); border-radius: var(--radius); box-shadow: var(--shadow); padding: 16px 18px; position: relative; overflow:hidden; }
+.kpi-card .value{ font-family:'Spectral',serif; font-weight:700; font-size: 32px; color: var(--ink); }
+.kpi-card .label{ font-size: 12px; color: var(--ink-soft); font-weight:600; letter-spacing:.03em; text-transform: uppercase; margin-top: 2px; }
+.kpi-card .accent-bar{ position:absolute; left:0; top:0; bottom:0; width:5px; }
+.kpi-card.c-total .accent-bar{ background: var(--ink); }
+.kpi-card.c-forte .accent-bar{ background: var(--wine); }
+.kpi-card.c-confirmado .accent-bar{ background: var(--teal); }
+.kpi-card.c-aguardando .accent-bar{ background: var(--gold); }
+
+.panel-grid{ display:grid; grid-template-columns: 1.3fr 1fr; gap: 16px; margin-bottom:16px; }
+.panel{ background: var(--card); border:1px solid var(--line-soft); border-radius: var(--radius); box-shadow: var(--shadow); padding: 18px 20px; }
+.panel h3{ font-family:'Spectral', serif; font-size: 16px; margin: 0 0 14px; color: var(--ink); display:flex; align-items:center; gap:8px; }
+.panel h3 .kicker{ font-family:'IBM Plex Mono', monospace; font-size: 10.5px; color: var(--ink-soft); text-transform: uppercase; letter-spacing:.06em; font-weight:600; }
+
+.bar-row{ display:flex; align-items:center; gap:10px; margin-bottom: 12px; }
+.bar-row .bar-label{ width: 128px; font-size: 12.5px; font-weight:600; color: var(--ink-soft); flex-shrink:0; }
+.bar-row .bar-track{ flex:1; background: var(--paper-alt); border-radius:5px; height: 16px; overflow:hidden; }
+.bar-row .bar-fill{ height:100%; border-radius:5px; transition: width .5s ease; }
+.bar-row .bar-value{ font-family:'IBM Plex Mono', monospace; font-size: 12px; width: 34px; text-align:right; color: var(--ink-soft); }
+
+.funnel{ display:flex; flex-direction:column; gap: 8px; }
+.funnel-step{ display:flex; align-items:center; justify-content: space-between; padding: 10px 14px; border-radius: 8px; background: var(--paper-alt); }
+.funnel-step .fs-label{ font-size: 13px; font-weight:600; color: var(--ink); }
+.funnel-step .fs-value{ font-family:'IBM Plex Mono', monospace; font-weight:600; font-size: 15px; }
+
+.legend-row{ display:flex; gap:14px; flex-wrap:wrap; font-size:12px; color: var(--ink-soft); margin-top: 10px; }
+.legend-row span{ display:inline-flex; align-items:center; gap:6px; }
+.legend-row i{ width:9px; height:9px; border-radius:2px; display:inline-block; }
+
+.table-mini{ width:100%; border-collapse: collapse; }
+.table-mini th{ text-align:left; font-size: 10.5px; text-transform:uppercase; letter-spacing:.05em; color: var(--ink-soft); padding: 6px 8px; border-bottom: 2px solid var(--line-soft); }
+.table-mini td{ padding: 8px 8px; font-size: 13px; border-bottom: 1px solid var(--line-soft); }
+.table-mini tr:last-child td{ border-bottom:none; }
+
+/* ---------- responsive ---------- */
+@media (max-width: 980px){
+  .panel-grid{ grid-template-columns: 1fr; }
+  .kpi-grid{ grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 720px){
+  .toolbar{ flex-direction: column; align-items: stretch; }
+  .toolbar-actions{ margin-left:0; justify-content: space-between; width:100%; }
+  .field{ width:100%; }
+  .field select, .field input{ width:100%; }
+  .compact-row{ grid-template-columns: 1fr auto; row-gap:6px; }
+  table.full-table{ min-width: 720px; }
+  .kpi-grid{ grid-template-columns: 1fr 1fr; }
+  .page-title{ font-size: 22px; }
+}
+@media (max-width: 480px){
+  .kpi-grid{ grid-template-columns: 1fr; }
+  .topbar-inner{ gap: 10px; }
+  .brand-sub{ display:none; }
+}
+
+button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible{ outline: 2px solid var(--teal); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce){ *{ transition: none !important; } }
+
+.footer-note{ text-align:center; font-size: 11.5px; color: var(--ink-soft); margin-top: 30px; font-family:'IBM Plex Mono', monospace; }
+</style>
 </head>
-<body class="text-gray-800">
+<body>
 
-    <!-- Notification Modal -->
-    <div id="notification" class="fixed top-5 right-5 bg-red-500 text-white py-3 px-6 rounded-2xl shadow-lg transition-transform transform translate-x-[150%] z-50">
-        <p id="notification-message"></p>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <div class="brand">
+        <span class="brand-mark">Diligência</span>
+        <span class="brand-sub">Captação 26.1 · UNINTA Buriti</span>
+      </div>
+      <nav class="topnav">
+        <button id="navLista" class="active" type="button">Lista</button>
+        <button id="navDashboard" type="button">Painel</button>
+      </nav>
     </div>
+  </header>
 
-    <!-- Loading Overlay -->
-    <div id="loading-overlay" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
-        <div class="loader ease-linear rounded-full border-8 border-t-8 border-gray-200 h-24 w-24"></div>
-        <p class="text-white text-xl ml-4">Gerando PDF...</p>
-    </div>
+  <main class="shell">
 
-    <!-- Header / Menu -->
-    <header class="bg-white shadow-sm sticky top-0 z-40 py-4 px-4 sm:px-8">
-        <div class="container mx-auto flex justify-between items-center gap-4">
-            <h1 id="page-title" class="text-xl sm:text-2xl font-bold text-[#2F3C7E] whitespace-nowrap">Projeto EJA</h1>
-            
-            <nav class="hidden md:flex flex-1 justify-end items-center gap-2">
-                <input type="search" id="search-input-desktop" placeholder="Buscar..." class="w-full max-w-xs px-4 py-2 border border-gray-300 rounded-2xl focus:ring-2 focus:ring-[#4A90E2] focus:outline-none transition">
-                <button data-action="toggle-page" class="action-button text-white font-semibold py-2 px-4 rounded-2xl shadow-md text-sm">Relatório Final</button>
-                <button data-action="import-json" class="action-button text-white font-semibold py-2 px-4 rounded-2xl shadow-md text-sm">Importar JSON</button>
-                <button data-action="export-json" class="action-button text-white font-semibold py-2 px-4 rounded-2xl shadow-md text-sm">Exportar JSON</button>
-                <button data-action="export-pdf" class="action-button text-white font-semibold py-2 px-4 rounded-2xl shadow-md text-sm">Exportar PDF</button>
-                <button data-action="share-pdf" class="action-button text-white font-semibold py-2 px-4 rounded-2xl shadow-md text-sm hidden">Compartilhar PDF</button>
-            </nav>
-
-            <div class="md:hidden">
-                <button id="mobile-menu-button" class="p-2 rounded-md text-[#2F3C7E]"><svg class="h-6 w-6" id="menu-open-icon" stroke="currentColor" fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg><svg class="h-6 w-6 hidden" id="menu-close-icon" stroke="currentColor" fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
-            </div>
+    <!-- ===================== VIEW: LISTA ===================== -->
+    <section class="view active" id="viewLista">
+      <div class="page-head">
+        <div>
+          <div class="page-kicker">Protocolo de prospecção</div>
+          <h1 class="page-title">Candidatos por curso</h1>
         </div>
+      </div>
 
-        <div id="mobile-menu" class="md:hidden hidden bg-white shadow-lg absolute top-full right-0 w-full">
-            <div class="px-4 pt-2 pb-4 space-y-3">
-                 <input type="search" id="search-input-mobile" placeholder="Buscar..." class="w-full px-4 py-2 border border-gray-300 rounded-2xl">
-                 <button data-action="toggle-page" class="w-full text-left action-button text-white font-semibold py-2 px-4 rounded-2xl shadow-md">Relatório Final</button>
-                 <button data-action="import-json" class="w-full text-left action-button text-white font-semibold py-2 px-4 rounded-2xl shadow-md">Importar JSON</button>
-                 <button data-action="export-json" class="w-full text-left action-button text-white font-semibold py-2 px-4 rounded-2xl shadow-md">Exportar JSON</button>
-                 <button data-action="export-pdf" class="w-full text-left action-button text-white font-semibold py-2 px-4 rounded-2xl shadow-md">Exportar PDF</button>
-                 <button data-action="share-pdf" class="w-full text-left action-button text-white font-semibold py-2 px-4 rounded-2xl shadow-md hidden">Compartilhar PDF</button>
-            </div>
+      <div class="tabs" id="tabs"></div>
+
+      <div class="toolbar">
+        <div class="field search">
+          <label for="fBusca">Buscar</label>
+          <input type="text" id="fBusca" placeholder="Nome ou observação…">
         </div>
-        <input type="file" id="json-file-input" class="hidden" accept=".json">
-    </header>
+        <div class="field">
+          <label for="fStatus">Status</label>
+          <select id="fStatus"><option value="">Todos</option></select>
+        </div>
+        <div class="field">
+          <label for="fNivel">Nível</label>
+          <select id="fNivel"><option value="">Todos</option></select>
+        </div>
+        <div class="field">
+          <label for="fInscricao">Inscrição</label>
+          <select id="fInscricao"><option value="">Todas</option></select>
+        </div>
+        <div class="field">
+          <label for="fPre">Pré-matrícula</label>
+          <select id="fPre"><option value="">Todas</option></select>
+        </div>
+        <div class="toolbar-actions">
+          <button class="btn ghost" id="btnLimpar" type="button">Limpar filtros</button>
+          <div class="view-switch" role="group" aria-label="Alternar modo de visualização">
+            <button id="btnCompleto" class="active" type="button">Completo</button>
+            <button id="btnCompacto" type="button">Compacto</button>
+          </div>
+        </div>
+      </div>
 
-    <!-- Page: Project -->
-    <main id="page-project" class="container mx-auto p-4 sm:p-8">
-        <!-- Project cards will be dynamically inserted here -->
-    </main>
-    
-    <!-- Page: Report -->
-    <main id="page-report" class="container mx-auto p-4 sm:p-8 hidden">
-        <!-- Report cards will be dynamically inserted here -->
-    </main>
+      <div class="results-count" id="resultsCount"></div>
 
+      <div class="table-wrap">
+        <table class="full-table">
+          <thead>
+            <tr>
+              <th style="width:26%">Nome</th>
+              <th>Status</th>
+              <th>Curso</th>
+              <th>Nível</th>
+              <th>Inscrição</th>
+              <th>Pré-matrícula</th>
+            </tr>
+          </thead>
+          <tbody id="tbodyFull"></tbody>
+        </table>
+      </div>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            
-            // --- DATA STRUCTURES ---
-            const projectSections = [
-                { id: 'identificacao', title: '1. Identificação do Projeto', fields: [{ id: 'estagiario', label: 'Estagiário(a)'}, { id: 'local_acao', label: 'Local da ação'}, { id: 'gestor_local', label: 'Gestor do local'}, { id: 'endereco', label: 'Endereço'}] },
-                { id: 'introducao', title: '2. Introdução', fields: [{ id: 'introducao_text'}] }, { id: 'objetivos', title: '3. Objetivos', fields: [{ id: 'objetivo_geral', label: '3.1 Objetivo Geral'}, { id: 'objetivos_especificos', label: '3.2 Objetivos Específicos'}] }, { id: 'justificativa', title: '4. Justificativa', fields: [{ id: 'justificativa_text'}] }, { id: 'revisao_literatura', title: '5. Revisão da Literatura', fields: [{ id: 'revisao_literatura_text'}] }, { id: 'metodologia', title: '6. Metodologia', fields: [{ id: 'metodologia_text'}] }, { id: 'acao_educativa', title: '7. Ação Educativa', fields: [{ id: 'data_acao', label: 'Data'}, { id: 'publico_alvo', label: 'Público-alvo'}, { id: 'turno', label: 'Turno'}, { id: 'semestre_atual', label: 'Semestre atual'}, { id: 'local_aplicacao', label: 'Local'}, { id: 'titulo_projeto', label: 'Título do projeto (obrigatório)', required: true }] }, { id: 'recursos', title: '7.1 Recursos', fields: [{ id: 'recursos_text'}] }, { id: 'referencias_proj', title: 'Referências (Projeto)', fields: [{ id: 'referencias_proj_text'}] }, { id: 'avaliacao', title: '8. Avaliação', fields: [{ id: 'avaliacao_text'}] }, { id: 'resultados_esperados', title: '9. Resultados esperados', fields: [{ id: 'resultados_esperados_text'}] }
-            ];
+      <div class="compact-list" id="compactList"></div>
 
-            const reportSections = [
-                { id: 'intro_report', title: '1. Introdução do Relatório', info: 'Apresente o documento, o tipo de estágio, curso, instituição, local e orientador.', fields: [{ id: 'intro_report_text' }] },
-                { id: 'revisao_report', title: '2. Revisão de Literatura', info: 'Levantamento bibliográfico sobre a temática "Estágio Supervisionado em EJA".', fields: [{ id: 'revisao_report_text' }] },
-                { id: 'relato_experiencia', title: '3. Relato de Experiência', info: 'Descreva sua experiência completa com o estágio em EJA, do início ao fim, incluindo desafios.', fields: [{ id: 'relato_experiencia_text' }] },
-                { id: 'conclusao_report', title: '4. Conclusão', info: 'Observações gerais, resultados obtidos, dificuldades, aprendizados e reflexões sobre a prática.', fields: [{ id: 'conclusao_report_text' }] },
-                { id: 'referencias_report', title: 'Referências (Relatório)', info: 'Liste os autores e obras citados ao longo do relatório.', fields: [{ id: 'referencias_report_text' }] }
-            ];
-            
-            let projectData = {};
-            let reportData = {};
-            let currentPage = 'project'; // 'project' or 'report'
+      <div class="empty-state" id="emptyState" style="display:none;">
+        <strong>Nenhum registro encontrado</strong>
+        Ajuste os filtros ou limpe a busca para ver os candidatos novamente.
+      </div>
+    </section>
 
-            // --- UI & PAGE LOGIC ---
-            const pageTitleEl = document.getElementById('page-title');
-            const pageProjectEl = document.getElementById('page-project');
-            const pageReportEl = document.getElementById('page-report');
-            const togglePageBtns = document.querySelectorAll('[data-action="toggle-page"]');
+    <!-- ===================== VIEW: DASHBOARD ===================== -->
+    <section class="view" id="viewDashboard">
+      <div class="page-head">
+        <div>
+          <div class="page-kicker">Visão geral</div>
+          <h1 class="page-title">Painel de captação — 26.1</h1>
+        </div>
+      </div>
 
-            const showPage = (pageId) => {
-                currentPage = pageId;
-                if (pageId === 'project') {
-                    pageProjectEl.classList.remove('hidden');
-                    pageReportEl.classList.add('hidden');
-                    pageTitleEl.textContent = 'Projeto EJA';
-                    togglePageBtns.forEach(btn => btn.textContent = 'Relatório Final');
-                } else {
-                    pageProjectEl.classList.add('hidden');
-                    pageReportEl.classList.remove('hidden');
-                    pageTitleEl.textContent = 'Relatório Final';
-                    togglePageBtns.forEach(btn => btn.textContent = 'Voltar ao Projeto');
-                }
-                window.scrollTo(0, 0);
-            };
+      <div class="kpi-grid" id="kpiGrid"></div>
 
-            // --- DYNAMIC CONTENT GENERATION ---
-            const createCardHTML = (section, page) => {
-                const fieldsHTML = section.fields.map(field => `
-                    <div class="mb-4">
-                        ${field.label ? `<label for="${field.id}" class="block text-md font-semibold text-[#2F3C7E] mb-2">${field.label}${field.required ? '<span class="text-red-500">*</span>' : ''}</label>` : ''}
-                        <textarea id="${field.id}" data-page="${page}" rows="8" class="w-full p-3 border border-gray-300 rounded-2xl focus:ring-2 focus:ring-[#4A90E2] focus:outline-none transition bg-gray-50"></textarea>
-                    </div>`).join('');
+      <div class="panel-grid">
+        <div class="panel">
+          <h3>Candidatos por curso <span class="kicker">contagem</span></h3>
+          <div id="barCurso"></div>
+        </div>
+        <div class="panel">
+          <h3>Distribuição de status <span class="kicker">todos os cursos</span></h3>
+          <div id="barStatus"></div>
+          <div class="legend-row" id="legendStatus"></div>
+        </div>
+      </div>
 
-                return `
-                    <div class="card bg-white rounded-2xl shadow-md mb-6" data-id="${section.id}" data-page="${page}">
-                        <div class="card-header p-6 cursor-pointer flex justify-between items-start gap-4">
-                            <div><h2 class="text-xl font-bold text-[#2F3C7E]">${section.title}</h2><p class="text-sm text-gray-500 mt-1">${section.info || ''}</p></div>
-                            <button class="edit-btn text-[#4A90E2] font-semibold flex-shrink-0">Editar</button>
-                        </div>
-                        <div class="summary-content px-6 pb-6 text-gray-600 italic truncate">Nenhum conteúdo.</div>
-                        <div class="card-content px-6">${fieldsHTML}<div class="flex justify-end py-4"><button class="save-btn action-button text-white font-semibold py-2 px-8 rounded-2xl">Salvar</button></div></div>
-                    </div>`;
-            };
-            
-            pageProjectEl.innerHTML = projectSections.map(s => createCardHTML(s, 'project')).join('');
-            pageReportEl.innerHTML = reportSections.map(s => createCardHTML(s, 'report')).join('');
+      <div class="panel-grid">
+        <div class="panel">
+          <h3>Funil de matrícula <span class="kicker">estágio atual</span></h3>
+          <div class="funnel" id="funnel"></div>
+        </div>
+        <div class="panel">
+          <h3>Confirmados <span class="kicker">prontos para pré-matrícula</span></h3>
+          <table class="table-mini">
+            <thead><tr><th>Nome</th><th>Curso</th><th>Pré-matrícula</th></tr></thead>
+            <tbody id="tabelaConfirmados"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
 
-            // --- DATA HANDLING ---
-            const autoSave = () => {
-                if (currentPage === 'project') localStorage.setItem('ejaProjectData', JSON.stringify(projectData));
-                else localStorage.setItem('ejaReportData', JSON.stringify(reportData));
-            };
+    <div class="footer-note">Diligência · uso interno da secretaria · dados de 2026.1</div>
+  </main>
 
-            const loadData = () => {
-                const savedProject = localStorage.getItem('ejaProjectData');
-                const savedReport = localStorage.getItem('ejaReportData');
-                projectData = savedProject ? JSON.parse(savedProject) : {};
-                reportData = savedReport ? JSON.parse(savedReport) : {};
+<script>
+"use strict";
 
-                [...projectSections, ...reportSections].forEach(section => {
-                    const data = section.id.includes('_report') || section.id.includes('relato') ? reportData : projectData;
-                    section.fields.forEach(field => {
-                        const el = document.getElementById(field.id);
-                        if (el) el.value = data[field.id] || '';
-                    });
-                    updateSummary(section.id);
-                });
-            };
+/* ==========================================================================
+   DADOS — base única de prospecção 26.1
+   ========================================================================== */
+const REGISTROS = [
+  { id: 1,  nome: "Bruno", obs: "Regiana ficou de passar info dele", status: "sem_status", curso: "Educação Física", nivel: "?", inscricao: "?", preMatricula: "docs" },
+  { id: 2,  nome: "Isaías", obs: "Regiana falou dia 05/06/26 — interesse em Ed. Física, não especificou Bach./Lic.", status: "sem_status", curso: "Educação Física", nivel: "?", inscricao: "?", preMatricula: "docs" },
+  { id: 3,  nome: "Suza", obs: "Regiana (09/05/26) só pediu para anotar; a lista ela mesma conversaria", status: "sem_status", curso: "Educação Física", nivel: "Lic.", inscricao: "?", preMatricula: "docs" },
+  { id: 4,  nome: "Flávio", obs: "Tem amigo interessado também", status: "sem_status", curso: "Educação Física", nivel: "Lic.", inscricao: "?", preMatricula: "docs" },
+  { id: 5,  nome: "Flávio", obs: "", status: "sem_status", curso: "Educação Física", nivel: "Lic.", inscricao: "?", preMatricula: "docs" },
+  { id: 6,  nome: "Milena Eugênio", obs: "", status: "sem_status", curso: "Educação Física", nivel: "Lic.", inscricao: "?", preMatricula: "docs" },
+  { id: 7,  nome: "Cunhado da Rosiline", obs: "Regiana ficou de passar o contato", status: "sem_status", curso: "Educação Física", nivel: "Lic.", inscricao: "?", preMatricula: "docs" },
+  { id: 8,  nome: "Yslanne Alves", obs: "Indicada pelo Saymon", status: "forte", curso: "Educação Física", nivel: "Bach.", inscricao: "?", preMatricula: "docs" },
+  { id: 9,  nome: "Kelson Blandão", obs: "De Buriti", status: "forte", curso: "Educação Física", nivel: "Bach.", inscricao: "Quer aprov", preMatricula: "docs" },
+  { id: 10, nome: "Beatriz Viana", obs: "", status: "sem_status", curso: "", nivel: "", inscricao: "?", preMatricula: "docs" },
+  { id: 11, nome: "Talita Santos", obs: "", status: "sem_status", curso: "Educação Física", nivel: "Bach.", inscricao: "?", preMatricula: "docs" },
+  { id: 12, nome: "Luana Feitosa", obs: "", status: "forte", curso: "Educação Física", nivel: "Bach.", inscricao: "?", preMatricula: "docs" },
+  { id: 13, nome: "Georges Lucas Danton Aguiar", obs: "", status: "forte", curso: "Educação Física", nivel: "Bach.", inscricao: "Fazer", preMatricula: "docs" },
+  { id: 14, nome: "Regina Sousa", obs: "Filho dela — nome ainda não informado", status: "forte", curso: "Educação Física", nivel: "Bach.", inscricao: "?", preMatricula: "docs" },
+  { id: 15, nome: "Francisca Kelly Dias da Silva", obs: "", status: "forte", curso: "História", nivel: "Lic.", inscricao: "?", preMatricula: "docs" },
+  { id: 16, nome: "(nome a confirmar)", obs: "Regiana ficou de passar o nome em 17/03", status: "aguardando", curso: "História", nivel: "Lic.", inscricao: "?", preMatricula: "docs" },
+  { id: 17, nome: "Jôse", obs: "Da casa familiar rural — Regiana pediu sigilo/atenção", status: "aguardando", curso: "História", nivel: "Lic.", inscricao: "?", preMatricula: "docs" },
+  { id: 18, nome: "Maria Elaine Lopes Pereira", obs: "", status: "confirmado", curso: "História", nivel: "Lic.", inscricao: "Prova", preMatricula: "aguardando_formar" },
+  { id: 19, nome: "Tathylla Lawanne de Sousa Costa", obs: "", status: "forte", curso: "História", nivel: "Lic.", inscricao: "inscrito", preMatricula: "docs" },
+  { id: 20, nome: "Kelry", obs: "", status: "sem_status", curso: "História", nivel: "Lic.", inscricao: "?", preMatricula: "docs" },
+  { id: 21, nome: "Karllos Wandreson", obs: "", status: "sem_status", curso: "História", nivel: "Lic.", inscricao: "?", preMatricula: "docs" },
+  { id: 22, nome: "José de Ribamar Teixeira da Silva", obs: "", status: "confirmado", curso: "História", nivel: "Lic.", inscricao: "inscrito", preMatricula: "aguardando_formar" },
+  { id: 23, nome: "Márcio da Silva Cardoso", obs: "", status: "sem_status", curso: "História", nivel: "Lic.", inscricao: "?", preMatricula: "docs" },
+  { id: 24, nome: "Maria Cristiane Sousa da Silva", obs: "", status: "confirmado", curso: "História", nivel: "Lic.", inscricao: "inscrita", preMatricula: "aguardando_formar" },
+  { id: 25, nome: "Yasmim Pereira da Silva", obs: "", status: "confirmado", curso: "Letras", nivel: "Lic.", inscricao: "inscrita", preMatricula: "aguardando_formar" },
+  { id: 26, nome: "Delsalinda", obs: "", status: "sem_status", curso: "Letras", nivel: "Lic.", inscricao: "?", preMatricula: "docs" },
+  { id: 27, nome: "Camile", obs: "Vizinha — Regiana só passou o nome", status: "sem_status", curso: "Letras", nivel: "Lic.", inscricao: "?", preMatricula: "docs" },
+  { id: 28, nome: "Ronaldo", obs: "", status: "sem_status", curso: "Letras", nivel: "Lic.", inscricao: "?", preMatricula: "docs" },
+  { id: 29, nome: "Maria da Conceição Silva Teixeira", obs: "", status: "sem_status", curso: "Matemática", nivel: "Lic.", inscricao: "?", preMatricula: "docs" },
+  { id: 30, nome: "Isaías", obs: "", status: "sem_status", curso: "Matemática", nivel: "Lic.", inscricao: "?", preMatricula: "docs" },
+  { id: 31, nome: "Leila", obs: "", status: "sem_status", curso: "Matemática", nivel: "Lic.", inscricao: "?", preMatricula: "docs" },
+  { id: 32, nome: "Rayssa", obs: "", status: "sem_status", curso: "Matemática", nivel: "Lic.", inscricao: "?", preMatricula: "docs" },
+];
 
-            function updateSummary(sectionId) {
-                const card = document.querySelector(`.card[data-id="${sectionId}"]`);
-                if (!card) return;
+const STATUS_META = {
+  forte:       { label: "Forte",              curto: "FORTE" },
+  confirmado:  { label: "Confirmado",         curto: "CONFIRM." },
+  aguardando:  { label: "Aguardando retorno",  curto: "AGUARD." },
+  sem_status:  { label: "Sem status",          curto: "A DEFINIR" },
+};
 
-                const page = card.dataset.page;
-                const sections = page === 'project' ? projectSections : reportSections;
-                const data = page === 'project' ? projectData : reportData;
+const CURSO_META = {
+  "Educação Física": { chave: "edfisica" },
+  "História":        { chave: "historia" },
+  "Letras":          { chave: "letras" },
+  "Matemática":       { chave: "matematica" },
+  "":                { chave: "sem_curso" },
+};
 
-                const summaryEl = card.querySelector('.summary-content');
-                const sectionFields = sections.find(s => s.id === sectionId).fields;
-                let summaryText = sectionFields.map(field => data[field.id] || '').join(' ').trim();
+const PRE_MATRICULA_META = {
+  docs:              "Reunindo docs",
+  aguardando_formar: "Aguardando formar turma",
+};
 
-                summaryEl.textContent = summaryText ? summaryText : 'Nenhum conteúdo.';
-                summaryEl.classList.toggle('italic', !summaryText);
-            }
+/* ==========================================================================
+   NAVEGAÇÃO ENTRE PÁGINAS (lista / painel)
+   ========================================================================== */
+(function(){
+  function setNav(view){
+    document.getElementById("viewLista").classList.toggle("active", view === "lista");
+    document.getElementById("viewDashboard").classList.toggle("active", view === "dashboard");
+    document.getElementById("navLista").classList.toggle("active", view === "lista");
+    document.getElementById("navDashboard").classList.toggle("active", view === "dashboard");
+    window.scrollTo({top:0});
+  }
+  document.getElementById("navLista").addEventListener("click", () => setNav("lista"));
+  document.getElementById("navDashboard").addEventListener("click", () => setNav("dashboard"));
+})();
 
-            // --- EVENT LISTENERS ---
-            document.body.addEventListener('click', (e) => {
-                const cardHeader = e.target.closest('.card-header, .edit-btn');
-                const saveBtn = e.target.closest('.save-btn');
+/* ==========================================================================
+   PÁGINA: LISTA — filtros, abas, alternância completo/compacto
+   ========================================================================== */
+(function(){
+  const state = { curso: "todos", busca: "", status: "", nivel: "", inscricao: "", pre: "", view: "completo" };
 
-                if (cardHeader) cardHeader.closest('.card').classList.toggle('expanded');
-                
-                if (saveBtn) {
-                    const card = saveBtn.closest('.card');
-                    const page = card.dataset.page;
-                    const sections = page === 'project' ? projectSections : reportSections;
-                    const data = page === 'project' ? projectData : reportData;
-                    const section = sections.find(s => s.id === card.dataset.id);
+  function cursoKey(curso){ return (CURSO_META[curso] || CURSO_META[""]).chave; }
 
-                    section.fields.forEach(field => {
-                        data[field.id] = document.getElementById(field.id).value;
-                    });
-                    
-                    autoSave();
-                    updateSummary(section.id);
-                    card.classList.remove('expanded');
-                    showNotification('Salvo com sucesso!', 'success');
-                }
-            });
-            
-            const showNotification = (message, type = 'error') => {
-                const el = document.getElementById('notification');
-                el.querySelector('p').textContent = message;
-                el.className = `fixed top-5 right-5 text-white py-3 px-6 rounded-2xl shadow-lg transition-transform transform z-50 ${type === 'success' ? 'bg-green-500' : 'bg-red-500'}`;
-                el.classList.remove('translate-x-[150%]');
-                setTimeout(() => el.classList.add('translate-x-[150%]'), 3000);
-            };
+  function inscricaoTagClass(v){
+    if(v === "?") return "unknown";
+    if(/inscrit/i.test(v)) return "ok";
+    if(/prova|quer aprov|fazer/i.test(v)) return "warn";
+    return "";
+  }
 
-            const validateProject = () => {
-                if (!(projectData.titulo_projeto || '').trim()) {
-                    showNotification('O "Título do projeto" é obrigatório.');
-                    showPage('project');
-                    const card = document.querySelector('.card[data-id="acao_educativa"]');
-                    if(card && !card.classList.contains('expanded')) card.classList.add('expanded');
-                    document.getElementById('titulo_projeto')?.focus();
-                    return false;
-                }
-                return true;
-            };
+  const cursosOrdenados = ["Educação Física", "História", "Letras", "Matemática"];
 
-            // --- ACTIONS (Import, Export, Share) ---
-            const fileInput = document.getElementById('json-file-input');
-            const actions = {
-                'toggle-page': () => showPage(currentPage === 'project' ? 'report' : 'project'),
-                'import-json': () => fileInput.click(),
-                'export-json': () => {
-                    if (currentPage === 'project' && !validateProject()) return;
-                    const data = currentPage === 'project' ? projectData : reportData;
-                    const title = projectData.titulo_projeto || 'sem_titulo';
-                    const filename = `${currentPage}-eja-${title.replace(/ /g, '_')}.json`;
-                    
-                    const a = document.createElement('a');
-                    a.href = 'data:application/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(data, null, 4));
-                    a.download = filename;
-                    a.click();
-                },
-                'export-pdf': async () => {
-                    if (currentPage === 'project' && !validateProject()) return;
-                    document.getElementById('loading-overlay').classList.remove('hidden');
-                    const blob = await generatePdfBlob();
-                    const title = projectData.titulo_projeto || 'sem_titulo';
-                    const filename = `${currentPage === 'project' ? 'Projeto' : 'Relatorio'}_EJA_${title.replace(/ /g, '_')}.pdf`;
-                    const a = document.createElement('a');
-                    a.href = URL.createObjectURL(blob);
-                    a.download = filename;
-                    a.click();
-                    URL.revokeObjectURL(a.href);
-                    document.getElementById('loading-overlay').classList.add('hidden');
-                },
-                'share-pdf': async () => {
-                    if (currentPage === 'project' && !validateProject()) return;
-                    document.getElementById('loading-overlay').classList.remove('hidden');
-                    const blob = await generatePdfBlob();
-                    const title = projectData.titulo_projeto || 'sem_titulo';
-                    const filename = `${currentPage === 'project' ? 'Projeto' : 'Relatorio'}_EJA_${title.replace(/ /g, '_')}.pdf`;
-                    const file = new File([blob], filename, { type: 'application/pdf' });
+  function contarPorCurso(curso){
+    if(curso === "todos") return REGISTROS.length;
+    return REGISTROS.filter(r => r.curso === curso).length;
+  }
 
-                    try {
-                        await navigator.share({ files: [file], title: `EJA: ${title}` });
-                    } catch (error) {
-                        if (error.name !== 'AbortError') showNotification('Erro ao compartilhar.');
-                    } finally {
-                        document.getElementById('loading-overlay').classList.add('hidden');
-                    }
-                }
-            };
+  function renderTabs(){
+    const wrap = document.getElementById("tabs");
+    const all = [{label:"Todos os cursos", curso:"todos", key:"todos"}]
+      .concat(cursosOrdenados.map(c => ({label:c, curso:c, key: cursoKey(c)})));
 
-            document.body.addEventListener('click', e => {
-                const action = e.target.dataset.action;
-                if (actions[action]) actions[action]();
-            });
+    wrap.innerHTML = all.map(item => `
+      <button class="tab ${state.curso===item.curso ? 'active':''}" data-curso="${item.key}" data-value="${item.curso}">
+        ${item.label} <span class="count">${contarPorCurso(item.curso)}</span>
+      </button>
+    `).join("");
 
-            fileInput.addEventListener('change', (e) => {
-                const file = e.target.files[0];
-                if (!file) return;
-                const reader = new FileReader();
-                reader.onload = (re) => {
-                    try {
-                        const data = JSON.parse(re.target.result);
-                        if (currentPage === 'project') projectData = data; else reportData = data;
-                        autoSave();
-                        loadData();
-                        showNotification('Importado com sucesso!', 'success');
-                    } catch { showNotification('Erro ao ler arquivo JSON.'); }
-                };
-                reader.readAsText(file);
-                fileInput.value = '';
-            });
+    wrap.querySelectorAll(".tab").forEach(btn => {
+      btn.addEventListener("click", () => {
+        state.curso = btn.dataset.value;
+        renderTabs();
+        renderList();
+      });
+    });
+  }
 
-            const generatePdfBlob = async () => {
-                const { jsPDF } = window.jspdf;
-                const doc = new jsPDF({ unit: 'mm', format: 'a4' });
-                const margin = 20;
-                const width = doc.internal.pageSize.getWidth() - (margin * 2);
-                let y = margin;
+  function uniqueSorted(arr){
+    return Array.from(new Set(arr)).filter(v => v !== undefined && v !== null && v !== "").sort();
+  }
 
-                const addText = (text, size, style, space) => {
-                    if (y > doc.internal.pageSize.getHeight() - margin - 10) { doc.addPage(); y = margin; }
-                    doc.setFontSize(size);
-                    doc.setFont('helvetica', style);
-                    const lines = doc.splitTextToSize(text || 'Não preenchido', width);
-                    doc.text(lines, margin, y);
-                    y += (lines.length * size * 0.4) + space;
-                };
+  function populateSelects(){
+    const selStatus = document.getElementById("fStatus");
+    Object.keys(STATUS_META).forEach(key => {
+      const opt = document.createElement("option");
+      opt.value = key; opt.textContent = STATUS_META[key].label;
+      selStatus.appendChild(opt);
+    });
 
-                const sections = currentPage === 'project' ? projectSections : reportSections;
-                const data = currentPage === 'project' ? projectData : reportData;
+    const selNivel = document.getElementById("fNivel");
+    uniqueSorted(REGISTROS.map(r => r.nivel)).forEach(v => {
+      const opt = document.createElement("option");
+      opt.value = v; opt.textContent = v;
+      selNivel.appendChild(opt);
+    });
 
-                addText(currentPage === 'project' ? 'Projeto da Ação Educativa' : 'Relatório Final', 18, 'bold', 10);
-                addText(projectData.titulo_projeto || 'Título não definido', 14, 'normal', 20);
+    const selInscricao = document.getElementById("fInscricao");
+    uniqueSorted(REGISTROS.map(r => r.inscricao)).forEach(v => {
+      const opt = document.createElement("option");
+      opt.value = v; opt.textContent = v;
+      selInscricao.appendChild(opt);
+    });
 
-                for (const section of sections) {
-                    addText(section.title, 14, 'bold', 5);
-                    const content = section.fields.map(f => (f.label ? `${f.label}:\n` : '') + (data[f.id] || '')).join('\n\n');
-                    addText(content, 12, 'normal', 15);
-                }
-                return doc.output('blob');
-            };
+    const selPre = document.getElementById("fPre");
+    uniqueSorted(REGISTROS.map(r => r.preMatricula)).forEach(v => {
+      const opt = document.createElement("option");
+      opt.value = v; opt.textContent = PRE_MATRICULA_META[v] || v;
+      selPre.appendChild(opt);
+    });
+  }
 
-            // --- SEARCH & MENU ---
-            document.querySelectorAll('#search-input-desktop, #search-input-mobile').forEach(input => {
-                input.addEventListener('input', (e) => {
-                    const term = e.target.value.toLowerCase();
-                    document.querySelectorAll(`.card[data-page="${currentPage}"]`).forEach(card => {
-                        card.classList.toggle('hidden', !card.innerText.toLowerCase().includes(term));
-                    });
-                });
-            });
+  function getFiltered(){
+    const busca = state.busca.trim().toLowerCase();
+    return REGISTROS.filter(r => {
+      if(state.curso !== "todos" && r.curso !== state.curso) return false;
+      if(state.status && r.status !== state.status) return false;
+      if(state.nivel && r.nivel !== state.nivel) return false;
+      if(state.inscricao && r.inscricao !== state.inscricao) return false;
+      if(state.pre && r.preMatricula !== state.pre) return false;
+      if(busca){
+        const alvo = (r.nome + " " + r.obs).toLowerCase();
+        if(!alvo.includes(busca)) return false;
+      }
+      return true;
+    });
+  }
 
-            const mobileMenuBtn = document.getElementById('mobile-menu-button');
-            const mobileMenu = document.getElementById('mobile-menu');
-            mobileMenuBtn.addEventListener('click', () => {
-                mobileMenu.classList.toggle('hidden');
-                document.getElementById('menu-open-icon').classList.toggle('hidden');
-                document.getElementById('menu-close-icon').classList.toggle('hidden');
-            });
-            
-            if (navigator.share && navigator.canShare({files: [new File([""], "t.pdf", {type:"application/pdf"})]})) {
-                document.querySelectorAll('[data-action="share-pdf"]').forEach(b => b.classList.remove('hidden'));
-            }
+  function stampHtml(status){
+    const meta = STATUS_META[status] || STATUS_META.sem_status;
+    return `<span class="stamp ${status}">${meta.curto}</span>`;
+  }
 
-            loadData();
-        });
-    </script>
+  function cursoPillHtml(curso){
+    const key = cursoKey(curso);
+    const label = curso || "Não informado";
+    return `<span class="pill-curso ${key}"><span class="dot"></span>${label}</span>`;
+  }
+
+  function tagHtml(value, kind){
+    if(kind === "inscricao") return `<span class="tag ${inscricaoTagClass(value)}">${value}</span>`;
+    const label = PRE_MATRICULA_META[value] || value;
+    return `<span class="tag">${label}</span>`;
+  }
+
+  function renderFullRow(r){
+    return `
+      <tr>
+        <td class="nome-cell">
+          <span class="nome">${r.nome}</span>
+          ${r.obs ? `<span class="obs">${r.obs}</span>` : ""}
+        </td>
+        <td>${stampHtml(r.status)}</td>
+        <td>${cursoPillHtml(r.curso)}</td>
+        <td class="nivel-cell">${r.nivel || "—"}</td>
+        <td>${tagHtml(r.inscricao, "inscricao")}</td>
+        <td>${tagHtml(r.preMatricula, "pre")}</td>
+      </tr>
+    `;
+  }
+
+  function renderCompactRow(r){
+    return `
+      <div class="compact-row">
+        <div class="nome">${r.nome}${r.obs ? `<small>${r.obs}</small>` : ""}</div>
+        ${cursoPillHtml(r.curso)}
+        ${stampHtml(r.status)}
+        ${tagHtml(r.inscricao, "inscricao")}
+        ${tagHtml(r.preMatricula, "pre")}
+      </div>
+    `;
+  }
+
+  function renderList(){
+    const filtrados = getFiltered();
+    const tbody = document.getElementById("tbodyFull");
+    const compactList = document.getElementById("compactList");
+    const empty = document.getElementById("emptyState");
+    const count = document.getElementById("resultsCount");
+
+    count.textContent = `${filtrados.length} candidato${filtrados.length===1?'':'s'} de ${REGISTROS.length} no total`;
+
+    if(filtrados.length === 0){
+      tbody.innerHTML = ""; compactList.innerHTML = ""; empty.style.display = "block";
+      return;
+    }
+    empty.style.display = "none";
+    tbody.innerHTML = filtrados.map(renderFullRow).join("");
+    compactList.innerHTML = filtrados.map(renderCompactRow).join("");
+  }
+
+  function setView(view){
+    state.view = view;
+    document.body.classList.toggle("compact", view === "compacto");
+    document.getElementById("btnCompleto").classList.toggle("active", view === "completo");
+    document.getElementById("btnCompacto").classList.toggle("active", view === "compacto");
+  }
+
+  populateSelects();
+  renderTabs();
+  renderList();
+
+  document.getElementById("fBusca").addEventListener("input", e => { state.busca = e.target.value; renderList(); });
+  document.getElementById("fStatus").addEventListener("change", e => { state.status = e.target.value; renderList(); });
+  document.getElementById("fNivel").addEventListener("change", e => { state.nivel = e.target.value; renderList(); });
+  document.getElementById("fInscricao").addEventListener("change", e => { state.inscricao = e.target.value; renderList(); });
+  document.getElementById("fPre").addEventListener("change", e => { state.pre = e.target.value; renderList(); });
+
+  document.getElementById("btnLimpar").addEventListener("click", () => {
+    state.busca = ""; state.status = ""; state.nivel = ""; state.inscricao = ""; state.pre = ""; state.curso = "todos";
+    document.getElementById("fBusca").value = "";
+    document.getElementById("fStatus").value = "";
+    document.getElementById("fNivel").value = "";
+    document.getElementById("fInscricao").value = "";
+    document.getElementById("fPre").value = "";
+    renderTabs();
+    renderList();
+  });
+
+  document.getElementById("btnCompleto").addEventListener("click", () => setView("completo"));
+  document.getElementById("btnCompacto").addEventListener("click", () => setView("compacto"));
+})();
+
+/* ==========================================================================
+   PÁGINA: PAINEL — KPIs, gráficos e funil
+   ========================================================================== */
+(function(){
+  const CORES_CURSO = {
+    "Educação Física": "#0F6B5C", "História": "#B9862A", "Letras": "#A23A50",
+    "Matemática": "#3E5F80", "": "#9CA3AF",
+  };
+  const CORES_STATUS = { forte: "#A23A50", confirmado: "#0F6B5C", aguardando: "#B9862A", sem_status: "#9CA3AF" };
+
+  function renderKpis(){
+    const total = REGISTROS.length;
+    const forte = REGISTROS.filter(r => r.status === "forte").length;
+    const confirmado = REGISTROS.filter(r => r.status === "confirmado").length;
+    const aguardando = REGISTROS.filter(r => r.status === "aguardando").length;
+
+    const cards = [
+      { cls: "c-total", value: total, label: "Candidatos no radar" },
+      { cls: "c-forte", value: forte, label: "Interesse forte" },
+      { cls: "c-confirmado", value: confirmado, label: "Confirmados" },
+      { cls: "c-aguardando", value: aguardando, label: "Aguardando retorno" },
+    ];
+
+    document.getElementById("kpiGrid").innerHTML = cards.map(c => `
+      <div class="kpi-card ${c.cls}">
+        <div class="accent-bar"></div>
+        <div class="value font-mono">${c.value}</div>
+        <div class="label">${c.label}</div>
+      </div>
+    `).join("");
+  }
+
+  function renderBarCurso(){
+    const cursos = ["Educação Física", "História", "Letras", "Matemática", ""];
+    const counts = cursos.map(c => ({
+      curso: c || "Não informado",
+      n: REGISTROS.filter(r => r.curso === c).length,
+      cor: CORES_CURSO[c],
+    })).filter(c => c.n > 0);
+    const max = Math.max(...counts.map(c => c.n));
+
+    document.getElementById("barCurso").innerHTML = counts.map(c => `
+      <div class="bar-row">
+        <div class="bar-label">${c.curso}</div>
+        <div class="bar-track"><div class="bar-fill" style="width:${(c.n/max*100).toFixed(0)}%; background:${c.cor}"></div></div>
+        <div class="bar-value">${c.n}</div>
+      </div>
+    `).join("");
+  }
+
+  function renderBarStatus(){
+    const order = ["forte", "confirmado", "aguardando", "sem_status"];
+    const counts = order.map(s => ({
+      key: s, label: STATUS_META[s].label,
+      n: REGISTROS.filter(r => r.status === s).length,
+      cor: CORES_STATUS[s],
+    }));
+    const max = Math.max(...counts.map(c => c.n));
+
+    document.getElementById("barStatus").innerHTML = counts.map(c => `
+      <div class="bar-row">
+        <div class="bar-label">${c.label}</div>
+        <div class="bar-track"><div class="bar-fill" style="width:${(c.n/max*100).toFixed(0)}%; background:${c.cor}"></div></div>
+        <div class="bar-value">${c.n}</div>
+      </div>
+    `).join("");
+
+    document.getElementById("legendStatus").innerHTML = counts.map(c => `
+      <span><i style="background:${c.cor}"></i>${c.label} (${c.n})</span>
+    `).join("");
+  }
+
+  function renderFunnel(){
+    const total = REGISTROS.length;
+    const comInteresseQualificado = REGISTROS.filter(r => r.status !== "sem_status").length;
+    const comInscricaoDefinida = REGISTROS.filter(r => r.inscricao !== "?").length;
+    const confirmados = REGISTROS.filter(r => r.status === "confirmado").length;
+
+    const steps = [
+      { label: "No radar da secretaria", value: total },
+      { label: "Interesse qualificado (forte / confirmado / aguardando)", value: comInteresseQualificado },
+      { label: "Inscrição já encaminhada", value: comInscricaoDefinida },
+      { label: "Confirmados para pré-matrícula", value: confirmados },
+    ];
+
+    document.getElementById("funnel").innerHTML = steps.map((s, i) => `
+      <div class="funnel-step" style="opacity:${1 - i*0.06}">
+        <span class="fs-label">${s.label}</span>
+        <span class="fs-value font-mono">${s.value}</span>
+      </div>
+    `).join("");
+  }
+
+  function renderConfirmados(){
+    const confirmados = REGISTROS.filter(r => r.status === "confirmado");
+    const tbody = document.getElementById("tabelaConfirmados");
+    if(confirmados.length === 0){
+      tbody.innerHTML = `<tr><td colspan="3" style="color:var(--ink-soft); font-style:italic;">Nenhum candidato confirmado no momento.</td></tr>`;
+      return;
+    }
+    tbody.innerHTML = confirmados.map(r => `
+      <tr>
+        <td>${r.nome}</td>
+        <td>${r.curso || "—"}</td>
+        <td>${PRE_MATRICULA_META[r.preMatricula] || r.preMatricula}</td>
+      </tr>
+    `).join("");
+  }
+
+  renderKpis();
+  renderBarCurso();
+  renderBarStatus();
+  renderFunnel();
+  renderConfirmados();
+})();
+</script>
 </body>
 </html>
-
-
