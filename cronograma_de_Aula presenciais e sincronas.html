@@ -1,0 +1,2713 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cronograma de Aulas Presenciais e Síncronas - INTA 2026.2</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <!-- Font Awesome CDN -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <!-- SheetJS (XLSX) CDN para Exportação Nativa em Excel -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+          },
+          colors: {
+            brand: {
+              50: '#fef2f2',
+              100: '#fee2e2',
+              200: '#fecaca',
+              600: '#dc2626',
+              700: '#b91c1c',
+              800: '#991b1b',
+              900: '#7f1d1d',
+              950: '#450a0a',
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      color: #111827;
+      background-color: #f3f4f6;
+      padding-top: env(safe-area-inset-top);
+      padding-bottom: env(safe-area-inset-bottom);
+      padding-left: env(safe-area-inset-left);
+      padding-right: env(safe-area-inset-right);
+    }
+
+    /* Linha e cartão riscado para datas passadas ou concluídas */
+    tr.row-riscada, .card-riscado {
+      background-color: #f8fafc !important;
+      opacity: 0.65;
+      transition: all 0.25s ease-in-out;
+    }
+
+    tr.row-riscada:hover, .card-riscado:hover {
+      opacity: 0.92;
+    }
+
+    tr.row-riscada td:not(.col-acoes) {
+      text-decoration: line-through;
+      text-decoration-color: #dc2626;
+      text-decoration-thickness: 2.2px;
+      color: #4b5563 !important;
+    }
+
+    .card-riscado .card-title-text {
+      text-decoration: line-through;
+      text-decoration-color: #dc2626;
+      text-decoration-thickness: 2px;
+    }
+
+    .modal-backdrop {
+      background-color: rgba(17, 24, 39, 0.68);
+      backdrop-filter: blur(4px);
+    }
+
+    #main-header {
+      transition: transform 0.32s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.32s ease;
+      will-change: transform;
+    }
+
+    .header-oculto {
+      transform: translateY(-100%) !important;
+      box-shadow: none !important;
+    }
+
+    .disciplina-conteudo {
+      transition: max-height 0.3s ease-out, opacity 0.25s ease;
+    }
+
+    @media (max-height: 540px) and (orientation: landscape) {
+      .modal-content-scroll {
+        max-height: 75vh !important;
+      }
+      header {
+        padding-top: 0.75rem !important;
+        padding-bottom: 0.75rem !important;
+      }
+    }
+
+    @media print {
+      .no-print {
+        display: none !important;
+      }
+      body {
+        background-color: #ffffff !important;
+        font-size: 10.5pt;
+      }
+      .page-break {
+        page-break-after: always;
+      }
+      .shadow-md, .shadow-sm, .shadow-lg, .shadow-xl {
+        box-shadow: none !important;
+      }
+    }
+  </style>
+</head>
+<body class="bg-gray-100 text-black min-h-screen pb-20 select-text">
+
+  <!-- Barra de Topo Compacta (Sempre visível, com botão para solicitar/exibir o cabeçalho) -->
+  <div id="bar-topo-compacta" class="bg-red-950 text-white border-b-2 border-red-900 px-3.5 sm:px-6 lg:px-8 py-2.5 sticky top-0 z-50 shadow-md flex items-center justify-between gap-2">
+    <div class="flex items-center gap-2">
+      <span class="bg-red-900 text-red-100 text-[11px] font-extrabold px-2.5 py-0.5 rounded-md uppercase tracking-wider border border-red-400/30 flex items-center gap-1.5">
+        <i class="fa-solid fa-graduation-cap text-amber-300"></i> INTA 2026.2
+      </span>
+      <span class="hidden md:inline font-semibold text-xs text-red-100">
+        Cronograma Semipresencial • Serviço Social & Pedagogia
+      </span>
+    </div>
+
+    <!-- Controles Rápidos -->
+    <div class="flex items-center gap-1.5 sm:gap-2">
+      <!-- Botão Exportar JSON -->
+      <button onclick="exportarCronogramaJson()" type="button" class="flex items-center gap-1.5 bg-red-900/90 hover:bg-red-800 text-white px-2.5 sm:px-3 py-1.5 rounded-xl border border-red-400/30 text-xs font-bold transition-all shadow-sm active:scale-95 cursor-pointer" title="Exportar dados e checklist em formato JSON">
+        <i class="fa-solid fa-file-export text-amber-300"></i>
+        <span class="hidden sm:inline">Exportar JSON</span>
+      </button>
+
+      <!-- Botão Importar JSON -->
+      <button onclick="acionarImportacaoJson()" type="button" class="flex items-center gap-1.5 bg-red-900/90 hover:bg-red-800 text-white px-2.5 sm:px-3 py-1.5 rounded-xl border border-red-400/30 text-xs font-bold transition-all shadow-sm active:scale-95 cursor-pointer" title="Importar cronograma e checklist de arquivo JSON">
+        <i class="fa-solid fa-file-import text-emerald-300"></i>
+        <span class="hidden sm:inline">Importar JSON</span>
+      </button>
+
+      <!-- Botão Limpar Tudo / Zerar Cronograma -->
+      <button onclick="limparTudoZerarEventos()" type="button" class="flex items-center gap-1.5 bg-red-900/70 hover:bg-red-800 text-red-200 hover:text-white px-2.5 sm:px-3 py-1.5 rounded-xl border border-red-400/20 text-xs font-bold transition-all shadow-sm active:scale-95 cursor-pointer" title="Zerar e limpar todas as sessões para começar um novo cronograma">
+        <i class="fa-solid fa-trash-can text-red-300"></i>
+        <span class="hidden md:inline">Limpar Tudo</span>
+      </button>
+
+      <!-- Botão para Solicitar / Exibir o Cabeçalho Completo -->
+      <button id="btn-toggle-cabecalho" type="button" class="flex items-center gap-1.5 bg-red-900 hover:bg-red-800 text-white px-3 py-1.5 rounded-xl border border-red-400/30 text-xs font-bold transition-all shadow-sm active:scale-95 cursor-pointer">
+        <i class="fa-solid fa-bars" id="icon-toggle-cabecalho"></i>
+        <span id="label-toggle-cabecalho">Mostrar Cabeçalho</span>
+        <i class="fa-solid fa-chevron-down text-[10px] transition-transform duration-200" id="chevron-toggle-cabecalho"></i>
+      </button>
+
+      <!-- Botão Adicionar Evento -->
+      <button onclick="abrirModalCriarEvento()" type="button" class="flex items-center gap-1.5 bg-white text-red-950 hover:bg-red-50 px-3 py-1.5 rounded-xl text-xs font-bold shadow transition-all active:scale-95">
+        <i class="fa-solid fa-circle-plus text-red-700"></i>
+        <span class="hidden sm:inline">Novo Evento</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Cabeçalho Acadêmico Completo (OCULTO POR PADRÃO - Só aparece se o usuário solicitar) -->
+  <header id="main-header" class="hidden bg-gradient-to-r from-red-950 via-red-900 to-red-800 text-white shadow-xl border-b-4 border-red-950 transition-all duration-300 ease-in-out">
+    <div class="max-w-7xl mx-auto px-3.5 sm:px-6 lg:px-8 py-3.5 sm:py-5">
+      <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3 sm:gap-4">
+        <div>
+          <div class="flex flex-wrap items-center gap-2 mb-1.5">
+            <span class="bg-red-950/90 text-red-100 text-[11px] font-semibold px-2.5 py-0.5 rounded-full uppercase tracking-wider flex items-center gap-1.5 border border-red-400/20">
+              <i class="fa-solid fa-graduation-cap"></i> Ensino Semipresencial • Centro Universitário INTA
+            </span>
+            <span class="bg-white/20 text-white text-[11px] font-semibold px-2 py-0.5 rounded-full">
+              Semestre 2026.2
+            </span>
+          </div>
+          <h1 class="text-xl sm:text-2xl lg:text-3xl font-extrabold tracking-tight leading-tight">
+            CRONOGRAMA DE AULAS PRESENCIAIS E SÍNCRONAS
+          </h1>
+          <p class="text-red-100 text-xs sm:text-sm font-medium mt-0.5 flex flex-wrap items-center gap-2">
+            <span><i class="fa-solid fa-building-columns text-amber-300 mr-1"></i>Encontros Presenciais no Polo</span>
+            <span>•</span>
+            <span><i class="fa-solid fa-laptop text-blue-300 mr-1"></i>Aulas Síncronas Mediadas</span>
+            <span>•</span>
+            <span class="font-bold text-white bg-red-950/60 px-2 py-0.5 rounded-md border border-red-400/30">Serviço Social & Pedagogia</span>
+          </p>
+        </div>
+
+        <!-- Quick Action & Widgets -->
+        <div class="flex flex-wrap items-center gap-2 self-start md:self-auto">
+          <!-- Botão Exportar JSON -->
+          <button onclick="exportarCronogramaJson()" type="button" class="flex items-center gap-1.5 bg-red-950/80 hover:bg-red-950 text-white px-3 py-2 rounded-xl border border-red-400/30 backdrop-blur-sm text-xs sm:text-sm font-bold transition-all active:scale-95 shadow-sm" title="Baixar arquivo JSON com todas as sessões e checklist salvo">
+            <i class="fa-solid fa-file-export text-amber-300"></i>
+            <span>Exportar JSON</span>
+          </button>
+
+          <!-- Botão Importar JSON -->
+          <button onclick="acionarImportacaoJson()" type="button" class="flex items-center gap-1.5 bg-red-950/80 hover:bg-red-950 text-white px-3 py-2 rounded-xl border border-red-400/30 backdrop-blur-sm text-xs sm:text-sm font-bold transition-all active:scale-95 shadow-sm" title="Carregar arquivo JSON para restaurar sessões e checklist">
+            <i class="fa-solid fa-file-import text-emerald-300"></i>
+            <span>Importar JSON</span>
+          </button>
+
+          <!-- Botão Limpar Tudo / Zerar Cronograma -->
+          <button onclick="limparTudoZerarEventos()" type="button" class="flex items-center gap-1.5 bg-red-950/80 hover:bg-red-950 text-red-200 hover:text-white px-3 py-2 rounded-xl border border-red-400/30 backdrop-blur-sm text-xs sm:text-sm font-bold transition-all active:scale-95 shadow-sm" title="Limpar todas as sessões da tela para começar do zero">
+            <i class="fa-solid fa-trash-can text-red-300"></i>
+            <span>Limpar Tudo</span>
+          </button>
+
+          <!-- Botão Adicionar Evento -->
+          <button id="btn-abrir-novo-evento" type="button" class="flex items-center gap-1.5 bg-white text-red-900 hover:bg-red-50 px-3 py-2 rounded-xl text-xs sm:text-sm font-bold shadow-md hover:shadow-lg transition-all active:scale-95">
+            <i class="fa-solid fa-circle-plus text-red-700 text-sm"></i>
+            <span>Novo Evento</span>
+          </button>
+
+          <!-- Toggle Indicadores -->
+          <button id="btn-toggle-insights" type="button" class="flex items-center gap-1.5 bg-red-950/70 hover:bg-red-950 text-red-100 hover:text-white px-3 py-2 rounded-xl border border-red-400/30 backdrop-blur-sm text-xs sm:text-sm font-semibold transition-all">
+            <i class="fa-solid fa-chart-pie text-red-300"></i>
+            <span id="texto-toggle-insights">Indicadores</span>
+            <i class="fa-solid fa-chevron-down text-xs transition-transform duration-200" id="icon-toggle-insights"></i>
+          </button>
+
+          <!-- Widget Data Atual -->
+          <div class="hidden sm:flex items-center gap-2 bg-red-950/60 px-3 py-1.5 rounded-xl border border-red-500/30 backdrop-blur-sm">
+            <div class="w-7 h-7 rounded-lg bg-red-700 flex items-center justify-center text-white text-xs">
+              <i class="fa-regular fa-calendar-check"></i>
+            </div>
+            <div>
+              <div class="text-[10px] text-red-200 uppercase font-bold tracking-wider">Hoje:</div>
+              <div id="display-data-hoje" class="text-xs font-bold text-white capitalize">Hoje</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Dashboard Bar (Oculto por padrão) -->
+  <div id="container-insights" class="hidden max-w-7xl mx-auto px-3.5 sm:px-6 lg:px-8 my-4 transition-all">
+    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5 sm:gap-3">
+      
+      <div class="bg-white rounded-xl p-3 shadow-sm border-l-4 border-red-700 flex items-center justify-between">
+        <div>
+          <p class="text-[11px] text-gray-500 uppercase font-semibold">Total de Sessões</p>
+          <p id="stat-total" class="text-lg sm:text-xl font-black text-gray-900">0</p>
+        </div>
+        <div class="p-2 bg-red-50 text-red-700 rounded-lg text-base">
+          <i class="fa-solid fa-calendar-days"></i>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-xl p-3 shadow-sm border-l-4 border-amber-600 flex items-center justify-between">
+        <div>
+          <p class="text-[11px] text-gray-500 uppercase font-semibold">Presenciais Polo</p>
+          <p id="stat-presenciais" class="text-lg sm:text-xl font-black text-amber-700">0</p>
+        </div>
+        <div class="p-2 bg-amber-50 text-amber-700 rounded-lg text-base">
+          <i class="fa-solid fa-location-dot"></i>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-xl p-3 shadow-sm border-l-4 border-blue-600 flex items-center justify-between">
+        <div>
+          <p class="text-[11px] text-gray-500 uppercase font-semibold">Síncronas Online</p>
+          <p id="stat-sincronas" class="text-lg sm:text-xl font-black text-blue-700">0</p>
+        </div>
+        <div class="p-2 bg-blue-50 text-blue-700 rounded-lg text-base">
+          <i class="fa-solid fa-laptop"></i>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-xl p-3 shadow-sm border-l-4 border-emerald-600 flex items-center justify-between">
+        <div>
+          <p class="text-[11px] text-gray-500 uppercase font-semibold">Realizadas</p>
+          <p id="stat-passadas" class="text-lg sm:text-xl font-black text-emerald-700">0</p>
+        </div>
+        <div class="p-2 bg-emerald-50 text-emerald-700 rounded-lg text-base">
+          <i class="fa-solid fa-check-double"></i>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-xl p-3 shadow-sm border-l-4 border-gray-700 flex items-center justify-between">
+        <div>
+          <p class="text-[11px] text-gray-500 uppercase font-semibold">Pendentes</p>
+          <p id="stat-pendentes" class="text-lg sm:text-xl font-black text-gray-800">0</p>
+        </div>
+        <div class="p-2 bg-gray-100 text-gray-700 rounded-lg text-base">
+          <i class="fa-solid fa-hourglass-half"></i>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-xl p-3 shadow-sm border-l-4 border-purple-700 flex items-center justify-between">
+        <div>
+          <p class="text-[11px] text-gray-500 uppercase font-semibold">Disciplinas</p>
+          <p id="stat-disciplinas" class="text-lg sm:text-xl font-black text-purple-900">0</p>
+        </div>
+        <div class="p-2 bg-purple-50 text-purple-700 rounded-lg text-base">
+          <i class="fa-solid fa-layer-group"></i>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <main class="max-w-7xl mx-auto px-3.5 sm:px-6 lg:px-8 space-y-4 sm:space-y-6 mt-4">
+
+    <!-- PAINEL DE CONTROLE INTEGRADO (DIFERENCIADO E COMPACTO) -->
+    <div class="bg-white rounded-2xl shadow-md border border-gray-200/90 border-t-4 border-t-red-800 overflow-visible relative">
+      
+      <!-- Topo do Painel: Abas de Navegação + Modos de Exibição + Ações Compactadas -->
+      <div class="p-2.5 sm:p-3 bg-gray-50/90 border-b border-gray-200/80 flex flex-col xl:flex-row xl:items-center xl:justify-between gap-2.5">
+        
+        <!-- Abas Principais de Navegação -->
+        <div class="inline-flex p-1 bg-gray-200/80 rounded-xl border border-gray-300/70 self-start sm:self-auto shadow-inner">
+          <button id="tab-presenciais" class="px-3 py-1.5 text-xs sm:text-sm font-bold rounded-lg text-gray-600 hover:text-red-700 transition-all text-center flex items-center gap-1.5 cursor-pointer">
+            <i class="fa-solid fa-location-dot text-amber-600"></i> <span>No Polo (2 Momentos)</span>
+          </button>
+          <button id="tab-disciplinas" class="px-3 py-1.5 text-xs sm:text-sm font-bold rounded-lg bg-white text-red-800 shadow-sm transition-all text-center flex items-center gap-1.5 cursor-pointer">
+            <i class="fa-solid fa-layer-group"></i> <span>Por Disciplina</span>
+          </button>
+          <button id="tab-cronologico" class="px-3 py-1.5 text-xs sm:text-sm font-bold rounded-lg text-gray-600 hover:text-red-700 transition-all text-center flex items-center gap-1.5 cursor-pointer">
+            <i class="fa-regular fa-calendar-days"></i> <span>Linha do Tempo</span>
+          </button>
+        </div>
+
+        <!-- Ferramentas de Exibição e Menu de Ações Compactado -->
+        <div class="flex flex-wrap items-center gap-2 self-start xl:self-auto">
+          <!-- Alternador Tabela / Cartões -->
+          <div class="inline-flex rounded-xl border border-gray-300 bg-gray-200/70 p-0.5 text-xs font-semibold text-gray-700">
+            <button id="btn-view-table" type="button" class="px-3 py-1.5 rounded-lg bg-white text-red-800 shadow-sm transition-all flex items-center gap-1.5 font-bold cursor-pointer" title="Exibição em Tabela Tradicional">
+              <i class="fa-solid fa-table-list text-red-700"></i> <span>Tabela</span>
+            </button>
+            <button id="btn-view-cards" type="button" class="px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 hover:text-red-700 font-semibold cursor-pointer" title="Exibição em Cartões">
+              <i class="fa-solid fa-grip"></i> <span>Cartões</span>
+            </button>
+          </div>
+
+          <!-- Menu de Ações em Lote Compactado (Dropdown Nativo Sem Poluição) -->
+          <details id="dropdown-acoes-painel" class="relative inline-block text-left group">
+            <summary class="list-none px-3 py-1.5 text-xs font-semibold text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 rounded-xl transition-colors flex items-center gap-1.5 shadow-2xs cursor-pointer select-none">
+              <i class="fa-solid fa-sliders text-red-700"></i>
+              <span>Ações</span>
+              <i class="fa-solid fa-chevron-down text-[10px] text-gray-400 group-open:rotate-180 transition-transform"></i>
+            </summary>
+            <div class="absolute right-0 mt-1.5 w-52 bg-white rounded-xl shadow-xl border border-gray-200 py-1 z-50 flex flex-col divide-y divide-gray-100 animate-in fade-in zoom-in-95 duration-100">
+              <div class="py-1">
+                <button id="btn-toggle-accordion-all" type="button" class="w-full text-left px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-red-50 hover:text-red-800 transition-colors flex items-center gap-2 cursor-pointer">
+                  <i class="fa-solid fa-layer-group text-red-700 w-4 text-center"></i> <span id="label-accordion-all">Recolher</span>
+                </button>
+              </div>
+              <div class="py-1">
+                <button id="btn-riscar-todas" type="button" class="w-full text-left px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-emerald-50 hover:text-emerald-800 transition-colors flex items-center gap-2 cursor-pointer">
+                  <i class="fa-solid fa-check-double text-emerald-600 w-4 text-center"></i> <span>Marcar Todas</span>
+                </button>
+                <button id="btn-limpar-riscos" type="button" class="w-full text-left px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-amber-50 hover:text-amber-800 transition-colors flex items-center gap-2 cursor-pointer">
+                  <i class="fa-solid fa-arrow-rotate-left text-gray-600 w-4 text-center"></i> <span>Limpar Registros</span>
+                </button>
+              </div>
+              <div class="py-1">
+                <button onclick="window.print()" type="button" class="w-full text-left px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-100 hover:text-gray-900 transition-colors flex items-center gap-2 cursor-pointer">
+                  <i class="fa-solid fa-print text-gray-500 w-4 text-center"></i> <span>Imprimir (Papel / PDF)</span>
+                </button>
+              </div>
+            </div>
+          </details>
+
+          <!-- Ação Principal: Exportar Excel -->
+          <button onclick="exportarCronogramaParaExcel()" type="button" class="px-3.5 py-1.5 text-xs font-bold text-white bg-emerald-700 hover:bg-emerald-800 rounded-xl transition-colors shadow-sm flex items-center gap-1.5 cursor-pointer" title="Exportar dados da seção atual filtrada para planilha Excel (.xlsx)">
+            <i class="fa-solid fa-file-excel text-emerald-100"></i> <span>Exportar Excel</span>
+          </button>
+        </div>
+
+      </div>
+
+      <!-- Miolo do Painel: Grid de Filtros Compactos e Alinhados -->
+      <div class="p-3 sm:p-3.5 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2.5 bg-white">
+        
+        <!-- Filtro Curso -->
+        <div>
+          <label class="block text-[11px] font-bold text-gray-600 uppercase tracking-wider mb-1">
+            <i class="fa-solid fa-graduation-cap text-red-700 mr-1"></i> Curso
+          </label>
+          <select id="select-filtro-curso" onchange="setFiltroCurso(this.value)" class="w-full text-xs font-bold px-3 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-red-600 focus:outline-none bg-gray-50 text-gray-900">
+            <option value="todos">Todos os Cursos</option>
+            <option value="Serviço Social">Serviço Social</option>
+            <option value="Pedagogia">Pedagogia</option>
+          </select>
+        </div>
+
+        <!-- Filtro Modalidade -->
+        <div>
+          <label class="block text-[11px] font-bold text-gray-600 uppercase tracking-wider mb-1">
+            <i class="fa-solid fa-location-dot text-amber-600 mr-1"></i> Modalidade
+          </label>
+          <select id="select-filtro-modalidade" onchange="setFiltroModalidade(this.value)" class="w-full text-xs font-bold px-3 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-red-600 focus:outline-none bg-gray-50 text-gray-900">
+            <option value="todos">Todas as Modalidades</option>
+            <option value="Presencial no Polo">Presencial no Polo</option>
+            <option value="Síncrona Mediada (Online)">Síncronas Online</option>
+          </select>
+        </div>
+
+        <!-- Filtro Trimestre -->
+        <div>
+          <label class="block text-[11px] font-bold text-gray-600 uppercase tracking-wider mb-1">
+            <i class="fa-regular fa-calendar-check text-purple-700 mr-1"></i> Trimestre
+          </label>
+          <select id="filtro-trimestre" class="w-full text-xs font-semibold px-3 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-red-600 focus:outline-none bg-gray-50 text-gray-900">
+            <option value="todos">Todos os Trimestres</option>
+            <option value="1º TRIMESTRE">1º Trimestre</option>
+            <option value="2º TRIMESTRE">2º Trimestre</option>
+          </select>
+        </div>
+
+        <!-- Filtro Tipo de Sessão -->
+        <div>
+          <label class="block text-[11px] font-bold text-gray-600 uppercase tracking-wider mb-1">
+            <i class="fa-solid fa-list-check text-blue-700 mr-1"></i> Tipo de Encontro
+          </label>
+          <select id="filtro-tipo" class="w-full text-xs font-semibold px-3 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-red-600 focus:outline-none bg-gray-50 text-gray-900">
+            <option value="todos">Todos os Tipos</option>
+            <option value="Presencial">Presencial no Polo</option>
+            <option value="AULA">Aulas Principais</option>
+            <option value="Mediação">Mediações</option>
+            <option value="Encontro">Outros Encontros</option>
+          </select>
+        </div>
+
+        <!-- Campo de Busca em Tempo Real -->
+        <div>
+          <label class="block text-[11px] font-bold text-gray-600 uppercase tracking-wider mb-1">
+            <i class="fa-solid fa-magnifying-glass text-gray-500 mr-1"></i> Busca Rápida
+          </label>
+          <div class="relative">
+            <input type="text" id="filtro-busca" placeholder="Matéria, docente, polo..." class="w-full text-xs font-medium pl-3 pr-8 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-red-600 focus:outline-none bg-gray-50">
+            <i class="fa-solid fa-search absolute right-2.5 top-2.5 text-gray-400 text-xs pointer-events-none"></i>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Base do Painel: Automação & Data Base em Pills Compactas e Elegantes -->
+      <div class="px-3 sm:px-4 py-2 bg-gray-50/80 border-t border-gray-200/70 flex flex-wrap items-center justify-between gap-2 text-xs">
+        <div class="flex flex-wrap items-center gap-2">
+          <!-- Pill Auto-riscar -->
+          <label class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white border border-gray-200 hover:border-red-300 text-red-950 font-bold cursor-pointer select-none shadow-2xs transition-colors">
+            <input type="checkbox" id="toggle-risco-automatico" checked class="w-3.5 h-3.5 accent-red-700 rounded cursor-pointer">
+            <span class="text-[11px]"><i class="fa-solid fa-wand-magic-sparkles text-red-700 mr-1"></i>Auto-riscar passadas</span>
+          </label>
+
+          <!-- Pill Ocultar Concluídas -->
+          <label class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white border border-gray-200 hover:border-emerald-300 text-emerald-950 font-bold cursor-pointer select-none shadow-2xs transition-colors">
+            <input type="checkbox" id="toggle-ocultar-concluidas" class="w-3.5 h-3.5 accent-emerald-600 rounded cursor-pointer">
+            <span class="text-[11px]"><i class="fa-solid fa-eye-slash text-emerald-700 mr-1"></i>Ocultar concluídas</span>
+          </label>
+        </div>
+
+        <!-- Pill Data Base Minimalista -->
+        <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white border border-gray-200 shadow-2xs text-[11px]">
+          <span class="font-bold text-gray-600"><i class="fa-regular fa-clock text-red-700 mr-1"></i>Data base:</span>
+          <input type="date" id="input-data-base" class="text-xs font-bold border-0 bg-transparent p-0 focus:ring-0 text-gray-800 cursor-pointer">
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- SECTION 1: VISÃO DOS DOIS MOMENTOS PRESENCIAIS NO POLO (DESTAQUE)        -->
+    <!-- ========================================================================= -->
+    <div id="container-presenciais" class="hidden space-y-4">
+      <div class="flex items-center justify-between">
+        <h3 class="text-base sm:text-lg font-extrabold text-gray-900 flex items-center gap-2">
+          <i class="fa-solid fa-building-user text-red-700"></i>
+          <span>Momentos Presenciais no Polo (1º e 2º Encontros por Matéria)</span>
+        </h3>
+        <span id="badge-contador-presenciais" class="text-xs bg-amber-100 text-amber-900 font-bold px-3 py-1 rounded-full border border-amber-200">
+          0 Matérias
+        </span>
+      </div>
+
+      <!-- Exibição em Tabela Tradicional dos Momentos Presenciais -->
+      <div id="presenciais-table-wrapper" class="overflow-x-auto bg-white rounded-2xl shadow-sm border border-gray-200">
+        <table class="w-full text-left text-xs sm:text-sm">
+          <thead class="bg-gray-50 text-gray-700 font-semibold border-b border-gray-200">
+            <tr>
+              <th class="py-3 px-3.5">Curso</th>
+              <th class="py-3 px-3.5">Trimestre</th>
+              <th class="py-3 px-3.5 font-bold">Disciplina</th>
+              <th class="py-3 px-3.5">1º Momento Presencial</th>
+              <th class="py-3 px-3.5">2º Momento Presencial</th>
+              <th class="py-3 px-3.5">Local / Polo</th>
+              <th class="py-3 px-3.5 text-center">Progresso</th>
+            </tr>
+          </thead>
+          <tbody id="presenciais-table-body" class="divide-y divide-gray-200">
+            <!-- Inserido dinamicamente pelo JavaScript -->
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Grid de Matérias com seus 2 Momentos Presenciais Lado a Lado (Modo Cartões) -->
+      <div id="grid-momentos-presenciais" class="hidden grid grid-cols-1 md:grid-cols-2 gap-4">
+        <!-- Inserido dinamicamente pelo JavaScript -->
+      </div>
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- SECTION 2: VISÃO POR DISCIPLINAS (ACORDEÃO COMPLETO)                      -->
+    <!-- ========================================================================= -->
+    <div id="container-disciplinas" class="space-y-6">
+      <!-- Inserido dinamicamente pelo JavaScript -->
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- SECTION 3: VISÃO CRONOLÓGICA (LINHA DO TEMPO UNIFICADA)                   -->
+    <!-- ========================================================================= -->
+    <div id="container-cronologico" class="hidden bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+      <div class="bg-gradient-to-r from-red-900 to-red-800 px-4 sm:px-5 py-3.5 sm:py-4 text-white flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+        <div class="flex items-center gap-3">
+          <div class="w-8 h-8 rounded-lg bg-white/20 font-bold flex items-center justify-center text-sm">
+            <i class="fa-solid fa-timeline"></i>
+          </div>
+          <div>
+            <h2 class="text-sm sm:text-base font-bold">Linha do Tempo Completa de Aulas & Encontros</h2>
+            <p class="text-[11px] sm:text-xs text-red-100">Todas as sessões presenciais e síncronas em ordem cronológica com carimbo de checklist</p>
+          </div>
+        </div>
+        <span id="badge-total-timeline" class="text-xs bg-red-950/60 px-3 py-1 rounded-full border border-red-400/20 font-medium self-start sm:self-auto">
+          0 Sessões
+        </span>
+      </div>
+
+      <!-- Container dinâmico (tabela ou cartões) da Linha do Tempo -->
+      <div id="timeline-content-wrapper" class="p-3 sm:p-0">
+        <!-- Tabela -->
+        <div id="timeline-table-container" class="overflow-x-auto">
+          <table class="w-full text-left text-xs sm:text-sm">
+            <thead class="bg-gray-50 text-gray-700 font-semibold border-b border-gray-200">
+              <tr>
+                <th class="py-3 px-3.5 w-14 text-center col-acoes">Check</th>
+                <th class="py-3 px-3.5">Data</th>
+                <th class="py-3 px-3.5">Curso</th>
+                <th class="py-3 px-3.5">Disciplina</th>
+                <th class="py-3 px-3.5">Tipo & Formato</th>
+                <th class="py-3 px-3.5">Sessão / Momento</th>
+                <th class="py-3 px-3.5">Horário / Local</th>
+                <th class="py-3 px-3.5">Docente / Mediador(a)</th>
+                <th class="py-3 px-3.5">Registro Checklist</th>
+                <th class="py-3 px-3.5 text-center col-acoes">Ações</th>
+              </tr>
+            </thead>
+            <tbody id="timeline-body" class="divide-y divide-gray-200">
+              <!-- Inserido dinamicamente -->
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Cards View para Linha do Tempo -->
+        <div id="timeline-cards-container" class="hidden grid grid-cols-1 md:grid-cols-2 gap-3.5 p-3.5">
+          <!-- Inserido dinamicamente -->
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- ========================================================================= -->
+  <!-- MODAL: AUTORIZAÇÃO POR SENHA (VISÍVEL: "158")                             -->
+  <!-- ========================================================================= -->
+  <div id="modal-senha-seguranca" class="fixed inset-0 z-50 flex items-center justify-center p-3.5 sm:p-4 hidden modal-backdrop animate-fade-in">
+    <div class="bg-white rounded-2xl shadow-2xl border border-gray-200 w-full max-w-sm overflow-hidden transform transition-all">
+      <div class="bg-gradient-to-r from-red-900 to-red-800 text-white px-5 py-3.5 flex items-center justify-between">
+        <div class="flex items-center gap-2.5">
+          <div class="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center text-sm">
+            <i class="fa-solid fa-key text-amber-300"></i>
+          </div>
+          <div>
+            <h3 id="modal-senha-titulo" class="font-bold text-sm sm:text-base">Autorização por Senha</h3>
+            <span class="text-[11px] font-semibold text-red-200">Ação Protegida</span>
+          </div>
+        </div>
+        <button onclick="fecharModalSenha()" type="button" class="text-white/80 hover:text-white text-lg p-1">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+      <div class="p-5 space-y-3.5">
+        <p id="modal-senha-descricao" class="text-xs text-gray-700 font-medium leading-relaxed">
+          Para prosseguir com esta ação, digite a senha de segurança abaixo:
+        </p>
+        <div class="space-y-1.5">
+          <label class="block text-[11px] font-bold text-gray-700 uppercase tracking-wider">Senha de Segurança (Visível):</label>
+          <div class="relative">
+            <input type="text" id="input-senha-visivel" autocomplete="off" placeholder="Digite 158" class="w-full text-center text-lg font-mono font-black tracking-widest px-3 py-2 border-2 border-red-300 focus:border-red-600 rounded-xl focus:outline-none bg-red-50/50 text-red-950 placeholder-gray-400">
+            <span class="absolute right-3 top-2.5 text-xs font-semibold text-gray-400 select-none">
+              <i class="fa-regular fa-eye mr-1 text-red-700"></i>Visível
+            </span>
+          </div>
+          <p id="modal-senha-erro" class="hidden text-xs text-red-600 font-bold text-center"></p>
+        </div>
+        <div class="flex items-center justify-end gap-2 pt-2">
+          <button onclick="fecharModalSenha()" type="button" class="px-3.5 py-2 text-xs font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-xl transition-all">
+            Cancelar
+          </button>
+          <button id="btn-confirmar-acao-senha" type="button" class="px-4 py-2 text-xs font-bold text-white bg-red-700 hover:bg-red-800 rounded-xl transition-all shadow-sm flex items-center gap-1.5">
+            <i class="fa-solid fa-check"></i>
+            <span>Confirmar</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- MODAL: CONFIRMAÇÃO DUPLA DE CHECKLIST (PREVENÇÃO DE ERROS)                -->
+  <!-- ========================================================================= -->
+  <div id="modal-checklist" class="fixed inset-0 z-50 flex items-center justify-center p-3.5 sm:p-4 hidden modal-backdrop animate-fade-in">
+    <div class="bg-white rounded-2xl shadow-2xl border border-gray-200 w-full max-w-md overflow-hidden transform transition-all">
+      
+      <!-- Modal Header -->
+      <div class="bg-gradient-to-r from-red-900 to-red-800 text-white px-5 py-4 flex items-center justify-between">
+        <div class="flex items-center gap-2.5">
+          <div class="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center text-sm">
+            <i class="fa-solid fa-shield-halved text-amber-300"></i>
+          </div>
+          <div>
+            <h3 class="font-bold text-sm sm:text-base">Validação de Presença / Checklist</h3>
+            <span id="modal-passo-indicador" class="text-[11px] font-semibold text-red-200 uppercase tracking-wider">Passo 1 de 2: Confirmação Inicial</span>
+          </div>
+        </div>
+        <button id="btn-fechar-modal-checklist" type="button" class="text-white/80 hover:text-white text-lg p-1">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <!-- Modal Body -->
+      <div class="p-5 space-y-4">
+        
+        <!-- Info da Aula Selecionada -->
+        <div class="bg-gray-50 border border-gray-200 rounded-xl p-3.5 space-y-1.5 text-xs sm:text-sm">
+          <div class="flex items-center justify-between font-bold text-gray-900">
+            <span id="modal-item-sessao">Sessão</span>
+            <span id="modal-item-data" class="text-red-700 font-extrabold">00/00/0000</span>
+          </div>
+          <div id="modal-item-disciplina" class="text-gray-900 font-bold">Disciplina</div>
+          <div class="flex flex-wrap items-center gap-2 text-gray-600 text-[11px] pt-1">
+            <span id="modal-item-curso" class="bg-red-100 text-red-800 font-bold px-2 py-0.5 rounded">Curso</span>
+            <span id="modal-item-formato" class="bg-amber-100 text-amber-900 font-medium px-2 py-0.5 rounded">Presencial no Polo</span>
+          </div>
+          <div class="flex items-center gap-2 text-gray-500 text-[11px] pt-1 border-t border-gray-200 mt-1.5">
+            <span id="modal-item-horario"><i class="fa-regular fa-clock mr-1 text-red-600"></i>--:--</span>
+            <span>•</span>
+            <span id="modal-item-docente"><i class="fa-solid fa-user-tie mr-1"></i>Docente / Polo</span>
+          </div>
+        </div>
+
+        <!-- ETAPA 1 Conteúdo -->
+        <div id="etapa-1-conteudo" class="space-y-3">
+          <div class="p-3 bg-red-50 text-red-950 rounded-xl border border-red-200 text-xs sm:text-sm flex items-start gap-2.5">
+            <i class="fa-solid fa-circle-question text-red-700 text-base mt-0.5"></i>
+            <p>
+              Você solicitou a alteração do status de realização deste momento. Deseja prosseguir para a confirmação definitiva com gravação de carimbo?
+            </p>
+          </div>
+          <div class="flex items-center justify-end gap-2 pt-2">
+            <button id="btn-cancelar-checklist" type="button" class="px-4 py-2 text-xs sm:text-sm font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-xl transition-all">
+              Cancelar
+            </button>
+            <button id="btn-avancar-etapa-2" type="button" class="px-4 py-2 text-xs sm:text-sm font-bold text-white bg-red-700 hover:bg-red-800 rounded-xl transition-all shadow-sm flex items-center gap-1.5">
+              <span>Avançar para Etapa 2</span>
+              <i class="fa-solid fa-arrow-right text-xs"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- ETAPA 2 Conteúdo (Confirmação Definitiva e Carimbo) -->
+        <div id="etapa-2-conteudo" class="space-y-3 hidden">
+          <div class="p-3.5 bg-amber-50 text-amber-950 rounded-xl border border-amber-300 text-xs sm:text-sm space-y-2">
+            <div class="flex items-center gap-2 font-bold text-amber-900">
+              <i class="fa-solid fa-triangle-exclamation text-amber-700"></i>
+              <span>Confirmação Final (Etapa 2/2)</span>
+            </div>
+            <p class="text-[12px] text-amber-800">
+              Ao confirmar agora, o sistema gravará o registro oficial com o seguinte carimbo de data e hora:
+            </p>
+            <div class="p-2.5 bg-white rounded-lg border border-amber-300 text-center font-mono font-bold text-sm text-red-800 shadow-inner flex items-center justify-center gap-2">
+              <i class="fa-solid fa-clock-rotate-left text-red-600"></i>
+              <span id="preview-timestamp-agora">16/09/2026 às --:--:--</span>
+            </div>
+          </div>
+
+          <div class="flex items-center justify-between pt-2">
+            <button id="btn-voltar-etapa-1" type="button" class="px-3.5 py-2 text-xs font-semibold text-gray-600 hover:text-gray-900 bg-gray-100 rounded-xl transition-all flex items-center gap-1">
+              <i class="fa-solid fa-arrow-left text-xs"></i> <span>Voltar</span>
+            </button>
+            <button id="btn-confirmar-final-checklist" type="button" class="px-4 py-2 text-xs sm:text-sm font-bold text-white bg-emerald-700 hover:bg-emerald-800 rounded-xl transition-all shadow-md flex items-center gap-1.5">
+              <i class="fa-solid fa-circle-check"></i>
+              <span>Confirmar & Registrar</span>
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- MODAL: ADICIONAR / EDITAR EVENTO                                          -->
+  <!-- ========================================================================= -->
+  <div id="modal-evento" class="fixed inset-0 z-50 flex items-center justify-center p-3.5 sm:p-4 hidden modal-backdrop animate-fade-in">
+    <div class="bg-white rounded-2xl shadow-2xl border border-gray-200 w-full max-w-lg overflow-hidden transform transition-all modal-content-scroll max-h-[92vh] flex flex-col">
+      
+      <!-- Modal Header -->
+      <div class="bg-gradient-to-r from-red-900 to-red-800 text-white px-5 py-4 flex items-center justify-between shrink-0">
+        <div class="flex items-center gap-2.5">
+          <div class="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center text-sm">
+            <i id="icone-modal-evento" class="fa-solid fa-calendar-plus"></i>
+          </div>
+          <div>
+            <h3 id="titulo-modal-evento" class="font-bold text-sm sm:text-base">Adicionar Novo Evento</h3>
+            <p class="text-[11px] text-red-200">Preencha os dados da sessão presencial ou síncrona</p>
+          </div>
+        </div>
+        <button id="btn-fechar-modal-evento" type="button" class="text-white/80 hover:text-white text-lg p-1">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <!-- Modal Form Formulario -->
+      <form id="form-evento" class="p-4 sm:p-5 overflow-y-auto space-y-3.5 text-xs sm:text-sm flex-1">
+        <input type="hidden" id="form-evento-id">
+
+        <!-- Curso e Trimestre -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block font-bold text-gray-800 mb-1">Curso *</label>
+            <select id="form-curso" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-600 focus:outline-none bg-white font-medium">
+              <option value="Serviço Social">Serviço Social</option>
+              <option value="Pedagogia">Pedagogia</option>
+              <option value="Outro Curso">Outro Curso</option>
+            </select>
+          </div>
+          <div>
+            <label class="block font-bold text-gray-800 mb-1">Trimestre *</label>
+            <select id="form-trimestre" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-600 focus:outline-none bg-white font-medium">
+              <option value="1º TRIMESTRE">1º Trimestre</option>
+              <option value="2º TRIMESTRE">2º Trimestre</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Disciplina -->
+        <div>
+          <label class="block font-bold text-gray-800 mb-1">Disciplina *</label>
+          <input type="text" id="form-disciplina" required placeholder="Ex: Sociologia, História da Educação..." class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-600 focus:outline-none bg-white font-medium">
+        </div>
+
+        <!-- Modalidade e Momento Presencial -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block font-bold text-gray-800 mb-1">Modalidade *</label>
+            <select id="form-modalidade" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-600 focus:outline-none bg-white">
+              <option value="Presencial no Polo">Presencial no Polo</option>
+              <option value="Síncrona Mediada (Online)">Síncrona Mediada (Online)</option>
+            </select>
+          </div>
+          <div>
+            <label class="block font-bold text-gray-800 mb-1">Momento Presencial</label>
+            <select id="form-momento" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-600 focus:outline-none bg-white">
+              <option value="1º Momento Presencial">1º Momento Presencial</option>
+              <option value="2º Momento Presencial">2º Momento Presencial</option>
+              <option value="Momento Único">Momento Único</option>
+              <option value="">Não se aplica (Síncrona)</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Tipo e Nome da Sessão -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block font-bold text-gray-800 mb-1">Tipo de Sessão *</label>
+            <select id="form-tipo" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-600 focus:outline-none bg-white">
+              <option value="Presencial">Presencial (No Polo)</option>
+              <option value="AULA">AULA (Síncrona)</option>
+              <option value="Mediação">Mediação (Síncrona)</option>
+              <option value="Encontro">Encontro Geral</option>
+            </select>
+          </div>
+          <div>
+            <label class="block font-bold text-gray-800 mb-1">Identificação da Sessão *</label>
+            <input type="text" id="form-sessao" required placeholder="Ex: 1º Encontro Presencial, AULA 1" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-600 focus:outline-none bg-white font-medium">
+          </div>
+        </div>
+
+        <!-- Data e Horário -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div>
+            <label class="block font-bold text-gray-800 mb-1">Data *</label>
+            <input type="date" id="form-data" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-600 focus:outline-none bg-white font-medium">
+          </div>
+          <div>
+            <label class="block font-bold text-gray-800 mb-1">Horário *</label>
+            <input type="text" id="form-horario" required placeholder="Ex: Sábado (Polo) ou 18:00 às 20:00" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-600 focus:outline-none bg-white font-medium">
+          </div>
+          <div>
+            <label class="block font-bold text-gray-800 mb-1">C.H.</label>
+            <input type="text" id="form-ch" placeholder="Ex: 4h ou 2h" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-600 focus:outline-none bg-white font-medium">
+          </div>
+        </div>
+
+        <!-- Docente / Local -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block font-bold text-gray-800 mb-1">Professor / Mediador Responsável *</label>
+            <input type="text" id="form-docente" required placeholder="Nome do docente ou tutor" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-600 focus:outline-none bg-white font-medium">
+          </div>
+          <div>
+            <label class="block font-bold text-gray-800 mb-1">Local de Realização *</label>
+            <input type="text" id="form-local" required placeholder="Polo Presencial ou Google Meet" value="Polo de Apoio Presencial INTA" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-600 focus:outline-none bg-white font-medium">
+          </div>
+        </div>
+
+        <!-- Footer do Formulário -->
+        <div class="pt-3 border-t border-gray-200 flex items-center justify-end gap-2.5">
+          <button id="btn-cancelar-form-evento" type="button" class="px-4 py-2 text-xs sm:text-sm font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-xl transition-all">
+            Cancelar
+          </button>
+          <button type="submit" class="px-5 py-2 text-xs sm:text-sm font-bold text-white bg-red-700 hover:bg-red-800 rounded-xl transition-all shadow-md flex items-center gap-1.5">
+            <i class="fa-solid fa-floppy-disk"></i>
+            <span>Salvar Sessão</span>
+          </button>
+        </div>
+
+      </form>
+
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div id="toast-notificacao" class="fixed bottom-5 right-5 z-50 transform translate-y-20 opacity-0 transition-all duration-300 flex items-center gap-2.5 bg-gray-900 text-white px-4 py-3 rounded-xl shadow-2xl border border-gray-700 text-xs sm:text-sm max-w-sm pointer-events-none">
+    <div id="toast-icone" class="text-emerald-400 text-base">
+      <i class="fa-solid fa-circle-check"></i>
+    </div>
+    <div id="toast-mensagem" class="font-medium">
+      Operação realizada com sucesso.
+    </div>
+  </div>
+
+  <!-- Botão Flutuante Voltar ao Topo -->
+  <button id="btn-voltar-topo" type="button" class="fixed bottom-5 right-5 z-30 opacity-0 pointer-events-none transform translate-y-4 bg-red-800 hover:bg-red-700 active:scale-90 text-white w-10 h-10 sm:w-11 sm:h-11 rounded-full shadow-xl flex items-center justify-center border-2 border-white/20 transition-all duration-300 group" title="Voltar ao topo da página">
+    <i class="fa-solid fa-arrow-up text-sm sm:text-base group-hover:-translate-y-0.5 transition-transform"></i>
+  </button>
+
+  <script>
+    // =========================================================================
+    // BASE DE DADOS INICIAL LIMPA PARA NOVOS CADASTROS OU IMPORTAÇÃO DE BACKUP
+    // =========================================================================
+    const defaultData = [];
+
+    // =========================================================================
+    // PERSISTÊNCIA LOCAL (LOCALSTORAGE) & IMPORTAÇÃO / EXPORTAÇÃO JSON
+    // =========================================================================
+    const STORAGE_KEY = 'cronograma_inta_2026_2_eventos_v2';
+
+    // Limpa chave legada de sessões anteriores
+    try {
+      localStorage.removeItem('cronograma_inta_2026_2_eventos');
+    } catch (e) {}
+
+    function salvarNoLocalStorage() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(eventosData));
+      } catch (e) {
+        console.warn('Erro ao salvar no localStorage:', e);
+      }
+    }
+
+    function carregarDoLocalStorage() {
+      try {
+        const salvo = localStorage.getItem(STORAGE_KEY);
+        if (salvo) {
+          const parsed = JSON.parse(salvo);
+          if (Array.isArray(parsed)) {
+            return parsed;
+          }
+        }
+      } catch (e) {
+        console.warn('Erro ao carregar do localStorage:', e);
+      }
+      return [];
+    }
+
+    // =========================================================================
+    // CONTROLE DE AUTORIZAÇÃO POR SENHA VISÍVEL ("158")
+    // =========================================================================
+    let callbackAcaoSegura = null;
+
+    function pedirSenha158(titulo, descricao, callbackSucesso) {
+      const modal = document.getElementById('modal-senha-seguranca');
+      const input = document.getElementById('input-senha-visivel');
+      const tituloElem = document.getElementById('modal-senha-titulo');
+      const descElem = document.getElementById('modal-senha-descricao');
+      const erroElem = document.getElementById('modal-senha-erro');
+
+      callbackAcaoSegura = callbackSucesso;
+
+      if (tituloElem) tituloElem.textContent = titulo;
+      if (descElem) descElem.textContent = descricao;
+      if (erroElem) {
+        erroElem.textContent = '';
+        erroElem.classList.add('hidden');
+      }
+      if (input) {
+        input.value = '';
+        input.classList.remove('border-red-600', 'bg-red-100');
+      }
+
+      if (modal) {
+        modal.classList.remove('hidden');
+        setTimeout(() => input && input.focus(), 80);
+      } else {
+        const digitada = prompt(`${descricao}\n\nDigite a senha (158):`);
+        if (digitada === '158') {
+          callbackSucesso();
+        } else if (digitada !== null) {
+          mostrarToast('Senha incorreta! Ação cancelada.', 'erro');
+        }
+      }
+    }
+
+    window.fecharModalSenha = function() {
+      const modal = document.getElementById('modal-senha-seguranca');
+      if (modal) modal.classList.add('hidden');
+      callbackAcaoSegura = null;
+    };
+
+    function validarEExecutarSenha() {
+      const input = document.getElementById('input-senha-visivel');
+      const erroElem = document.getElementById('modal-senha-erro');
+      const valor = (input ? input.value : '').trim();
+
+      if (valor === '158') {
+        const callback = callbackAcaoSegura;
+        window.fecharModalSenha();
+        if (typeof callback === 'function') {
+          callback();
+        }
+      } else {
+        if (erroElem) {
+          erroElem.textContent = 'Senha incorreta! Digite exatamente a senha "158".';
+          erroElem.classList.remove('hidden');
+        }
+        if (input) {
+          input.classList.add('border-red-600', 'bg-red-100');
+          input.focus();
+          input.select();
+        }
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      document.getElementById('btn-confirmar-acao-senha')?.addEventListener('click', validarEExecutarSenha);
+      document.getElementById('input-senha-visivel')?.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          validarEExecutarSenha();
+        } else if (e.key === 'Escape') {
+          window.fecharModalSenha();
+        }
+      });
+    });
+
+    // Função para Limpar / Zerar todo o cronograma sob demanda do usuário (Protegida por senha "158")
+    window.limparTudoZerarEventos = function() {
+      pedirSenha158(
+        'Limpar Tudo (Zerar Cronograma)',
+        'ATENÇÃO: Todas as sessões cadastradas serão apagadas da tela. Digite a senha "158" para confirmar a limpeza total:',
+        () => {
+          eventosData = [];
+          salvarNoLocalStorage();
+          renderTudo();
+          mostrarToast('Cronograma completamente limpo com sucesso! Pronto para cadastrar novas sessões.', 'info');
+        }
+      );
+    };
+
+    let eventosData = carregarDoLocalStorage();
+    let filtroCursoAtivo = 'todos'; // 'todos', 'Serviço Social', 'Pedagogia'
+    let filtroModalidadeAtiva = 'todos'; // 'todos', 'Presencial no Polo', 'Síncrona Mediada (Online)'
+    let modoExibicaoMobile = false; // false = tabela, true = cards
+
+    // Funções Globais de Exportar e Importar JSON
+    window.exportarCronogramaJson = function() {
+      try {
+        const payload = {
+          instituicao: 'Centro Universitário INTA',
+          semestre: '2026.2',
+          exportadoEm: new Date().toISOString(),
+          totalSessoes: eventosData.length,
+          concluidas: eventosData.filter(e => e.concluido).length,
+          eventos: eventosData
+        };
+
+        const jsonStr = JSON.stringify(payload, null, 2);
+        const blob = new Blob([jsonStr], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        const hojeIso = getDataHojeIso();
+        a.href = url;
+        a.download = `cronograma_aulas_inta_2026_2_${hojeIso}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        mostrarToast('Cronograma e checklist exportados com sucesso em JSON!');
+      } catch (err) {
+        console.error(err);
+        mostrarToast('Erro ao exportar JSON.', 'erro');
+      }
+    };
+
+    window.acionarImportacaoJson = function() {
+      const input = document.getElementById('input-importar-json');
+      if (input) {
+        input.value = '';
+        input.click();
+      }
+    };
+
+    window.processarImportacaoJson = function(event) {
+      const file = event.target.files && event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          const raw = JSON.parse(e.target.result);
+          let lista = [];
+
+          if (Array.isArray(raw)) {
+            lista = raw;
+          } else if (raw && Array.isArray(raw.eventos)) {
+            lista = raw.eventos;
+          } else {
+            throw new Error('O arquivo selecionado não possui uma lista válida de sessões/eventos.');
+          }
+
+          if (lista.length === 0) {
+            throw new Error('O arquivo JSON está vazio.');
+          }
+
+          if (window.confirm(`Deseja importar ${lista.length} sessões? Isso atualizará o cronograma e os registros de checklist salvos no navegador.`)) {
+            eventosData = lista;
+            salvarNoLocalStorage();
+            renderTudo();
+            mostrarToast(`Importação realizada com sucesso! ${lista.length} sessões carregadas e salvas.`);
+          }
+        } catch (err) {
+          console.error(err);
+          alert('Erro na importação do JSON: ' + err.message);
+          mostrarToast('Falha ao importar arquivo JSON.', 'erro');
+        }
+      };
+      reader.readAsText(file);
+    };
+
+    // =========================================================================
+    // DETECÇÃO DE TELA E ORIENTAÇÃO
+    // =========================================================================
+    function atualizarSensorOrientacao() {
+      const width = window.innerWidth;
+      const isLandscape = window.matchMedia('(orientation: landscape)').matches;
+      const label = document.getElementById('label-orientacao');
+      const badge = document.getElementById('badge-orientacao-sensor');
+
+      // Só exibe se houver solicitação explícita via window.exibirSensorOrientacao
+      if (window.exibirSensorOrientacao && label && badge) {
+        label.textContent = width < 768 
+          ? (isLandscape ? 'Mobile Horizontal' : 'Mobile Vertical')
+          : (isLandscape ? 'Desktop / Paisagem' : 'Desktop / Retrato');
+        badge.classList.remove('hidden');
+        badge.classList.add('inline-flex');
+      } else if (badge) {
+        badge.classList.add('hidden');
+        badge.classList.remove('inline-flex');
+      }
+
+      if (width < 640 && !sessionStorage.getItem('preferencia_view_setada')) {
+        modoExibicaoMobile = true;
+        atualizarBotoesModoExibicao();
+      }
+    }
+
+    window.addEventListener('resize', atualizarSensorOrientacao);
+    window.addEventListener('orientationchange', atualizarSensorOrientacao);
+
+    function getDataHojeIso() {
+      const d = new Date();
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    }
+
+    function formatarTimestampCompleto(dateObj = new Date()) {
+      const dia = String(dateObj.getDate()).padStart(2, '0');
+      const mes = String(dateObj.getMonth() + 1).padStart(2, '0');
+      const ano = dateObj.getFullYear();
+      const horas = String(dateObj.getHours()).padStart(2, '0');
+      const minutos = String(dateObj.getMinutes()).padStart(2, '0');
+      const segundos = String(dateObj.getSeconds()).padStart(2, '0');
+      return `${dia}/${mes}/${ano} às ${horas}:${minutos}:${segundos}`;
+    }
+
+    function converterIsoParaBr(iso) {
+      if (!iso) return '';
+      const [ano, mes, dia] = iso.split('-');
+      return `${dia}/${mes}/${ano}`;
+    }
+
+    function mostrarToast(mensagem, tipo = 'sucesso') {
+      const toast = document.getElementById('toast-notificacao');
+      const toastMsg = document.getElementById('toast-mensagem');
+      const toastIcon = document.getElementById('toast-icone');
+
+      if (!toast || !toastMsg) return;
+
+      toastMsg.textContent = mensagem;
+      if (tipo === 'erro') {
+        toastIcon.className = 'text-red-400 text-base';
+        toastIcon.innerHTML = '<i class="fa-solid fa-circle-exclamation"></i>';
+      } else {
+        toastIcon.className = 'text-emerald-400 text-base';
+        toastIcon.innerHTML = '<i class="fa-solid fa-circle-check"></i>';
+      }
+
+      toast.classList.remove('translate-y-20', 'opacity-0');
+      toast.classList.add('translate-y-0', 'opacity-100');
+
+      setTimeout(() => {
+        toast.classList.remove('translate-y-0', 'opacity-100');
+        toast.classList.add('translate-y-20', 'opacity-0');
+      }, 3500);
+    }
+
+    // =========================================================================
+    // FILTROS RÁPIDOS POR CURSO E MODALIDADE
+    // =========================================================================
+    window.setFiltroCurso = function(curso) {
+      filtroCursoAtivo = curso;
+      const select = document.getElementById('select-filtro-curso');
+      if (select && select.value !== curso) select.value = curso;
+      renderTudo();
+      if (typeof salvarEstadoNavegacao === 'function') salvarEstadoNavegacao();
+      mostrarToast(`Filtrado por: ${curso === 'todos' ? 'Todos os Cursos' : curso}`, 'info');
+    };
+
+    window.setFiltroModalidade = function(mod) {
+      filtroModalidadeAtiva = mod;
+      const select = document.getElementById('select-filtro-modalidade');
+      if (select && select.value !== mod) select.value = mod;
+      renderTudo();
+      if (typeof salvarEstadoNavegacao === 'function') salvarEstadoNavegacao();
+      mostrarToast(`Modalidade: ${mod === 'todos' ? 'Todas as Sessões' : mod}`, 'info');
+    };
+
+    // =========================================================================
+    // RENDERIZAÇÃO: SEÇÃO 1 - MOMENTOS PRESENCIAIS NO POLO (1º E 2º ENCONTROS)
+    // =========================================================================
+    function renderMomentosPresenciais() {
+      const containerCards = document.getElementById('grid-momentos-presenciais');
+      const tableBody = document.getElementById('presenciais-table-body');
+      const badgeContador = document.getElementById('badge-contador-presenciais');
+      if (!containerCards || !tableBody) return;
+
+      // Filtra apenas eventos presenciais ou com momentoPresencial
+      let filtrados = eventosData.filter(e => {
+        const matchCurso = (filtroCursoAtivo === 'todos' || e.curso === filtroCursoAtivo);
+        const isPresencial = (e.modalidade === 'Presencial no Polo' || e.momentoPresencial);
+        return matchCurso && isPresencial;
+      });
+
+      // Agrupa por Disciplina
+      const grupos = {};
+      filtrados.forEach(evt => {
+        const chave = `${evt.curso} - ${evt.disciplina}`;
+        if (!grupos[chave]) {
+          grupos[chave] = {
+            curso: evt.curso,
+            disciplina: evt.disciplina,
+            trimestre: evt.trimestre || '1º TRIMESTRE',
+            local: evt.local || 'Polo de Apoio Presencial INTA',
+            momentos: []
+          };
+        }
+        grupos[chave].momentos.push(evt);
+      });
+
+      const totalMaterias = Object.keys(grupos).length;
+      if (badgeContador) badgeContador.textContent = `${totalMaterias} Disciplinas no Polo`;
+
+      if (totalMaterias === 0) {
+        containerCards.innerHTML = `
+          <div class="col-span-full p-8 text-center bg-white rounded-2xl border border-gray-200">
+            <i class="fa-solid fa-calendar-xmark text-4xl text-gray-300 mb-2"></i>
+            <p class="font-bold text-gray-700">Nenhum momento presencial encontrado para o filtro selecionado.</p>
+            <p class="text-xs text-gray-500 mt-1">Experimente alternar o curso para "Todos os Cursos" ou limpar a busca.</p>
+          </div>
+        `;
+        tableBody.innerHTML = `
+          <tr>
+            <td colspan="7" class="py-8 text-center text-gray-500 font-semibold text-xs">
+              Nenhuma disciplina presencial encontrada com os filtros selecionados.
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      let cardsHtml = '';
+      let tableHtml = '';
+
+      for (const chave in grupos) {
+        const g = grupos[chave];
+        g.momentos.sort((a, b) => a.data.localeCompare(b.data));
+
+        const m1 = g.momentos[0];
+        const m2 = g.momentos.length > 1 ? g.momentos[1] : null;
+
+        const totalM = g.momentos.length;
+        const concluidosM = g.momentos.filter(m => m.concluido).length;
+        const pct = Math.round((concluidosM / totalM) * 100);
+
+        const badgeCorCurso = g.curso === 'Serviço Social' ? 'bg-red-100 text-red-800 border-red-200' : 'bg-blue-100 text-blue-800 border-blue-200';
+
+        // 1. MODO CARTÕES
+        cardsHtml += `
+          <div class="card-materia-presencial bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden flex flex-col justify-between hover:shadow-md transition-shadow">
+            
+            <!-- Header do Card da Matéria -->
+            <div class="p-4 sm:p-5 border-b border-gray-100 bg-gradient-to-r from-gray-50 to-white flex items-start justify-between gap-2">
+              <div>
+                <div class="flex flex-wrap items-center gap-1.5 mb-1">
+                  <span class="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-md border ${badgeCorCurso}">
+                    <i class="fa-solid fa-graduation-cap mr-1"></i>${g.curso}
+                  </span>
+                  <span class="text-[10px] font-bold bg-amber-100 text-amber-900 border border-amber-200 px-2 py-0.5 rounded-md">
+                    ${g.trimestre}
+                  </span>
+                </div>
+                <h4 class="text-sm sm:text-base font-extrabold text-gray-950 leading-snug">${g.disciplina}</h4>
+                <p class="text-[11px] text-gray-500 flex items-center gap-1 mt-0.5">
+                  <i class="fa-solid fa-location-dot text-red-600"></i> ${g.local}
+                </p>
+              </div>
+
+              <!-- Mini progresso -->
+              <div class="text-right shrink-0">
+                <span class="text-xs font-black ${concluidosM === totalM ? 'text-emerald-700' : 'text-gray-700'}">
+                  ${concluidosM}/${totalM} Concluídos
+                </span>
+                <div class="w-16 h-1.5 bg-gray-200 rounded-full mt-1 overflow-hidden">
+                  <div class="h-full bg-emerald-600 rounded-full transition-all duration-300" style="width: ${pct}%"></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Corpo com os 2 Momentos Presenciais Lado a Lado -->
+            <div class="p-4 grid grid-cols-1 sm:grid-cols-2 gap-3 bg-gray-50/50 flex-1">
+              ${renderBlocoMomentoPresencial(m1, '1º MOMENTO PRESENCIAL')}
+              ${m2 ? renderBlocoMomentoPresencial(m2, '2º MOMENTO PRESENCIAL') : renderBlocoMomentoUnicoVazio(g.disciplina)}
+            </div>
+
+          </div>
+        `;
+
+        // 2. MODO TABELA TRADICIONAL
+        const renderCellMomentoTable = (m) => {
+          if (!m) {
+            return `<span class="text-gray-400 text-xs italic">Momento Único Oficial</span>`;
+          }
+          const isChk = m.concluido;
+          const ehMeet = m.formato === 'VIA MEET' || m.formato === 'Via Meet Polo Buriti-MA' || (m.sessao && m.sessao.toLowerCase().includes('meet'));
+          const stamp = m.dataHoraChecklist ? `
+            <span class="inline-flex items-center gap-1 bg-emerald-50 text-emerald-800 text-[10px] font-bold px-1.5 py-0.5 rounded border border-emerald-300 ml-1">
+              <i class="fa-solid fa-circle-check text-emerald-600"></i> ${m.dataHoraChecklist}
+            </span>
+          ` : '';
+
+          return `
+            <div data-event-id="${m.id}" data-date="${m.data}" data-tipo="${m.tipo}" class="flex flex-col gap-1 ${isChk ? 'row-riscada' : ''}">
+              <div class="flex items-center gap-1.5 font-bold text-gray-900">
+                <input type="checkbox" ${isChk ? 'checked' : ''} onchange="acionarChecklist('${m.id}', this)" class="w-4 h-4 rounded text-red-600 focus:ring-red-500 cursor-pointer col-acoes shrink-0" title="Checklist de presença com confirmação dupla">
+                <span class="text-red-900 font-extrabold whitespace-nowrap">${m.dataBr}</span>
+                ${ehMeet 
+                  ? `<span class="bg-blue-100 text-blue-900 border border-blue-200 text-[10px] font-bold px-1.5 py-0.5 rounded whitespace-nowrap"><i class="fa-solid fa-video mr-1 text-blue-700"></i>Via Meet Polo Buriti-MA</span>`
+                  : `<span class="text-gray-600 font-medium text-[11px] whitespace-nowrap">(${m.sessao})</span>`
+                }
+                ${stamp}
+              </div>
+              <div class="text-[11px] text-gray-500 flex items-center gap-1.5 pl-5">
+                <span><i class="fa-regular fa-clock mr-0.5 text-red-600"></i>${m.horario}</span>
+                <span>•</span>
+                <span class="truncate"><i class="fa-solid fa-user-tie mr-0.5 text-gray-400"></i>${m.docente}</span>
+              </div>
+            </div>
+          `;
+        };
+
+        tableHtml += `
+          <tr class="hover:bg-red-50/40 transition-colors card-materia-presencial" data-materia-nome="${g.disciplina}">
+            <td class="py-3 px-3.5 whitespace-nowrap">
+              <span class="text-[10px] font-bold px-2 py-0.5 rounded ${badgeCorCurso}">${g.curso}</span>
+            </td>
+            <td class="py-3 px-3.5 font-semibold text-gray-700 whitespace-nowrap text-xs">
+              ${g.trimestre}
+            </td>
+            <td class="py-3 px-3.5 font-bold text-gray-950 text-xs sm:text-sm">
+              ${g.disciplina}
+            </td>
+            <td class="py-3 px-3.5">
+              ${renderCellMomentoTable(m1)}
+            </td>
+            <td class="py-3 px-3.5">
+              ${renderCellMomentoTable(m2)}
+            </td>
+            <td class="py-3 px-3.5 text-gray-600 text-xs whitespace-nowrap">
+              <i class="fa-solid fa-location-dot text-red-600 mr-1"></i>${g.local}
+            </td>
+            <td class="py-3 px-3.5 text-center whitespace-nowrap">
+              <span class="text-xs font-black ${concluidosM === totalM ? 'text-emerald-700 bg-emerald-50 border border-emerald-200' : 'text-gray-700 bg-gray-100'} px-2 py-0.5 rounded-full">
+                ${concluidosM}/${totalM} Concluídos
+              </span>
+            </td>
+          </tr>
+        `;
+      }
+
+      containerCards.innerHTML = cardsHtml;
+      tableBody.innerHTML = tableHtml;
+    }
+
+    function renderBlocoMomentoPresencial(item, rotuloPadrao) {
+      if (!item) return '';
+
+      const isChecked = item.concluido;
+      const ehMeet = item.formato === 'VIA MEET' || item.formato === 'Via Meet Polo Buriti-MA' || (item.sessao && item.sessao.toLowerCase().includes('meet'));
+
+      return `
+        <div data-event-id="${item.id}" data-date="${item.data}" data-tipo="${item.tipo}" class="bg-white rounded-xl border border-gray-200 p-3 flex flex-col justify-between gap-2 shadow-sm transition-all ${isChecked ? 'card-riscado' : 'hover:border-amber-400'}">
+          <div>
+            <div class="flex items-center justify-between gap-1 mb-1">
+              <span class="text-[10px] font-black tracking-wider uppercase ${ehMeet ? 'text-blue-800 bg-blue-50 px-2 py-0.5 rounded border border-blue-200' : 'text-amber-800'}">
+                <i class="fa-solid ${ehMeet ? 'fa-video' : 'fa-building-columns'} mr-1"></i>
+                ${ehMeet ? 'Via Meet Polo Buriti-MA' : (item.momentoPresencial || rotuloPadrao)}
+              </span>
+              <span class="text-[11px] font-black text-gray-950 bg-gray-100 px-1.5 py-0.5 rounded border border-gray-200">
+                ${item.dataBr}
+              </span>
+            </div>
+
+            <div class="font-bold text-xs text-gray-900 leading-tight">
+              ${item.sessao}
+            </div>
+
+            <div class="text-[11px] text-gray-600 mt-1 flex flex-col gap-0.5">
+              <span><i class="fa-regular fa-clock mr-1 text-red-600"></i>${item.horario}</span>
+              <span class="truncate"><i class="fa-solid fa-user-tie mr-1 text-gray-400"></i>${item.docente}</span>
+            </div>
+          </div>
+
+          <!-- Carimbo de checklist ou Ação -->
+          <div class="pt-2 border-t border-gray-100 flex items-center justify-between gap-1 col-acoes">
+            <label class="inline-flex items-center gap-1.5 cursor-pointer select-none text-[11px] font-bold ${isChecked ? 'text-emerald-700' : 'text-gray-700'}">
+              <input type="checkbox" ${isChecked ? 'checked' : ''} onchange="acionarChecklist('${item.id}', this)" class="w-4 h-4 rounded text-red-600 focus:ring-red-500 cursor-pointer">
+              <span>${isChecked ? 'Concluído' : 'Confirmar Presença'}</span>
+            </label>
+
+            <div class="flex items-center gap-1">
+              <button type="button" onclick="abrirModalEditarEvento('${item.id}')" class="p-1 text-gray-400 hover:text-red-700 rounded hover:bg-gray-100" title="Editar">
+                <i class="fa-solid fa-pen text-xs"></i>
+              </button>
+            </div>
+          </div>
+
+          ${item.dataHoraChecklist ? `
+            <div class="bg-emerald-50 border border-emerald-200 rounded-md px-1.5 py-0.5 text-[10px] font-bold text-emerald-800 flex items-center gap-1 truncate">
+              <i class="fa-solid fa-circle-check text-emerald-600"></i>
+              <span class="truncate">${item.dataHoraChecklist}</span>
+            </div>
+          ` : ''}
+        </div>
+      `;
+    }
+
+    function renderBlocoMomentoUnicoVazio(disciplina) {
+      return `
+        <div class="bg-gray-50/70 border border-dashed border-gray-300 rounded-xl p-3 flex flex-col items-center justify-center text-center gap-1 text-gray-400 select-none">
+          <i class="fa-solid fa-check text-gray-300 text-lg"></i>
+          <span class="text-[11px] font-semibold text-gray-500">Momento Único Oficial</span>
+          <span class="text-[10px] text-gray-400">Esta disciplina cumpre a carga com encontro presencial único.</span>
+        </div>
+      `;
+    }
+
+    // =========================================================================
+    // RENDERIZAÇÃO: SEÇÃO 2 - POR DISCIPLINAS (ACORDEÃO COMPLETO)
+    // =========================================================================
+    function renderDisciplinas() {
+      const container = document.getElementById('container-disciplinas');
+      if (!container) return;
+
+      // Agrupa eventos filtrados por disciplina
+      const grupos = {};
+      eventosData.forEach(evt => {
+        const matchCurso = (filtroCursoAtivo === 'todos' || evt.curso === filtroCursoAtivo);
+        const matchMod = (filtroModalidadeAtiva === 'todos' || evt.modalidade === filtroModalidadeAtiva);
+
+        if (matchCurso && matchMod) {
+          const chave = `${evt.curso} • ${evt.disciplina}`;
+          if (!grupos[chave]) {
+            grupos[chave] = {
+              discId: evt.discId || 'custom',
+              curso: evt.curso,
+              disciplina: evt.disciplina,
+              trimestre: evt.trimestre || '1º TRIMESTRE',
+              itens: []
+            };
+          }
+          grupos[chave].itens.push(evt);
+        }
+      });
+
+      let html = '';
+      let indexDisc = 1;
+
+      for (const chave in grupos) {
+        const grupo = grupos[chave];
+        const numDisc = String(indexDisc).padStart(2, '0');
+        indexDisc++;
+
+        // Ordena itens do grupo por data
+        grupo.itens.sort((a, b) => a.data.localeCompare(b.data));
+
+        const badgeCorCurso = grupo.curso === 'Serviço Social' ? 'bg-red-950/70 text-red-200' : 'bg-blue-950/70 text-blue-200';
+
+        html += `
+          <div class="disciplina-card bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden transition-all" data-disc-id="${grupo.discId}" data-disc-nome="${grupo.disciplina}">
+            
+            <div onclick="toggleAccordionDisciplina('${grupo.discId}')" class="bg-gradient-to-r from-red-900 to-red-800 px-4 sm:px-5 py-3.5 text-white flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 cursor-pointer hover:brightness-105 select-none transition-all">
+              <div class="flex items-center gap-3">
+                <span class="w-8 h-8 rounded-lg bg-white/20 font-bold flex items-center justify-center text-sm">${numDisc}</span>
+                <div>
+                  <div class="flex items-center gap-2 mb-0.5">
+                    <span class="text-[10px] font-bold px-2 py-0.2 rounded ${badgeCorCurso}">${grupo.curso}</span>
+                    <span class="text-[10px] font-medium text-red-200">${grupo.trimestre}</span>
+                  </div>
+                  <h2 class="text-sm sm:text-base lg:text-lg font-bold">${grupo.disciplina}</h2>
+                </div>
+              </div>
+              <div class="flex items-center gap-2 self-start sm:self-auto">
+                <span class="bg-red-950/70 text-xs px-3 py-1 rounded-full font-medium border border-red-400/20">
+                  ${grupo.itens.length} Sessões
+                </span>
+                <span class="w-6 h-6 rounded-full bg-white/10 flex items-center justify-center text-xs text-red-200 transition-transform duration-200 accordion-icon" data-icon-disc="${grupo.discId}">
+                  <i class="fa-solid fa-chevron-up"></i>
+                </span>
+              </div>
+            </div>
+
+            <div id="disciplina-body-${grupo.discId}" class="disciplina-conteudo">
+              <!-- Exibição em Tabela Tradicional -->
+              <div class="disciplina-table-wrapper overflow-x-auto ${modoExibicaoMobile ? 'hidden' : ''}">
+                <table class="w-full text-left text-xs sm:text-sm">
+                  <thead class="bg-gray-50 text-gray-700 font-semibold border-b border-gray-200">
+                    <tr>
+                      <th class="py-3 px-3.5 w-12 text-center col-acoes">Check</th>
+                      <th class="py-3 px-3.5">Modalidade / Formato</th>
+                      <th class="py-3 px-3.5">Sessão & Data</th>
+                      <th class="py-3 px-3.5">Horário / Local</th>
+                      <th class="py-3 px-3.5 text-center">C.H.</th>
+                      <th class="py-3 px-3.5">Docente / Mediador(a)</th>
+                      <th class="py-3 px-3.5">Carimbo de Confirmação</th>
+                      <th class="py-3 px-3.5 text-center col-acoes w-24">Ações</th>
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y divide-gray-200">
+                    ${grupo.itens.map(item => renderLinhaTabelaItem(item)).join('')}
+                  </tbody>
+                </table>
+              </div>
+
+              <!-- Exibição em Cartões Responsivos (Mobile/Touch) -->
+              <div class="disciplina-cards-wrapper p-3.5 sm:p-4 grid grid-cols-1 sm:grid-cols-2 gap-3 ${modoExibicaoMobile ? '' : 'hidden'}">
+                ${grupo.itens.map(item => renderCardMobileItem(item)).join('')}
+              </div>
+            </div>
+
+          </div>
+        `;
+      }
+
+      if (Object.keys(grupos).length === 0) {
+        html = `
+          <div class="p-8 text-center bg-white rounded-2xl border border-gray-200">
+            <i class="fa-solid fa-filter text-4xl text-gray-300 mb-2"></i>
+            <p class="font-bold text-gray-700">Nenhuma disciplina encontrada com os filtros atuais.</p>
+          </div>
+        `;
+      }
+
+      container.innerHTML = html;
+    }
+
+    function renderLinhaTabelaItem(item) {
+      const ehMeetPolo = item.formato === 'Via Meet Polo Buriti-MA' || item.formato === 'VIA MEET' || (item.momentoPresencial && (item.formato || '').toLowerCase().includes('meet')) || (item.sessao && item.sessao.toLowerCase().includes('meet') && item.momentoPresencial);
+      let badgeModalidade;
+      if (ehMeetPolo) {
+        badgeModalidade = `<span class="inline-flex items-center gap-1 bg-blue-100 text-blue-900 font-bold px-2 py-0.5 rounded text-[11px] border border-blue-300"><i class="fa-solid fa-video text-blue-700"></i> Via Meet Polo Buriti-MA</span>`;
+      } else if (item.modalidade === 'Presencial no Polo') {
+        badgeModalidade = `<span class="inline-flex items-center gap-1 bg-amber-100 text-amber-900 font-bold px-2 py-0.5 rounded text-[11px] border border-amber-200"><i class="fa-solid fa-location-dot"></i> Presencial Polo</span>`;
+      } else {
+        badgeModalidade = `<span class="inline-flex items-center gap-1 bg-blue-100 text-blue-900 font-medium px-2 py-0.5 rounded text-[11px] border border-blue-200"><i class="fa-solid fa-laptop"></i> Síncrona Online</span>`;
+      }
+
+      const isChecked = item.concluido;
+      const stampHtml = item.dataHoraChecklist ? `
+        <span class="inline-flex items-center gap-1.5 bg-emerald-50 text-emerald-800 text-[11px] font-semibold px-2 py-0.5 rounded-md border border-emerald-300">
+          <i class="fa-solid fa-circle-check text-emerald-600 text-xs"></i>
+          <span>${item.dataHoraChecklist}</span>
+        </span>
+      ` : `<span class="text-gray-400 text-[11px] italic">Pendente</span>`;
+
+      return `
+        <tr data-event-id="${item.id}" data-date="${item.data}" data-tipo="${item.tipo}" class="hover:bg-red-50/40 transition-colors ${isChecked ? 'row-riscada' : ''}">
+          <td class="py-3 px-3.5 text-center col-acoes">
+            <input type="checkbox" ${isChecked ? 'checked' : ''} onchange="acionarChecklist('${item.id}', this)" class="w-4 h-4 rounded text-red-600 focus:ring-red-500 cursor-pointer" title="Dupla confirmação necessária para marcar/desmarcar">
+          </td>
+          <td class="py-3 px-3.5 whitespace-nowrap">
+            ${badgeModalidade}
+          </td>
+          <td class="py-3 px-3.5 font-semibold text-gray-900 whitespace-nowrap">
+            <span>${item.sessao} - <strong class="text-gray-950">${item.dataBr}</strong></span>
+          </td>
+          <td class="py-3 px-3.5 text-gray-800 font-medium whitespace-nowrap">
+            <i class="fa-regular fa-clock text-red-700 mr-1"></i>${item.horario}
+          </td>
+          <td class="py-3 px-3.5 text-center">
+            <span class="bg-gray-100 font-bold px-2 py-0.5 rounded text-gray-700 text-xs">${item.ch || '-'}</span>
+          </td>
+          <td class="py-3 px-3.5 font-medium text-gray-900">
+            <i class="fa-solid fa-user-tie text-gray-400 mr-1.5"></i>${item.docente}
+          </td>
+          <td class="py-3 px-3.5 whitespace-nowrap">
+            ${stampHtml}
+          </td>
+          <td class="py-3 px-3.5 text-center col-acoes whitespace-nowrap">
+            <div class="flex items-center justify-center gap-1">
+              <button type="button" onclick="abrirModalEditarEvento('${item.id}')" class="p-1.5 text-gray-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors" title="Editar sessão">
+                <i class="fa-solid fa-pen-to-square"></i>
+              </button>
+              <button type="button" onclick="excluirEvento('${item.id}')" class="p-1.5 text-gray-400 hover:text-red-800 hover:bg-red-50 rounded-lg transition-colors" title="Excluir sessão">
+                <i class="fa-regular fa-trash-can"></i>
+              </button>
+            </div>
+          </td>
+        </tr>
+      `;
+    }
+
+    function renderCardMobileItem(item) {
+      const isChecked = item.concluido;
+      const ehPresencial = item.modalidade === 'Presencial no Polo';
+      const ehMeetPolo = item.formato === 'Via Meet Polo Buriti-MA' || item.formato === 'VIA MEET' || (item.momentoPresencial && (item.formato || '').toLowerCase().includes('meet')) || (item.sessao && item.sessao.toLowerCase().includes('meet') && item.momentoPresencial);
+
+      return `
+        <div data-event-id="${item.id}" data-date="${item.data}" data-tipo="${item.tipo}" class="bg-gray-50 rounded-xl border border-gray-200 p-3.5 flex flex-col justify-between gap-2.5 transition-all ${isChecked ? 'card-riscado' : 'hover:border-red-300'}">
+          <div class="flex items-start justify-between gap-2">
+            <div>
+              <span class="text-[10px] font-extrabold uppercase px-1.5 py-0.5 rounded ${ehMeetPolo ? 'bg-blue-100 text-blue-900 border border-blue-300' : (ehPresencial ? 'bg-amber-100 text-amber-900' : 'bg-blue-100 text-blue-900')}">
+                ${ehMeetPolo ? 'Via Meet Polo Buriti-MA' : item.modalidade}
+              </span>
+              <h4 class="card-title-text font-bold text-gray-900 text-xs sm:text-sm leading-tight mt-1">${item.sessao}</h4>
+            </div>
+            <span class="bg-white border border-gray-200 text-red-800 font-extrabold text-[11px] px-2 py-0.5 rounded-md shrink-0">
+              ${item.dataBr}
+            </span>
+          </div>
+
+          <div class="space-y-1 text-xs text-gray-700">
+            <div class="flex items-center gap-1.5 font-medium">
+              <i class="fa-regular fa-clock text-red-700 text-[11px]"></i>
+              <span>${item.horario}</span>
+              <span class="text-gray-300">•</span>
+              <span class="font-bold text-gray-800">C.H: ${item.ch || '-'}</span>
+            </div>
+            <div class="flex items-center gap-1.5 text-gray-600 truncate">
+              <i class="fa-solid fa-user-tie text-gray-400 text-[11px]"></i>
+              <span class="truncate">${item.docente}</span>
+            </div>
+          </div>
+
+          ${item.dataHoraChecklist ? `
+            <div class="bg-emerald-50 border border-emerald-300 rounded-lg p-1.5 text-[11px] font-semibold text-emerald-900 flex items-center gap-1.5">
+              <i class="fa-solid fa-check-circle text-emerald-600"></i>
+              <span class="truncate">Realizado: ${item.dataHoraChecklist}</span>
+            </div>
+          ` : ''}
+
+          <div class="pt-2 border-t border-gray-200 flex items-center justify-between gap-2 col-acoes">
+            <label class="inline-flex items-center gap-2 cursor-pointer select-none text-xs font-bold text-gray-800">
+              <input type="checkbox" ${isChecked ? 'checked' : ''} onchange="acionarChecklist('${item.id}', this)" class="w-4 h-4 rounded text-red-600 focus:ring-red-500 cursor-pointer">
+              <span>${isChecked ? 'Concluída' : 'Marcar'}</span>
+            </label>
+            <div class="flex items-center gap-1">
+              <button type="button" onclick="abrirModalEditarEvento('${item.id}')" class="px-2 py-1 text-xs text-gray-600 hover:text-red-700 bg-white border border-gray-200 rounded-md">
+                <i class="fa-solid fa-pen"></i>
+              </button>
+              <button type="button" onclick="excluirEvento('${item.id}')" class="px-2 py-1 text-xs text-gray-400 hover:text-red-800 bg-white border border-gray-200 rounded-md">
+                <i class="fa-regular fa-trash-can"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    // =========================================================================
+    // RENDERIZAÇÃO: SEÇÃO 3 - LINHA DO TEMPO CRONOLÓGICA UNIFICADA
+    // =========================================================================
+    function renderTimeline() {
+      const timelineBody = document.getElementById('timeline-body');
+      const timelineCards = document.getElementById('timeline-cards-container');
+      const badgeTotal = document.getElementById('badge-total-timeline');
+
+      if (!timelineBody || !timelineCards) return;
+
+      // Filtra por Curso e Modalidade
+      let ordenados = eventosData.filter(e => {
+        const matchCurso = (filtroCursoAtivo === 'todos' || e.curso === filtroCursoAtivo);
+        const matchMod = (filtroModalidadeAtiva === 'todos' || e.modalidade === filtroModalidadeAtiva);
+        return matchCurso && matchMod;
+      });
+
+      ordenados.sort((a, b) => a.data.localeCompare(b.data) || a.horario.localeCompare(b.horario));
+      if (badgeTotal) badgeTotal.textContent = `${ordenados.length} Sessões`;
+
+      timelineBody.innerHTML = ordenados.map(item => {
+        const isChecked = item.concluido;
+        const ehPresencial = item.modalidade === 'Presencial no Polo';
+        const ehMeetPolo = item.formato === 'Via Meet Polo Buriti-MA' || item.formato === 'VIA MEET' || (item.momentoPresencial && (item.formato || '').toLowerCase().includes('meet')) || (item.sessao && item.sessao.toLowerCase().includes('meet') && item.momentoPresencial);
+        const stampHtml = item.dataHoraChecklist ? `
+          <span class="inline-flex items-center gap-1.5 bg-emerald-50 text-emerald-800 text-[11px] font-semibold px-2 py-0.5 rounded-md border border-emerald-300">
+            <i class="fa-solid fa-circle-check text-emerald-600 text-xs"></i>
+            <span>${item.dataHoraChecklist}</span>
+          </span>
+        ` : `<span class="text-gray-400 text-[11px] italic">Pendente</span>`;
+
+        return `
+          <tr data-event-id="${item.id}" data-date="${item.data}" data-tipo="${item.tipo}" data-disc-id="${item.discId}" class="hover:bg-red-50/40 transition-colors ${isChecked ? 'row-riscada' : ''}">
+            <td class="py-3 px-3.5 text-center col-acoes">
+              <input type="checkbox" ${isChecked ? 'checked' : ''} onchange="acionarChecklist('${item.id}', this)" class="w-4 h-4 rounded text-red-600 focus:ring-red-500 cursor-pointer">
+            </td>
+            <td class="py-3 px-3.5 font-bold text-gray-900 whitespace-nowrap">
+              <i class="fa-regular fa-calendar text-red-700 mr-1.5"></i>${item.dataBr}
+            </td>
+            <td class="py-3 px-3.5 font-semibold text-gray-700 whitespace-nowrap">
+              <span class="text-[11px] font-bold px-2 py-0.5 rounded ${item.curso === 'Serviço Social' ? 'bg-red-100 text-red-800' : 'bg-blue-100 text-blue-800'}">
+                ${item.curso}
+              </span>
+            </td>
+            <td class="py-3 px-3.5 font-bold text-gray-900">${item.disciplina}</td>
+            <td class="py-3 px-3.5 whitespace-nowrap">
+              ${ehMeetPolo
+                ? `<span class="text-[11px] font-bold px-2 py-0.5 rounded bg-blue-100 text-blue-900 border border-blue-300 inline-flex items-center gap-1"><i class="fa-solid fa-video text-blue-700"></i> Via Meet Polo Buriti-MA</span>`
+                : `<span class="text-[11px] font-bold px-2 py-0.5 rounded ${ehPresencial ? 'bg-amber-100 text-amber-900' : 'bg-blue-100 text-blue-900'}">
+                    ${item.modalidade}
+                  </span>`
+              }
+            </td>
+            <td class="py-3 px-3.5 font-medium text-gray-900 whitespace-nowrap">
+              ${item.sessao}
+            </td>
+            <td class="py-3 px-3.5 text-gray-700 whitespace-nowrap"><i class="fa-regular fa-clock text-red-700 mr-1.5"></i>${item.horario}</td>
+            <td class="py-3 px-3.5 text-gray-800"><i class="fa-solid fa-user-tie text-gray-400 mr-1.5"></i>${item.docente}</td>
+            <td class="py-3 px-3.5 whitespace-nowrap">${stampHtml}</td>
+            <td class="py-3 px-3.5 text-center col-acoes whitespace-nowrap">
+              <div class="flex items-center justify-center gap-1">
+                <button type="button" onclick="abrirModalEditarEvento('${item.id}')" class="p-1.5 text-gray-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors">
+                  <i class="fa-solid fa-pen-to-square"></i>
+                </button>
+                <button type="button" onclick="excluirEvento('${item.id}')" class="p-1.5 text-gray-400 hover:text-red-800 hover:bg-red-50 rounded-lg transition-colors">
+                  <i class="fa-regular fa-trash-can"></i>
+                </button>
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join('');
+
+      timelineCards.innerHTML = ordenados.map(item => renderCardMobileItem(item)).join('');
+    }
+
+    // =========================================================================
+    // ACORDEÃO E CONTROLES DE INTERFACE
+    // =========================================================================
+    window.toggleAccordionDisciplina = function(discId) {
+      const body = document.getElementById(`disciplina-body-${discId}`);
+      const icon = document.querySelector(`[data-icon-disc="${discId}"]`);
+      if (!body) return;
+
+      const estaOculto = body.classList.contains('hidden');
+      if (estaOculto) {
+        body.classList.remove('hidden');
+        if (icon) icon.innerHTML = '<i class="fa-solid fa-chevron-up"></i>';
+      } else {
+        body.classList.add('hidden');
+        if (icon) icon.innerHTML = '<i class="fa-solid fa-chevron-down"></i>';
+      }
+    };
+
+    let todasDisciplinasRecolhidas = false;
+    const btnToggleAccordionAll = document.getElementById('btn-toggle-accordion-all');
+    const labelAccordionAll = document.getElementById('label-accordion-all');
+
+    if (btnToggleAccordionAll) {
+      btnToggleAccordionAll.addEventListener('click', () => {
+        todasDisciplinasRecolhidas = !todasDisciplinasRecolhidas;
+        document.querySelectorAll('.disciplina-conteudo').forEach(b => {
+          b.classList.toggle('hidden', todasDisciplinasRecolhidas);
+        });
+        document.querySelectorAll('.accordion-icon').forEach(ic => {
+          ic.innerHTML = todasDisciplinasRecolhidas ? '<i class="fa-solid fa-chevron-down"></i>' : '<i class="fa-solid fa-chevron-up"></i>';
+        });
+        if (labelAccordionAll) {
+          labelAccordionAll.textContent = todasDisciplinasRecolhidas ? 'Expandir' : 'Recolher';
+        }
+      });
+    }
+
+    // =========================================================================
+    // CONTROLE DE RISCO AUTOMÁTICO E CHECKLIST COM DUPLA CONFIRMAÇÃO
+    // =========================================================================
+    let checklistEmAndamento = {
+      id: null,
+      checkboxElem: null,
+      novoStatus: false,
+      itemRef: null
+    };
+
+    function acionarChecklist(eventId, checkboxElem) {
+      const item = eventosData.find(e => e.id === eventId);
+      if (!item) return;
+
+      checkboxElem.checked = item.concluido;
+
+      checklistEmAndamento = {
+        id: eventId,
+        checkboxElem: checkboxElem,
+        novoStatus: !item.concluido,
+        itemRef: item
+      };
+
+      abrirModalChecklistDuplo(item, !item.concluido);
+    }
+
+    function abrirModalChecklistDuplo(item, novoStatus) {
+      const modal = document.getElementById('modal-checklist');
+      const sessaoSpan = document.getElementById('modal-item-sessao');
+      const dataSpan = document.getElementById('modal-item-data');
+      const discSpan = document.getElementById('modal-item-disciplina');
+      const cursoSpan = document.getElementById('modal-item-curso');
+      const formatoSpan = document.getElementById('modal-item-formato');
+      const horarioSpan = document.getElementById('modal-item-horario');
+      const docenteSpan = document.getElementById('modal-item-docente');
+      const indicadorPasso = document.getElementById('modal-passo-indicador');
+      const previewTime = document.getElementById('preview-timestamp-agora');
+
+      if (!modal) return;
+
+      sessaoSpan.textContent = item.sessao;
+      dataSpan.textContent = item.dataBr;
+      discSpan.textContent = item.disciplina;
+      cursoSpan.textContent = item.curso;
+      const ehMeetPolo = item.formato === 'Via Meet Polo Buriti-MA' || item.formato === 'VIA MEET' || (item.momentoPresencial && (item.formato || '').toLowerCase().includes('meet')) || (item.sessao && item.sessao.toLowerCase().includes('meet') && item.momentoPresencial);
+      formatoSpan.textContent = ehMeetPolo ? 'Via Meet Polo Buriti-MA' : item.modalidade;
+      horarioSpan.innerHTML = `<i class="fa-regular fa-clock mr-1 text-red-600"></i>${item.horario}`;
+      docenteSpan.innerHTML = `<i class="fa-solid fa-user-tie mr-1"></i>${item.docente}`;
+
+      document.getElementById('etapa-1-conteudo').classList.remove('hidden');
+      document.getElementById('etapa-2-conteudo').classList.add('hidden');
+      indicadorPasso.textContent = 'Passo 1 de 2: Confirmação Inicial';
+
+      if (previewTime) {
+        previewTime.textContent = formatarTimestampCompleto();
+      }
+
+      modal.classList.remove('hidden');
+    }
+
+    document.getElementById('btn-avancar-etapa-2').addEventListener('click', () => {
+      document.getElementById('etapa-1-conteudo').classList.add('hidden');
+      document.getElementById('etapa-2-conteudo').classList.remove('hidden');
+      document.getElementById('modal-passo-indicador').textContent = 'Passo 2 de 2: Confirmação Definitiva & Carimbo';
+      document.getElementById('preview-timestamp-agora').textContent = formatarTimestampCompleto();
+    });
+
+    document.getElementById('btn-voltar-etapa-1').addEventListener('click', () => {
+      document.getElementById('etapa-2-conteudo').classList.add('hidden');
+      document.getElementById('etapa-1-conteudo').classList.remove('hidden');
+      document.getElementById('modal-passo-indicador').textContent = 'Passo 1 de 2: Confirmação Inicial';
+    });
+
+    document.getElementById('btn-fechar-modal-checklist').addEventListener('click', fecharModalChecklist);
+    document.getElementById('btn-cancelar-checklist').addEventListener('click', fecharModalChecklist);
+
+    function fecharModalChecklist() {
+      const modal = document.getElementById('modal-checklist');
+      if (modal) modal.classList.add('hidden');
+      checklistEmAndamento = { id: null, checkboxElem: null, novoStatus: false, itemRef: null };
+    }
+
+    document.getElementById('btn-confirmar-final-checklist').addEventListener('click', () => {
+      if (!checklistEmAndamento.itemRef) return;
+
+      const item = checklistEmAndamento.itemRef;
+      const novoStatus = checklistEmAndamento.novoStatus;
+
+      item.concluido = novoStatus;
+      if (novoStatus) {
+        item.dataHoraChecklist = formatarTimestampCompleto();
+        mostrarToast(`Presença confirmada! Carimbo: ${item.dataHoraChecklist}`);
+      } else {
+        item.dataHoraChecklist = null;
+        mostrarToast('Presença desmarcada com sucesso.', 'info');
+      }
+
+      salvarNoLocalStorage();
+      fecharModalChecklist();
+      renderTudo();
+    });
+
+    // =========================================================================
+    // MODAL DE ADICIONAR / EDITAR EVENTO
+    // =========================================================================
+    const modalEvento = document.getElementById('modal-evento');
+    const formEvento = document.getElementById('form-evento');
+    const btnAbrirNovoEvento = document.getElementById('btn-abrir-novo-evento');
+    const btnFecharModalEvento = document.getElementById('btn-fechar-modal-evento');
+    const btnCancelarFormEvento = document.getElementById('btn-cancelar-form-evento');
+
+    btnAbrirNovoEvento.addEventListener('click', abrirModalCriarEvento);
+    btnFecharModalEvento.addEventListener('click', fecharModalEvento);
+    btnCancelarFormEvento.addEventListener('click', fecharModalEvento);
+
+    function fecharModalEvento() {
+      if (modalEvento) modalEvento.classList.add('hidden');
+      formEvento.reset();
+      document.getElementById('form-evento-id').value = '';
+    }
+
+    function abrirModalCriarEvento() {
+      formEvento.reset();
+      document.getElementById('form-evento-id').value = '';
+      document.getElementById('titulo-modal-evento').textContent = 'Adicionar Nova Sessão / Encontro';
+      document.getElementById('icone-modal-evento').className = 'fa-solid fa-circle-plus';
+      document.getElementById('form-data').value = getDataHojeIso();
+      modalEvento.classList.remove('hidden');
+    }
+
+    window.abrirModalEditarEvento = function(eventId) {
+      const item = eventosData.find(e => e.id === eventId);
+      if (!item) return;
+
+      document.getElementById('form-evento-id').value = item.id;
+      document.getElementById('titulo-modal-evento').textContent = 'Editar Sessão / Encontro';
+      document.getElementById('icone-modal-evento').className = 'fa-solid fa-pen-to-square';
+
+      document.getElementById('form-curso').value = item.curso || 'Serviço Social';
+      document.getElementById('form-trimestre').value = item.trimestre || '1º TRIMESTRE';
+      document.getElementById('form-disciplina').value = item.disciplina || '';
+      document.getElementById('form-modalidade').value = item.modalidade || 'Presencial no Polo';
+      document.getElementById('form-momento').value = item.momentoPresencial || '';
+      document.getElementById('form-tipo').value = item.tipo || 'Presencial';
+      document.getElementById('form-sessao').value = item.sessao || '';
+      document.getElementById('form-data').value = item.data || '';
+      document.getElementById('form-horario').value = item.horario || '';
+      document.getElementById('form-ch').value = item.ch || '';
+      document.getElementById('form-docente').value = item.docente || '';
+      document.getElementById('form-local').value = item.local || 'Polo de Apoio Presencial INTA';
+
+      modalEvento.classList.remove('hidden');
+    };
+
+    window.excluirEvento = function(eventId) {
+      const item = eventosData.find(e => e.id === eventId);
+      if (!item) return;
+
+      if (window.confirm(`Tem certeza que deseja remover permanentemente a sessão:\n"${item.sessao} - ${item.disciplina} (${item.dataBr})"?`)) {
+        eventosData = eventosData.filter(e => e.id !== eventId);
+        salvarNoLocalStorage();
+        mostrarToast('Sessão removida do cronograma.', 'erro');
+        renderTudo();
+      }
+    };
+
+    formEvento.addEventListener('submit', (e) => {
+      e.preventDefault();
+
+      const editId = document.getElementById('form-evento-id').value;
+      const curso = document.getElementById('form-curso').value;
+      const trimestre = document.getElementById('form-trimestre').value;
+      const disciplina = document.getElementById('form-disciplina').value.trim();
+      const modalidade = document.getElementById('form-modalidade').value;
+      const momento = document.getElementById('form-momento').value;
+      const tipo = document.getElementById('form-tipo').value;
+      const sessao = document.getElementById('form-sessao').value.trim();
+      const dataIso = document.getElementById('form-data').value;
+      const horario = document.getElementById('form-horario').value.trim();
+      const ch = document.getElementById('form-ch').value.trim() || '4h';
+      const docente = document.getElementById('form-docente').value.trim();
+      const local = document.getElementById('form-local').value.trim() || 'Polo de Apoio Presencial INTA';
+
+      if (editId) {
+        const item = eventosData.find(evt => evt.id === editId);
+        if (item) {
+          item.curso = curso;
+          item.trimestre = trimestre;
+          item.disciplina = disciplina;
+          item.modalidade = modalidade;
+          item.momentoPresencial = momento || null;
+          item.tipo = tipo;
+          item.sessao = sessao;
+          item.data = dataIso;
+          item.dataBr = converterIsoParaBr(dataIso);
+          item.horario = horario;
+          item.ch = ch;
+          item.docente = docente;
+          item.local = local;
+          mostrarToast('Sessão atualizada com sucesso!');
+        }
+      } else {
+        const novo = {
+          id: 'evt_' + Date.now(),
+          curso: curso,
+          disciplina: disciplina,
+          discId: 'custom_' + Date.now(),
+          trimestre: trimestre,
+          modalidade: modalidade,
+          tipo: tipo,
+          momentoPresencial: momento || null,
+          sessao: sessao,
+          formato: modalidade === 'Presencial no Polo' ? 'Presencial no Polo' : 'Online',
+          data: dataIso,
+          dataBr: converterIsoParaBr(dataIso),
+          horario: horario,
+          ch: ch,
+          docente: docente,
+          local: local,
+          concluido: false,
+          dataHoraChecklist: null
+        };
+        eventosData.push(novo);
+        mostrarToast('Nova sessão adicionada com sucesso!');
+      }
+
+      salvarNoLocalStorage();
+      fecharModalEvento();
+      renderTudo();
+    });
+
+    // =========================================================================
+    // RISCO AUTOMÁTICO E INDICADORES
+    // =========================================================================
+    const inputDataBase = document.getElementById('input-data-base');
+    const toggleRiscoAutomatico = document.getElementById('toggle-risco-automatico');
+
+    function aplicarRiscos() {
+      const isAuto = toggleRiscoAutomatico.checked;
+      const dataCorte = inputDataBase.value;
+
+      document.querySelectorAll('[data-date]').forEach(elem => {
+        const itemDate = elem.getAttribute('data-date');
+        const evtId = elem.getAttribute('data-event-id');
+        const item = eventosData.find(e => e.id === evtId);
+
+        let deveRiscar = false;
+
+        if (item && item.concluido) {
+          deveRiscar = true;
+        } else if (isAuto && dataCorte && itemDate < dataCorte) {
+          deveRiscar = true;
+        }
+
+        if (elem.tagName === 'TR') {
+          elem.classList.toggle('row-riscada', deveRiscar);
+        } else {
+          elem.classList.toggle('card-riscado', deveRiscar);
+        }
+      });
+
+      atualizarContadores();
+    }
+
+    function atualizarContadores() {
+      const total = eventosData.length;
+      let realizadas = 0;
+      let presenciais = 0;
+      let sincronas = 0;
+      const dataCorte = inputDataBase.value;
+      const isAuto = toggleRiscoAutomatico.checked;
+
+      eventosData.forEach(evt => {
+        if (evt.modalidade === 'Presencial no Polo') presenciais++;
+        else sincronas++;
+
+        if (evt.concluido || (isAuto && dataCorte && evt.data < dataCorte)) {
+          realizadas++;
+        }
+      });
+
+      const pendentes = Math.max(0, total - realizadas);
+      const disciplinasUnicas = new Set(eventosData.map(e => `${e.curso} - ${e.disciplina}`)).size;
+
+      document.getElementById('stat-total').textContent = total;
+      document.getElementById('stat-presenciais').textContent = presenciais;
+      document.getElementById('stat-sincronas').textContent = sincronas;
+      document.getElementById('stat-passadas').textContent = realizadas;
+      document.getElementById('stat-pendentes').textContent = pendentes;
+      document.getElementById('stat-disciplinas').textContent = disciplinasUnicas;
+    }
+
+    toggleRiscoAutomatico.addEventListener('change', aplicarRiscos);
+    inputDataBase.addEventListener('change', aplicarRiscos);
+
+    document.getElementById('btn-riscar-todas').addEventListener('click', () => {
+      toggleRiscoAutomatico.checked = false;
+      const agora = formatarTimestampCompleto();
+      eventosData.forEach(e => {
+        e.concluido = true;
+        if (!e.dataHoraChecklist) e.dataHoraChecklist = agora;
+      });
+      salvarNoLocalStorage();
+      mostrarToast('Todas as sessões foram marcadas como concluídas.');
+      renderTudo();
+    });
+
+    document.getElementById('btn-limpar-riscos').addEventListener('click', () => {
+      pedirSenha158(
+        'Confirmar Limpeza de Registros',
+        'Deseja desmarcar todos os checklists e carimbos de presença? Digite a senha "158" para confirmar:',
+        () => {
+          toggleRiscoAutomatico.checked = false;
+          eventosData.forEach(e => {
+            e.concluido = false;
+            e.dataHoraChecklist = null;
+          });
+          salvarNoLocalStorage();
+          mostrarToast('Todos os registros de presença foram limpos com sucesso!', 'info');
+          renderTudo();
+        }
+      );
+    });
+
+    // Fecha o dropdown de Ações ao clicar fora ou ao selecionar uma opção
+    const dropdownAcoes = document.getElementById('dropdown-acoes-painel');
+    if (dropdownAcoes) {
+      document.addEventListener('click', (e) => {
+        if (!dropdownAcoes.contains(e.target)) {
+          dropdownAcoes.removeAttribute('open');
+        }
+      });
+      dropdownAcoes.querySelectorAll('button').forEach(btn => {
+        btn.addEventListener('click', () => {
+          dropdownAcoes.removeAttribute('open');
+        });
+      });
+    }
+
+    // =========================================================================
+    // FILTROS DE TEXTO, TIPO, TRIMESTRE
+    // =========================================================================
+    const inputBusca = document.getElementById('filtro-busca');
+    const selectTipo = document.getElementById('filtro-tipo');
+    const selectTrimestre = document.getElementById('filtro-trimestre');
+    const toggleOcultarConcluidas = document.getElementById('toggle-ocultar-concluidas');
+
+    function aplicarFiltrosTexto() {
+      const termo = inputBusca.value.toLowerCase().trim();
+      const tipo = selectTipo.value;
+      const trimestre = selectTrimestre.value;
+      const ocultarConcluidas = toggleOcultarConcluidas ? toggleOcultarConcluidas.checked : false;
+      const isAuto = toggleRiscoAutomatico.checked;
+      const dataCorte = inputDataBase.value;
+
+      document.querySelectorAll('#container-presenciais [data-event-id], #container-disciplinas [data-event-id], #timeline-body tr, #timeline-cards-container > div').forEach(elem => {
+        const itemTipo = elem.getAttribute('data-tipo');
+        const itemDate = elem.getAttribute('data-date');
+        const evtId = elem.getAttribute('data-event-id');
+        const item = eventosData.find(e => e.id === evtId);
+        const texto = elem.innerText.toLowerCase();
+
+        let matchTipo = (tipo === 'todos' || itemTipo === tipo);
+        let matchTrimestre = (trimestre === 'todos' || (item && item.trimestre === trimestre));
+        let matchBusca = (!termo || texto.includes(termo));
+        let isConcluido = item && (item.concluido || (isAuto && dataCorte && itemDate < dataCorte));
+        let matchConcluida = !ocultarConcluidas || !isConcluido;
+
+        elem.style.display = (matchTipo && matchTrimestre && matchBusca && matchConcluida) ? '' : 'none';
+      });
+
+      // Oculta cards da matéria no grid presencial se todos os seus momentos estiverem ocultos
+      document.querySelectorAll('.card-materia-presencial').forEach(card => {
+        const filhosVisiveis = Array.from(card.querySelectorAll('[data-event-id]')).some(el => el.style.display !== 'none');
+        card.style.display = filhosVisiveis ? '' : 'none';
+      });
+
+      // Oculta cards da disciplina se todas as suas sessões estiverem ocultas
+      document.querySelectorAll('.disciplina-card').forEach(card => {
+        const filhosVisiveis = Array.from(card.querySelectorAll('[data-event-id]')).some(el => el.style.display !== 'none');
+        card.style.display = filhosVisiveis ? '' : 'none';
+      });
+    }
+
+    let abaAtualAtiva = 'disciplinas';
+
+    // =========================================================================
+    // EXPORTAÇÃO INTELIGENTE PARA EXCEL (SEÇÃO ATIVA + FILTROS + TABELA TRADICIONAL)
+    // =========================================================================
+    function obterEventosFiltrados() {
+      const termo = inputBusca ? inputBusca.value.toLowerCase().trim() : '';
+      const tipo = selectTipo ? selectTipo.value : 'todos';
+      const trimestre = selectTrimestre ? selectTrimestre.value : 'todos';
+      const ocultarConcluidas = toggleOcultarConcluidas ? toggleOcultarConcluidas.checked : false;
+      const isAuto = toggleRiscoAutomatico ? toggleRiscoAutomatico.checked : true;
+      const dataCorte = inputDataBase ? inputDataBase.value : '';
+
+      return eventosData.filter(item => {
+        const matchCurso = (filtroCursoAtivo === 'todos' || item.curso === filtroCursoAtivo);
+        const matchMod = (filtroModalidadeAtiva === 'todos' || item.modalidade === filtroModalidadeAtiva);
+        const matchTipo = (tipo === 'todos' || item.tipo === tipo);
+        const matchTrimestre = (trimestre === 'todos' || item.trimestre === trimestre);
+        const isConcluido = item.concluido || (isAuto && dataCorte && item.data < dataCorte);
+        const matchConcluida = !ocultarConcluidas || !isConcluido;
+
+        if (!matchCurso || !matchMod || !matchTipo || !matchTrimestre || !matchConcluida) {
+          return false;
+        }
+
+        if (termo) {
+          const textoCompleto = `${item.curso} ${item.disciplina} ${item.sessao} ${item.docente} ${item.local} ${item.dataBr} ${item.modalidade} ${item.formato || ''}`.toLowerCase();
+          if (!textoCompleto.includes(termo)) return false;
+        }
+
+        return true;
+      });
+    }
+
+    window.exportarCronogramaParaExcel = function() {
+      const eventos = obterEventosFiltrados();
+      if (!eventos || eventos.length === 0) {
+        mostrarToast('Nenhuma sessão encontrada para os filtros atuais.', 'error');
+        return;
+      }
+
+      const hojeStr = getDataHojeIso();
+      let sheetData = [];
+      let nomeAbaExcel = 'Cronograma';
+      let nomeArquivo = 'Cronograma';
+
+      if (abaAtualAtiva === 'presenciais') {
+        nomeAbaExcel = 'No Polo (2 Momentos)';
+        nomeArquivo = `Cronograma_No_Polo_${hojeStr}`;
+        sheetData.push([
+          'Curso',
+          'Trimestre',
+          'Disciplina',
+          '1º Momento Presencial (Data/Hora)',
+          '1º Momento (Sessão / Docente)',
+          '1º Momento (Status)',
+          '2º Momento Presencial (Data/Hora)',
+          '2º Momento (Sessão / Docente)',
+          '2º Momento (Status)',
+          'Local / Polo',
+          'Progresso'
+        ]);
+
+        // Agrupa por disciplina
+        const grupos = {};
+        eventos.filter(e => e.momentoPresencial || e.modalidade === 'Presencial no Polo').forEach(e => {
+          const chave = `${e.curso} • ${e.disciplina}`;
+          if (!grupos[chave]) {
+            grupos[chave] = {
+              curso: e.curso,
+              disciplina: e.disciplina,
+              trimestre: e.trimestre || '1º TRIMESTRE',
+              local: e.local || 'Polo Buriti-MA',
+              momentos: []
+            };
+          }
+          grupos[chave].momentos.push(e);
+        });
+
+        for (const k in grupos) {
+          const g = grupos[k];
+          g.momentos.sort((a, b) => a.data.localeCompare(b.data));
+          const m1 = g.momentos[0];
+          const m2 = g.momentos.length > 1 ? g.momentos[1] : null;
+
+          const totalM = g.momentos.length;
+          const concluidosM = g.momentos.filter(m => m.concluido).length;
+
+          sheetData.push([
+            g.curso,
+            g.trimestre,
+            g.disciplina,
+            m1 ? `${m1.dataBr} (${m1.horario})` : 'Não definido',
+            m1 ? `${m1.sessao} - ${m1.docente}` : '-',
+            m1 ? (m1.concluido ? `Concluído (${m1.dataHoraChecklist || 'Sim'})` : 'Pendente') : '-',
+            m2 ? `${m2.dataBr} (${m2.horario})` : (totalM === 1 ? 'Momento Único' : 'Não definido'),
+            m2 ? `${m2.sessao} - ${m2.docente}` : (totalM === 1 ? 'Carga cumprida em encontro único' : '-'),
+            m2 ? (m2.concluido ? `Concluído (${m2.dataHoraChecklist || 'Sim'})` : 'Pendente') : (totalM === 1 ? '-' : '-'),
+            g.local,
+            `${concluidosM}/${totalM} Concluídos`
+          ]);
+        }
+      } else if (abaAtualAtiva === 'disciplinas') {
+        nomeAbaExcel = 'Por Disciplina';
+        nomeArquivo = `Cronograma_Disciplinas_${hojeStr}`;
+        sheetData.push([
+          'Curso',
+          'Trimestre',
+          'Disciplina',
+          'Sessão',
+          'Modalidade / Formato',
+          'Data',
+          'Horário',
+          'C.H.',
+          'Docente / Mediador(a)',
+          'Local / Polo',
+          'Status Presença',
+          'Carimbo Confirmação'
+        ]);
+
+        const ordenados = [...eventos].sort((a, b) => 
+          a.curso.localeCompare(b.curso) || 
+          a.disciplina.localeCompare(b.disciplina) || 
+          a.data.localeCompare(b.data) || 
+          a.horario.localeCompare(b.horario)
+        );
+
+        ordenados.forEach(item => {
+          sheetData.push([
+            item.curso,
+            item.trimestre || '1º TRIMESTRE',
+            item.disciplina,
+            item.sessao,
+            item.formato || item.modalidade,
+            item.dataBr,
+            item.horario,
+            item.ch || '-',
+            item.docente,
+            item.local || 'Polo Buriti-MA',
+            item.concluido ? 'Concluída' : 'Pendente',
+            item.dataHoraChecklist || '-'
+          ]);
+        });
+      } else {
+        nomeAbaExcel = 'Linha do Tempo';
+        nomeArquivo = `Cronograma_Linha_do_Tempo_${hojeStr}`;
+        sheetData.push([
+          'Data',
+          'Horário',
+          'Curso',
+          'Trimestre',
+          'Disciplina',
+          'Sessão',
+          'Modalidade / Formato',
+          'C.H.',
+          'Docente / Mediador(a)',
+          'Local / Polo',
+          'Status Presença',
+          'Carimbo Confirmação'
+        ]);
+
+        const ordenados = [...eventos].sort((a, b) => a.data.localeCompare(b.data) || a.horario.localeCompare(b.horario));
+
+        ordenados.forEach(item => {
+          sheetData.push([
+            item.dataBr,
+            item.horario,
+            item.curso,
+            item.trimestre || '1º TRIMESTRE',
+            item.disciplina,
+            item.sessao,
+            item.formato || item.modalidade,
+            item.ch || '-',
+            item.docente,
+            item.local || 'Polo Buriti-MA',
+            item.concluido ? 'Concluída' : 'Pendente',
+            item.dataHoraChecklist || '-'
+          ]);
+        });
+      }
+
+      // 1. Tenta gerar via SheetJS nativo (.xlsx)
+      if (typeof XLSX !== 'undefined') {
+        try {
+          const ws = XLSX.utils.aoa_to_sheet(sheetData);
+
+          // Ajusta larguras de coluna
+          const colWidths = sheetData[0].map((_, colIdx) => {
+            let maxLen = 10;
+            sheetData.forEach(row => {
+              const val = row[colIdx] ? String(row[colIdx]) : '';
+              if (val.length > maxLen) maxLen = Math.min(val.length + 2, 45);
+            });
+            return { wch: maxLen };
+          });
+          ws['!cols'] = colWidths;
+
+          const wb = XLSX.utils.book_new();
+          XLSX.utils.book_append_sheet(wb, ws, nomeAbaExcel);
+          XLSX.writeFile(wb, `${nomeArquivo}.xlsx`);
+          mostrarToast(`Planilha "${nomeArquivo}.xlsx" exportada com sucesso!`);
+          return;
+        } catch (err) {
+          console.warn('Falha na exportação XLSX, recorrendo ao fallback CSV:', err);
+        }
+      }
+
+      // 2. Fallback CSV com UTF-8 BOM compatível direto com Microsoft Excel
+      try {
+        const csvContent = '\uFEFF' + sheetData.map(row => 
+          row.map(field => `"${String(field || '').replace(/"/g, '""')}"`).join(';')
+        ).join('\r\n');
+
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `${nomeArquivo}.csv`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+        mostrarToast(`Planilha "${nomeArquivo}.csv" exportada com sucesso!`);
+      } catch (e) {
+        console.error('Erro na exportação:', e);
+        mostrarToast('Erro ao exportar planilha.', 'error');
+      }
+    };
+
+    function salvarEstadoNavegacao() {
+      try {
+        const estado = {
+          abaAtiva: abaAtualAtiva || 'disciplinas',
+          filtroCurso: filtroCursoAtivo || 'todos',
+          filtroModalidade: filtroModalidadeAtiva || 'todos',
+          filtroTrimestre: selectTrimestre ? selectTrimestre.value : 'todos',
+          filtroTipo: selectTipo ? selectTipo.value : 'todos',
+          filtroBusca: inputBusca ? inputBusca.value : '',
+          riscoAuto: toggleRiscoAutomatico ? toggleRiscoAutomatico.checked : true,
+          ocultarConcluidas: toggleOcultarConcluidas ? toggleOcultarConcluidas.checked : false,
+          dataBase: inputDataBase ? inputDataBase.value : '',
+          modoExibicaoMobile: modoExibicaoMobile,
+          scrollY: window.pageYOffset || document.documentElement.scrollTop || 0
+        };
+        localStorage.setItem('cronograma_estado_usuario_v1', JSON.stringify(estado));
+        if (toggleOcultarConcluidas) {
+          localStorage.setItem('cronograma_ocultar_concluidas', toggleOcultarConcluidas.checked ? 'true' : 'false');
+        }
+      } catch (e) {}
+    }
+
+    function restaurarEstadoNavegacao() {
+      try {
+        const salvo = localStorage.getItem('cronograma_estado_usuario_v1');
+        let est = null;
+        if (salvo) {
+          try { est = JSON.parse(salvo); } catch(e){}
+        }
+
+        if (est) {
+          if (est.filtroCurso) {
+            filtroCursoAtivo = est.filtroCurso;
+            const sc = document.getElementById('select-filtro-curso');
+            if (sc) sc.value = est.filtroCurso;
+          }
+          if (est.filtroModalidade) {
+            filtroModalidadeAtiva = est.filtroModalidade;
+            const sm = document.getElementById('select-filtro-modalidade');
+            if (sm) sm.value = est.filtroModalidade;
+          }
+          if (est.filtroTrimestre && selectTrimestre) {
+            selectTrimestre.value = est.filtroTrimestre;
+          }
+          if (est.filtroTipo && selectTipo) {
+            selectTipo.value = est.filtroTipo;
+          }
+          if (est.filtroBusca !== undefined && inputBusca) {
+            inputBusca.value = est.filtroBusca;
+          }
+          if (est.riscoAuto !== undefined && toggleRiscoAutomatico) {
+            toggleRiscoAutomatico.checked = est.riscoAuto;
+          }
+          if (est.ocultarConcluidas !== undefined && toggleOcultarConcluidas) {
+            toggleOcultarConcluidas.checked = est.ocultarConcluidas;
+          }
+          if (est.dataBase && inputDataBase) {
+            inputDataBase.value = est.dataBase;
+          }
+          if (est.modoExibicaoMobile !== undefined) {
+            modoExibicaoMobile = est.modoExibicaoMobile;
+          }
+        }
+
+        // Restauração prioritária dedicada para a preferência de ocultar concluídas
+        const salvoOcultar = localStorage.getItem('cronograma_ocultar_concluidas');
+        if (salvoOcultar !== null && toggleOcultarConcluidas) {
+          toggleOcultarConcluidas.checked = (salvoOcultar === 'true');
+        }
+
+        // Padrão do filtro/aba é SEMPRE "Por Disciplina" caso não haja estado ou seja primeira visita
+        const abaAlvo = (est && est.abaAtiva) ? est.abaAtiva : 'disciplinas';
+        if (abaAlvo === 'presenciais') {
+          ativarAba(tabPresenciais, containerPresenciais, 'presenciais', false);
+        } else if (abaAlvo === 'cronologico') {
+          ativarAba(tabCronologico, containerCronologico, 'cronologico', false);
+        } else {
+          ativarAba(tabDisciplinas, containerDisciplinas, 'disciplinas', false);
+        }
+
+        // Restaura exatamente a posição onde o usuário estava navegando
+        if (est && typeof est.scrollY === 'number' && est.scrollY > 0) {
+          const targetY = est.scrollY;
+          setTimeout(() => {
+            window.scrollTo({ top: targetY, behavior: 'instant' });
+          }, 35);
+          setTimeout(() => {
+            window.scrollTo({ top: targetY, behavior: 'instant' });
+          }, 120);
+        }
+      } catch (err) {
+        console.warn('Erro ao restaurar estado:', err);
+        ativarAba(tabDisciplinas, containerDisciplinas, 'disciplinas', false);
+      }
+    }
+
+    inputBusca.addEventListener('input', () => { aplicarFiltrosTexto(); salvarEstadoNavegacao(); });
+    selectTipo.addEventListener('change', () => { aplicarFiltrosTexto(); salvarEstadoNavegacao(); });
+    selectTrimestre.addEventListener('change', () => { aplicarFiltrosTexto(); salvarEstadoNavegacao(); });
+    if (toggleOcultarConcluidas) {
+      toggleOcultarConcluidas.addEventListener('change', () => {
+        try {
+          localStorage.setItem('cronograma_ocultar_concluidas', toggleOcultarConcluidas.checked ? 'true' : 'false');
+        } catch (e) {}
+        aplicarFiltrosTexto();
+        salvarEstadoNavegacao();
+      });
+    }
+    if (toggleRiscoAutomatico) {
+      toggleRiscoAutomatico.addEventListener('change', () => { aplicarRiscos(); aplicarFiltrosTexto(); salvarEstadoNavegacao(); });
+    }
+    if (inputDataBase) {
+      inputDataBase.addEventListener('change', () => { aplicarRiscos(); aplicarFiltrosTexto(); salvarEstadoNavegacao(); });
+    }
+
+    // =========================================================================
+    // ALTERNÂNCIA DE ABAS DE VISUALIZAÇÃO
+    // =========================================================================
+    const tabPresenciais = document.getElementById('tab-presenciais');
+    const tabDisciplinas = document.getElementById('tab-disciplinas');
+    const tabCronologico = document.getElementById('tab-cronologico');
+
+    const containerPresenciais = document.getElementById('container-presenciais');
+    const containerDisciplinas = document.getElementById('container-disciplinas');
+    const containerCronologico = document.getElementById('container-cronologico');
+
+    function ativarAba(abaAtiva, containerAtivo, nomeAba, deveSalvar = true) {
+      [tabPresenciais, tabDisciplinas, tabCronologico].forEach(tab => {
+        if (tab) tab.className = 'px-3 py-1.5 text-xs sm:text-sm font-bold rounded-lg text-gray-600 hover:text-red-700 transition-all text-center flex items-center gap-1.5 cursor-pointer';
+      });
+      [containerPresenciais, containerDisciplinas, containerCronologico].forEach(c => {
+        if (c) c.classList.add('hidden');
+      });
+
+      if (abaAtiva) abaAtiva.className = 'px-3 py-1.5 text-xs sm:text-sm font-bold rounded-lg bg-white text-red-800 shadow-sm transition-all text-center flex items-center gap-1.5 cursor-pointer';
+      if (containerAtivo) containerAtivo.classList.remove('hidden');
+
+      if (nomeAba) {
+        abaAtualAtiva = nomeAba;
+        if (deveSalvar) salvarEstadoNavegacao();
+      }
+    }
+
+    tabPresenciais.addEventListener('click', () => {
+      ativarAba(tabPresenciais, containerPresenciais, 'presenciais');
+      renderMomentosPresenciais();
+      aplicarRiscos();
+      aplicarFiltrosTexto();
+    });
+
+    tabDisciplinas.addEventListener('click', () => {
+      ativarAba(tabDisciplinas, containerDisciplinas, 'disciplinas');
+      renderDisciplinas();
+      aplicarRiscos();
+      aplicarFiltrosTexto();
+    });
+
+    tabCronologico.addEventListener('click', () => {
+      ativarAba(tabCronologico, containerCronologico, 'cronologico');
+      renderTimeline();
+      aplicarRiscos();
+      aplicarFiltrosTexto();
+    });
+
+    // Monitora a rolagem para salvar a posição exata
+    let timerSalvarScroll = null;
+    window.addEventListener('scroll', () => {
+      if (timerSalvarScroll) clearTimeout(timerSalvarScroll);
+      timerSalvarScroll = setTimeout(() => {
+        salvarEstadoNavegacao();
+      }, 100);
+    }, { passive: true });
+
+    window.addEventListener('beforeunload', salvarEstadoNavegacao);
+    window.addEventListener('pagehide', salvarEstadoNavegacao);
+
+    // =========================================================================
+    // ALTERNÂNCIA DE MODO CARDS X TABELA
+    // =========================================================================
+    const btnViewCards = document.getElementById('btn-view-cards');
+    const btnViewTable = document.getElementById('btn-view-table');
+
+    function atualizarBotoesModoExibicao() {
+      if (modoExibicaoMobile) {
+        btnViewCards.className = 'px-3 py-1.5 rounded-lg bg-white text-red-800 shadow-sm transition-all flex items-center gap-1.5 font-bold cursor-pointer';
+        btnViewTable.className = 'px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 hover:text-red-700 font-semibold text-gray-700 cursor-pointer';
+      } else {
+        btnViewTable.className = 'px-3 py-1.5 rounded-lg bg-white text-red-800 shadow-sm transition-all flex items-center gap-1.5 font-bold cursor-pointer';
+        btnViewCards.className = 'px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 hover:text-red-700 font-semibold text-gray-700 cursor-pointer';
+      }
+
+      // Alterna na aba No Polo (2 Momentos)
+      const presTable = document.getElementById('presenciais-table-wrapper');
+      const presCards = document.getElementById('grid-momentos-presenciais');
+      if (presTable && presCards) {
+        presTable.classList.toggle('hidden', modoExibicaoMobile);
+        presCards.classList.toggle('hidden', !modoExibicaoMobile);
+      }
+
+      // Alterna na aba Por Disciplina
+      document.querySelectorAll('.disciplina-table-wrapper').forEach(t => t.classList.toggle('hidden', modoExibicaoMobile));
+      document.querySelectorAll('.disciplina-cards-wrapper').forEach(c => c.classList.toggle('hidden', !modoExibicaoMobile));
+
+      // Alterna na aba Linha do Tempo
+      const timelineTable = document.getElementById('timeline-table-container');
+      const timelineCards = document.getElementById('timeline-cards-container');
+      if (timelineTable && timelineCards) {
+        timelineTable.classList.toggle('hidden', modoExibicaoMobile);
+        timelineCards.classList.toggle('hidden', !modoExibicaoMobile);
+      }
+    }
+
+    btnViewCards.addEventListener('click', () => {
+      modoExibicaoMobile = true;
+      sessionStorage.setItem('preferencia_view_setada', 'cards');
+      atualizarBotoesModoExibicao();
+      salvarEstadoNavegacao();
+      mostrarToast('Modo de exibição: Cartões Responsivos Touch', 'info');
+    });
+
+    btnViewTable.addEventListener('click', () => {
+      modoExibicaoMobile = false;
+      sessionStorage.setItem('preferencia_view_setada', 'table');
+      atualizarBotoesModoExibicao();
+      salvarEstadoNavegacao();
+      mostrarToast('Modo de exibição: Tabela Tradicional', 'info');
+    });
+
+    // =========================================================================
+    // INDICADORES ACCORDION & RENDER TUDO
+    // =========================================================================
+    const btnToggleInsights = document.getElementById('btn-toggle-insights');
+    const containerInsights = document.getElementById('container-insights');
+    const textoToggleInsights = document.getElementById('texto-toggle-insights');
+    const iconToggleInsights = document.getElementById('icon-toggle-insights');
+
+    if (btnToggleInsights && containerInsights) {
+      btnToggleInsights.addEventListener('click', () => {
+        const estaOculto = containerInsights.classList.contains('hidden');
+        if (estaOculto) {
+          containerInsights.classList.remove('hidden');
+          textoToggleInsights.textContent = 'Ocultar';
+          iconToggleInsights.classList.add('rotate-180');
+          btnToggleInsights.classList.add('bg-red-950', 'text-white');
+        } else {
+          containerInsights.classList.add('hidden');
+          textoToggleInsights.textContent = 'Indicadores';
+          iconToggleInsights.classList.remove('rotate-180');
+          btnToggleInsights.classList.remove('bg-red-950', 'text-white');
+        }
+      });
+    }
+
+    function renderTudo() {
+      renderMomentosPresenciais();
+      renderDisciplinas();
+      renderTimeline();
+      aplicarRiscos();
+      aplicarFiltrosTexto();
+      atualizarContadores();
+      atualizarBotoesModoExibicao();
+    }
+
+    // Inicialização
+    window.addEventListener('DOMContentLoaded', () => {
+      const hoje = new Date();
+      document.getElementById('display-data-hoje').textContent = hoje.toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric' });
+      inputDataBase.value = getDataHojeIso();
+
+      restaurarEstadoNavegacao();
+      renderTudo();
+      atualizarSensorOrientacao();
+      inicializarAutoOcultarCabecalho();
+    });
+
+    // Controle de Exibição do Cabeçalho sob Demanda (Oculto por padrão)
+    let cabecalhoVisivel = false;
+    const btnToggleCabecalho = document.getElementById('btn-toggle-cabecalho');
+    const headerElement = document.getElementById('main-header');
+    const labelToggleCabecalho = document.getElementById('label-toggle-cabecalho');
+    const chevronToggleCabecalho = document.getElementById('chevron-toggle-cabecalho');
+
+    if (btnToggleCabecalho && headerElement) {
+      btnToggleCabecalho.addEventListener('click', () => {
+        cabecalhoVisivel = !cabecalhoVisivel;
+        if (cabecalhoVisivel) {
+          headerElement.classList.remove('hidden');
+          headerElement.classList.remove('header-oculto');
+          labelToggleCabecalho.textContent = 'Ocultar Cabeçalho';
+          if (chevronToggleCabecalho) chevronToggleCabecalho.classList.add('rotate-180');
+          btnToggleCabecalho.classList.add('bg-red-950');
+        } else {
+          headerElement.classList.add('hidden');
+          labelToggleCabecalho.textContent = 'Mostrar Cabeçalho';
+          if (chevronToggleCabecalho) chevronToggleCabecalho.classList.remove('rotate-180');
+          btnToggleCabecalho.classList.remove('bg-red-950');
+        }
+      });
+    }
+
+    function inicializarAutoOcultarCabecalho() {
+      const header = document.getElementById('main-header');
+      const btnVoltarTopo = document.getElementById('btn-voltar-topo');
+      if (!header) return;
+
+      let lastScrollY = window.pageYOffset || document.documentElement.scrollTop;
+      let ticking = false;
+
+      window.addEventListener('scroll', () => {
+        if (!ticking) {
+          window.requestAnimationFrame(() => {
+            const currentScrollY = window.pageYOffset || document.documentElement.scrollTop;
+            const scrollDelta = currentScrollY - lastScrollY;
+
+            // Só oculta/reexibe ao rolar se o cabeçalho foi solicitado pelo usuário
+            if (cabecalhoVisivel && Math.abs(scrollDelta) > 6) {
+              if (currentScrollY > 70 && scrollDelta > 0) {
+                header.classList.add('header-oculto');
+              } else if (scrollDelta < 0 || currentScrollY <= 15) {
+                header.classList.remove('header-oculto');
+              }
+            }
+
+            if (btnVoltarTopo) {
+              if (currentScrollY > 260) {
+                btnVoltarTopo.classList.remove('opacity-0', 'pointer-events-none', 'translate-y-4');
+                btnVoltarTopo.classList.add('opacity-100', 'pointer-events-auto', 'translate-y-0');
+              } else {
+                btnVoltarTopo.classList.add('opacity-0', 'pointer-events-none', 'translate-y-4');
+                btnVoltarTopo.classList.remove('opacity-100', 'pointer-events-auto', 'translate-y-0');
+              }
+            }
+
+            lastScrollY = Math.max(0, currentScrollY);
+            ticking = false;
+          });
+          ticking = true;
+        }
+      }, { passive: true });
+
+      if (btnVoltarTopo) {
+        btnVoltarTopo.addEventListener('click', () => {
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+      }
+    }
+  </script>
+
+  <!-- Page Footer -->
+  <footer class="mt-12 text-center text-xs text-gray-500 border-t border-gray-200 pt-6">
+    <p class="font-semibold text-gray-700">Centro Universitário INTA • Ensino Semipresencial • Semestre 2026.2</p>
+    <p class="mt-1">Serviço Social & Pedagogia • Cronograma Unificado de Encontros Presenciais no Polo e Aulas Síncronas</p>
+  </footer>
+
+  <!-- Input oculto para importação de arquivo JSON -->
+  <input type="file" id="input-importar-json" accept=".json,application/json" class="hidden" onchange="processarImportacaoJson(event)">
+
+</body>
+</html>
